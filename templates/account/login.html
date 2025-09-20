@@ -1,0 +1,54 @@
+{% extends "auth_base.html" %}
+{% load i18n %}
+{% load static %}
+{% load allauth %}
+
+{% block title %}
+    {% trans "Log In" %}
+{% endblock %}
+
+{% block auth_content %}
+<div class="container-fluid authentication-bg overflow-hidden" style="background-image: url(/static/images/AMP_Home_Slider_3.png)">
+    <div class="bg-overlay"></div>
+    <div class="row align-items-center justify-content-center min-vh-100">
+        <div class="col-10 col-md-6 col-lg-4 col-xxl-3">
+            <div class="card mb-0">
+                <div class="card-body">
+                    <div class="text-center">
+                        <a href="/">
+                            <img src="{% static 'images/amp_logo_small.png' %}" alt="Logo" height="64" class="auth-logo mx-auto">
+                        </a>
+                        <h4 class="mt-4">Welcome Back!</h4>
+                        <p class="text-muted">Sign in to continue</p>
+                    </div>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="p-2 mt-4">
+                        <form method="post" action="{% url 'login' %}?next={{ request.GET.next }}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="id_login" class="form-label">Username</label>
+                                <input type="text" name="username" id="id_login" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_password" class="form-label">Password</label>
+                                <input type="password" name="password" id="id_password" class="form-control" required>
+                            </div>
+                            <div class="text-center pt-3">
+                                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p>© <script>document.write(new Date().getFullYear())</script> AMP.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

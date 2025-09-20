@@ -1,0 +1,213 @@
+<!-- Weekly Report Modal -->
+<div class="modal fade" id="weeklyReportModal" tabindex="-1" aria-labelledby="weeklyReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="weeklyReportModalLabel">Generate Weekly Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" action="{% url 'weekly_report' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Warehouse</label>
+                        <select name="warehouse" class="form-select">
+                            <option value="all">All Warehouses</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Client</label>
+                        <select name="client" class="form-select">
+                            <option value="all">All Clients</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="format" value="csv" id="weeklyCsv">
+                        <label class="form-check-label" for="weeklyCsv">
+                            Download as CSV
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Beans Report Modal -->
+<div class="modal fade" id="monthlyBeansModal" tabindex="-1" aria-labelledby="monthlyBeansModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="monthlyBeansModalLabel">Generate Monthly Beans Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" action="{% url 'monthly_beans_report' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Warehouse</label>
+                        <select name="warehouse" class="form-select">
+                            <option value="all">All Warehouses</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Origin</label>
+                        <select name="origin" class="form-select">
+                            <option value="all">All Origins</option>
+                            <option value="Tema">Tema</option>
+                            <option value="Takoradi">Takoradi</option>
+                            <option value="Kumasi">Kumasi</option>
+                            <option value="Other">Other Countries</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="format" value="csv" id="beansCsv">
+                        <label class="form-check-label" for="beansCsv">
+                            Download as CSV
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Transport Report Modal -->
+<div class="modal fade" id="transportReportModal" tabindex="-1" aria-labelledby="transportReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transportReportModalLabel">Generate Transport Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" action="{% url 'transport_report' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Warehouse</label>
+                        <select name="warehouse" class="form-select">
+                            <option value="all">All Warehouses</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Transporter</label>
+                        <select name="transporter" class="form-select">
+                            <option value="all">All Transporters</option>
+                            <option value="AMP Transport">AMP Transport</option>
+                            <!-- Add other transporters as needed -->
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="format" value="csv" id="transportCsv">
+                        <label class="form-check-label" for="transportCsv">
+                            Download as CSV
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Sack Report Modal -->
+<div class="modal fade" id="sackReportModal" tabindex="-1" aria-labelledby="sackReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sackReportModalLabel">Generate Monthly Sack Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" action="{% url 'monthly_sack_report' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Warehouse</label>
+                        <select name="warehouse" class="form-select">
+                            <option value="all">All Warehouses</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="format" value="csv" id="sackCsv">
+                        <label class="form-check-label" for="sackCsv">
+                            Download as CSV
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Report Modal -->
+<div class="modal fade" id="qualityReportModal" tabindex="-1" aria-labelledby="qualityReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qualityReportModalLabel">Generate Quality Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="get" action="{% url 'quality_report' %}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Warehouse</label>
+                        <select name="warehouse" class="form-select">
+                            <option value="all">All Warehouses</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bean Category</label>
+                        <select name="bean_category" class="form-select">
+                            <option value="all">All Categories</option>
+                            <option value="Above Remnant">Above Remnant</option>
+                            <option value="Light Crop">Light Crop</option>
+                            <option value="Main Crop">Main Crop</option>
+                            <option value="Remnant">Remnant</option>
+                            <option value="Small Beans">Small Beans</option>
+                            <option value="Type 4">Type 4</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="format" value="csv" id="qualityCsv">
+                        <label class="form-check-label" for="qualityCsv">
+                            Download as CSV
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

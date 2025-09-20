@@ -1,0 +1,82 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">
+                    {% if report_type == 'weekly' %}Weekly Report
+                    {% elif report_type == 'monthly_beans' %}Monthly Beans Report
+                    {% elif report_type == 'transport' %}Transport Report
+                    {% elif report_type == 'monthly_sack' %}Monthly Sack Report
+                    {% elif report_type == 'quality' %}Quality Report
+                    {% endif %}
+                </h4>
+                <p class="text-muted mb-0">{{ start_date }} to {{ end_date }}</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">AMP</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reports_dashboard' %}">Reports</a></li>
+                    <li class="breadcrumb-item active">
+                        {% if report_type == 'weekly' %}Weekly
+                        {% elif report_type == 'monthly_beans' %}Monthly Beans
+                        {% elif report_type == 'transport' %}Transport
+                        {% elif report_type == 'monthly_sack' %}Monthly Sack
+                        {% elif report_type == 'quality' %}Quality
+                        {% endif %}
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">
+                    {% if report_type == 'weekly' %}Weekly Report
+                    {% elif report_type == 'monthly_beans' %}Monthly Beans Received Report
+                    {% elif report_type == 'transport' %}Transport Report
+                    {% elif report_type == 'monthly_sack' %}Monthly Sack Report
+                    {% elif report_type == 'quality' %}Quality Report
+                    {% endif %}
+                </h4>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'reports_dashboard' %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Reports
+                    </a>
+                    <button class="btn btn-primary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Report-specific content -->
+                {% if report_type == 'weekly' %}
+                    {% include 'warehouse/reports/partials/weekly_report.html' %}
+                {% elif report_type == 'monthly_beans' %}
+                    {% include 'warehouse/reports/partials/monthly_beans_report.html' %}
+                {% elif report_type == 'transport' %}
+                    {% include 'warehouse/reports/partials/transport_report.html' %}
+                {% elif report_type == 'monthly_sack' %}
+                    {% include 'warehouse/reports/partials/monthly_sack_report.html' %}
+                {% elif report_type == 'quality' %}
+                    {% include 'warehouse/reports/partials/quality_report.html' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

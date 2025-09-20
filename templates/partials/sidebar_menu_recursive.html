@@ -1,0 +1,18 @@
+{% for item_name, item_data in items.items %}
+  <li>
+    {% if item_data.sub_items %}
+      <a href="javascript:void(0);" class="has-arrow flex items-center space-x-2 py-2 pl-{{ level|add:4 }} hover:bg-gray-100 rounded text-sm">
+        <i class="{{ item_data.icon }}"></i>
+        <span>{{ item_name }}</span>
+      </a>
+      <ul class="sub-menu ml-4 mt-1 border-l-2 border-gray-200">
+        {% include "partials/sidebar_menu_recursive.html" with items=item_data.sub_items level=level|add:1 %}
+      </ul>
+    {% else %}
+      <a href="{{ item_data.url }}" class="flex items-center space-x-2 py-2 pl-{{ level|add:4 }} hover:bg-gray-100 rounded text-sm">
+        <i class="{{ item_data.icon }}"></i>
+        <span>{{ item_name }}</span>
+      </a>
+    {% endif %}
+  </li>
+{% endfor %}

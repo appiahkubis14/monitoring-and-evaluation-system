@@ -1,0 +1,60 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Good Morning, <span class="text-primary">{{ user.username }}!</span></h4>
+                <p class="text-muted mb-0">Here's what's happening with your dashboard today.</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">AMP</a></li>
+                    {% for crumb in path|getcrumbs  %}
+                        {% if forloop.last %}
+                            <li class="breadcrumb-item active">{{ crumb }}</li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="/{{ crumb|lower }}">{{ crumb }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!--    end row -->
+{% endblock %}
+
+{% block none_existent %}
+    <div class="">
+            <div class="container">
+                <div class="row justify-content-center align-items-center min-vh-100">
+                    <div class="col-lg-5">
+                        <div class="text-center">
+                            <img src="{% static 'images/error_404 test.svg' %}" alt="404 error" class="img-fluid">
+                            <div class="mt-2 pt-2 text-center">
+                                <h1 class="display-4 text-custom-blue fw-bold">404</h1>
+                                <p class="text-custom-blue">The page you are looking for might have been moved, deleted, or temporarily unavailable.</p>
+                            </div>
+                            <div class="mt-2 pt-2 text-center">
+                                <a class="btn btn-primary waves-effect waves-light" href="/dashboard/home/">Back to Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
+
+{% block right_sidebar %}
+    {% include 'partials/right_sidebar.html' %}
+{% endblock %}
+

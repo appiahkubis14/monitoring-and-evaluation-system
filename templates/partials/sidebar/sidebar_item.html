@@ -1,0 +1,24 @@
+{% if item.sub_items %}
+  <li>
+    <a href="javascript:void(0);" class="has-arrow">
+      <i class="{{ item.icon }}"></i>
+      <span>{{ name }}</span>
+    </a>
+    <ul class="sub-menu">
+      {% for child_name, child_item in item.sub_items.items %}
+        {% include "sidebar/sidebar_item.html" with name=child_name item=child_item %}
+      {% endfor %}
+    </ul>
+  </li>
+{% else %}
+  <li>
+    <a href="{{ item.url }}">
+      {% if item.icon %}
+        <i class="{{ item.icon }}"></i>
+      {% else %}
+        <i class="mdi mdi-checkbox-blank-circle align-middle"></i>
+      {% endif %}
+      <span>{{ name }}</span>
+    </a>
+  </li>
+{% endif %}

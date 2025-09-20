@@ -1,0 +1,12 @@
+
+django
+django-crispy-forms
+crispy-bootstrap5
+django-filter
+djangorestframework
+python-decouple
+whitenoise
+gunicorn
+psycopg2-binary
+openpyxl
+reportlab

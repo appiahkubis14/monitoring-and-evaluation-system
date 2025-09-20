@@ -1,0 +1,89 @@
+
+{% load i18n static %}
+{% load filters %}
+
+
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Origin</th>
+                <th>Total Bags</th>
+                <th>Total Net Weight (kg)</th>
+                <th>Average Weight per Bag (kg)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for origin, data in origin_data.items %}
+            <tr>
+                <td>{{ origin }}</td>
+                <td>{{ data.total_bags }}</td>
+                <td>{{ data.total_net_weight|floatformat:2 }}</td>
+                <td>
+                    {% if data.total_bags > 0 %}
+                        {{ data.total_net_weight|div:data.total_bags|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td>Total</td>
+                <td>{{ total_bags }}</td>
+                <td>{{ total_net_weight|floatformat:2 }}</td>
+                <td>
+                    {% if total_bags > 0 %}
+                        {{ total_net_weight|div:total_bags|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+{% if origin_data %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h5>Daily Breakdown by Origin</h5>
+        {% for origin, data in origin_data.items %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">{{ origin }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bags</th>
+                                <th>Net Weight (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for daily in data.daily_data %}
+                            <tr>
+                                <td>{{ daily.date }}</td>
+                                <td>{{ daily.bags }}</td>
+                                <td>{{ daily.net_weight|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle"></i> No data found for the selected criteria.
+</div>
+{% endif %}

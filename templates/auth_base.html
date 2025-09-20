@@ -1,0 +1,36 @@
+{% load i18n static %}
+
+<!doctype html>
+<html lang="en">
+
+{% block head %}
+    <head>
+
+        <meta charset="utf-8" />
+        <title>{{ title }} | AMP Logistics Company</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta content="" name="description" />
+        <meta content="AMPstudio" name="author" />
+        <!-- App favicon -->
+        <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}">
+
+        
+        {% block layout_scripts %}{% endblock %}
+        
+        {% include 'partials/base_css.html' %}
+        
+
+    </head>
+{% endblock %}
+
+<body>
+    {% block auth_content %}
+    {% endblock %}
+
+    {% include 'partials/base_scripts.html' %}
+
+    {% block custom_scripts %}
+    {% endblock %}
+</body>
+
+</html>

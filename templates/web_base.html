@@ -1,0 +1,161 @@
+{% load i18n static %}
+{% load allauth i18n %}
+
+<!doctype html>
+<html lang="en">
+
+{% block head %}
+<head>
+
+    <meta charset="utf-8" />
+    <title>{% block title %}{% endblock %} {{ title }} | AMP Logistics Company</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="" name="description" />
+    <meta content="AMPstudio" name="author" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}">
+
+    
+    {% block layout_scripts %}
+    {% endblock %}
+    
+    {% include 'partials/base_css.html' %}
+    {% block custom_css %}
+     {% endblock %}
+    
+
+</head>
+{% endblock %}
+
+<body>
+    <!-- Begin page -->
+    <div id="layout-wrapper">
+        
+        {% include 'partials/menu.html' %}
+
+        <!-- ============================================================== -->
+        <!-- Start right Content here -->
+        <!-- ============================================================== -->
+            
+        
+        <div class="main-content">
+            <div class="page-content" >
+                <div class="container-fluid">
+                    <!-- Start row -->
+                    {% block greeting %}
+                    {% endblock %}
+                    <!--    end row -->
+                    
+                        <!-- Start row -->
+                        {% block main_content %}
+                        {% endblock %}
+                        <!--    end row -->
+                
+                        {% block none_existent %}
+                        {% endblock %}
+                
+
+                    <div class="modal fade" id="modal8">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Sign Out</h5><button type="button" class="btn btn-sm btn-label-danger btn-icon" data-bs-dismiss="modal"><i class="mdi mdi-close"></i></button>
+                                </div>
+                                <div class="modal-body">
+                                    {% element p %}
+                                        {% trans 'Are you sure you want to sign out?' %}
+                                    {% endelement %}
+                                    {% url 'account_logout' as action_url %}
+                                    {% element form method="post" action=action_url no_visible_fields=True %}
+                                        {% slot body %}
+                                            {% csrf_token %}
+                                            {{ redirect_field }}
+                                        {% endslot %}
+                                        {% slot actions %}
+                                            <div class="d-flex align-items-center justify-content-end">
+                                                {% element button class="btn btn-outline-danger" type="submit" %}
+                                                    {% trans 'Sign Out' %}
+                                                {% endelement %}
+                                            </div>
+                                        {% endslot %}
+                                    {% endelement %}
+                                    
+                                </div>
+                                {% comment %} <div class="modal-footer"><button class="btn btn-primary">Submit</button> <button class="btn btn-outline-danger">Reset</button></div> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="modal11">
+                        <div class="modal-dialog modal-fullscreen">
+                            <div class="modal-content">
+                                {% comment %} <div class="modal-header">
+                                    <h5 class="modal-title">Full screen modal</h5><button type="button" class="btn btn-sm btn-label-danger btn-icon" data-bs-dismiss="modal"><i class="mdi mdi-close"></i></button>
+                                </div> {% endcomment %}
+                                <div class="modal-body">
+                                    
+                                </div>
+                                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% comment %} </div> {% endcomment %}
+                    <!-- end container-fluid -->
+                </div>
+                <!-- End Page-content -->
+                {% block footer %}
+                {% endblock %}
+            </div>
+            <!-- end main content-->
+        </div>
+        <!-- end layout-wrapper -->
+
+    {% block right_sidebar %}{% endblock %}
+    
+    <script>
+       window.addEventListener('load', () => {
+           const sideBar = document.querySelector("#side-menu");
+           sideBar.children.forEach(item => {
+            const currentAppName = document.location.pathname.split('/');
+            if(item.innerText.trim().toLowerCase() === currentAppName[1]){
+                item.classList.add('mm-active');
+
+                item.lastElementChild.classList.add('mm-show')
+
+                item.lastElementChild.children.forEach(child => {
+                    if(child.innerText.trim().toLowerCase() === currentAppName[2]){
+                        child.classList.add('active');
+                    }
+                });
+                
+            }
+           })
+        })
+    </script>
+
+     <!-- <script>
+        window.ChatBotConfig = {
+            websiteId: '4300e854-9ec6-4d74-a411-be94beb77641',
+            apiUrl: 'http://172.20.10.2:5000',
+            botName: 'AMP Logistics',
+            theme: 'orange', 
+            position: 'bottom-right',
+            welcomeMessage: 'Welcome to our website! How can I help you find what you\'re looking for?',
+            enableSound: true,
+            showTypingIndicator: true,
+            showAvatar: true,
+            allowMinimize: true,
+            allowClose: true,
+            autoConnect: true,
+            collectUserInfo: true 
+        };
+    </script>
+    <script src="http://172.20.10.2:5000/static/assets/js/chatbot-widget.js"></script> -->
+    {% include 'partials/base_scripts.html' %}
+
+    {% block vis_charts %}
+    {% endblock %}
+
+</body>
+</html>

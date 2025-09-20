@@ -1,0 +1,956 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">BCG Daily Stock Overview</h4>
+                <p class="text-muted mb-0">Manage BCG stock entries across warehouses</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">AMP</a></li>
+                    {% for crumb in path|getcrumbs %}
+                        {% if forloop.last %}
+                            <li class="breadcrumb-item active">{{ crumb }}</li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="/{{ crumb|lower }}">{{ crumb }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title">BCG Stock Daily Entries</h4>
+                
+                <!-- Filter section -->
+                <div class="d-flex gap-2">
+                    {% if warehouses %}
+                    <select id="warehouseFilter" class="form-select form-select-sm" style="width: 200px;">
+                        <option value="">All Warehouses</option>
+                        {% for warehouse in warehouses %}
+                        <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                    
+                    <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addBCGStockModal">
+                        <i class="fas fa-plus-circle"></i> Add BCG Stock
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="bcgStockTable" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
+                      <thead>
+                          <tr>
+                              <th>ID</th>
+                              <th>Warehouse</th>
+                              <th>Date</th>
+                              <th>Contract Number</th>
+                              <th>Bean Prefix</th>
+                              <th>Bean Category</th>
+                              <th>Stack Number</th>
+                              <th>Block</th>
+                              <th>Origin Depot</th>
+                              <th>Destination</th>
+                              <th>Driver Name</th>
+                              <th>Transporter</th>
+                              <th>Season</th>
+                              <th>Bags</th>
+                              <th>CMC Tonnage</th>
+                              <th>Barry Tonnage</th>
+                              <th>AMP Tonnage</th>
+                              <th>Expected Tonnage</th>
+                              <th>Country</th>
+                              <th>Weight</th>
+                              <th>Added By</th>
+                              <th>Added Date</th>
+                              <th>Actions</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <!-- Data will be loaded via AJAX -->
+                      </tbody>
+                  </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add BCG Stock Modal -->
+<!-- Add BCG Stock Modal -->
+<div class="modal fade" id="addBCGStockModal" tabindex="-1" aria-labelledby="addBCGStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBCGStockModalLabel">Add BCG Stock Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addBCGStockForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <!-- Operation Type -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Operation Type <span class="text-danger">*</span></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="operation_type" id="operation_add" value="add" checked>
+                                <label class="form-check-label" for="operation_add">
+                                    Add to Stock
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="operation_type" id="operation_subtract" value="subtract">
+                                <label class="form-check-label" for="operation_subtract">
+                                    Subtract from Stock
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Date <span class="text-danger">*</span></label>
+                            <input type="date" name="date" id="date" class="form-control" required 
+                                   value="{% now 'Y-m-d' %}">
+                        </div>
+
+                        <!-- Warehouse -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Warehouse <span class="text-danger">*</span></label>
+                            <select name="warehouse" id="warehouse" class="form-select" required>
+                                <option value="">Select Warehouse</option>
+                                {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Vehicle Assignment -->
+                        <div class="col-md-4 mb-3">
+                          <label class="form-label">Vehicle & Driver Assignment</label>
+                          <select name="vehicle_assignment" id="vehicle_assignment" class="form-select">
+                              <option value="">Select Vehicle Assignment</option>
+                              {% for assignment in vehicle_assignments %}
+                              <option value="{{ assignment.id }}" 
+                                      data-driver-name="{% if assignment.current_driver %}{{ assignment.current_driver.name }}{% endif %}">
+                                  {% if assignment.current_driver and assignment.vehicle %}
+                                      {{ assignment.current_driver.name }} - {{ assignment.vehicle.license_plate }}
+                                  {% elif assignment.current_driver %}
+                                      {{ assignment.current_driver.name }} (No Vehicle)
+                                  {% elif assignment.vehicle %}
+                                      {{ assignment.vehicle.license_plate }} (No Driver)
+                                  {% else %}
+                                      Unassigned
+                                  {% endif %}
+                              </option>
+                              {% endfor %}
+                          </select>
+                      </div>
+
+                      <div class="col-md-4 mb-3">
+                          <label class="form-label">Driver Name (if not assigned)</label>
+                          <input type="text" name="driver_name" id="driver_name" class="form-control" placeholder="Driver name">
+                      </div>
+
+                        <script>
+                          $(document).ready(function() {
+                            // Initialize Select2
+                            $('#vehicle_assignment').select2({
+                                dropdownParent: $('#addBCGStockModal'),
+                                placeholder: "Select Vehicle Assignment",
+                                allowClear: true
+                            });
+
+                            // Auto-populate driver name on selection
+                            $('#vehicle_assignment').on('change', function() {
+                                const selectedOption = $(this).find('option:selected');
+                                const driverName = selectedOption.data('driver-name') || '';
+                                $('#driver_name').val(driverName);
+                            });
+
+                            // Close dropdown on select
+                            $('#vehicle_assignment').on('select2:select', function() {
+                                $(this).select2('close');
+                            });
+
+                            // Clear driver name when assignment is cleared
+                            $('#vehicle_assignment').on('select2:unselect', function() {
+                                $('#driver_name').val('');
+                            });
+                        });
+                        </script>
+
+                        <!-- Vehicle Number (optional) -->
+                        <!-- <div class="col-md-4 mb-3">
+                            <label class="form-label">Vehicle Number (Direct)</label>
+                            <select name="vehicle_number" id="vehicle_number" class="form-select">
+                                <option value="">Select Vehicle</option>
+                                {% for vehicle in vehicles %}
+                                <option value="{{ vehicle.id }}">{{ vehicle.vehicle_number }}</option>
+                                {% endfor %}
+                            </select>
+                        </div> -->
+
+                        <!-- Waybill Number -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Waybill Number</label>
+                            <input type="text" name="waybill_number" id="waybill_number" class="form-control" placeholder="Waybill number">
+                        </div>
+
+                        <!-- Contract Number -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Contract Number <span class="text-danger">*</span></label>
+                            <input type="text" name="contract_number" id="contract_number" class="form-control" placeholder="Contract number" required>
+                        </div>
+
+                        <!-- Stack Number -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stack Number</label>
+                            <input type="text" name="stack_number" id="stack_number" class="form-control" placeholder="Stack number">
+                        </div>
+
+                        <!-- Block -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Block</label>
+                            <input type="text" name="block" id="block" class="form-control" placeholder="Block">
+                        </div>
+
+                        <!-- Bean Prefix -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bean Prefix</label>
+                            <input type="text" name="bean_prefix" id="bean_prefix" class="form-control" placeholder="Bean prefix">
+                        </div>
+
+                        <!-- Bean Category -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bean Category</label>
+                            <select name="bean_category" id="bean_category" class="form-select">
+                                <option value="">Select Bean Category</option>
+                                {% for display_name in beans %}
+                                <option value="{{ display_name.id }}">{{ display_name.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Origin Depot -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Origin Depot</label>
+                            <input type="text" name="origin_depot" id="origin_depot" class="form-control" placeholder="Origin depot">
+                        </div>
+
+                        <!-- Destination -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Destination</label>
+                            <input type="text" name="destination" id="destination" class="form-control" placeholder="Destination">
+                        </div>
+
+                        <!-- Driver Name (if not using assignment) -->
+                        <!-- <div class="col-md-4 mb-3">
+                            <label class="form-label">Driver Name (if not assigned)</label>
+                            <input type="text" name="driver_name" id="driver_name" class="form-control" placeholder="Driver name">
+                        </div> -->
+
+                        <!-- Transporter -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Transporter</label>
+                            <input type="text" name="transporter" id="transporter" class="form-control" placeholder="Transporter">
+                        </div>
+
+                        <!-- Season -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Season</label>
+                            <input type="text" name="season" id="season" class="form-control" placeholder="Season">
+                        </div>
+
+                        <!-- Bags -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bags</label>
+                            <input type="number" name="bags" id="bags" class="form-control" value="0" min="0">
+                        </div>
+
+                        <!-- CMC Tonnage -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">CMC Tonnage</label>
+                            <input type="number" step="0.01" name="cmc_tonnage" id="cmc_tonnage" class="form-control" value="0" min="0">
+                        </div>
+
+                        <!-- Barry Tonnage -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Barry Tonnage</label>
+                            <input type="number" step="0.01" name="barry_tonnage" id="barry_tonnage" class="form-control" value="0" min="0">
+                        </div>
+
+                        <!-- AMP Tonnage -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">AMP Tonnage</label>
+                            <input type="number" step="0.01" name="amp_tonnage" id="amp_tonnage" class="form-control" value="0" min="0">
+                        </div>
+
+                        <!-- Expected Tonnage -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Expected Tonnage</label>
+                            <input type="number" step="0.01" name="expected_tonnage" id="expected_tonnage" class="form-control" value="0" min="0">
+                        </div>
+
+                       
+                        <!-- Weight -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Weight</label>
+                            <input type="number" step="0.01" name="weight" id="weight" class="form-control" value="0" min="0">
+                        </div>
+                         <!-- Country -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Country</label>
+                            <select name="country" id="country" class="form-select">
+                                <option value="">Select Country</option>
+                                {% for country in countries %}
+                                <option value="{{ country.country }}">{{ country.country }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+
+                        <!-- Remarks -->
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Remarks</label>
+                            <textarea name="remarks" id="remarks" class="form-control" rows="2" placeholder="Additional remarks"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveBCGStockBtn">
+                    <i class="fas fa-save"></i> Save Entry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit BCG Stock Modal -->
+<div class="modal fade" id="editBCGStockModal" tabindex="-1" aria-labelledby="editBCGStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBCGStockModalLabel">Edit BCG Stock Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBCGStockForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="stock_id" id="edit_stock_id">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Warehouse <span class="text-danger">*</span></label>
+                            <select name="warehouse" id="edit_warehouse" class="form-select" required>
+                                <option value="">Select Warehouse</option>
+                                {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Contract Number</label>
+                            <input type="text" name="contract_number" id="edit_contract_number" class="form-control" placeholder="Contract number">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Stack Number</label>
+                            <input type="text" name="stack_number" id="edit_stack_number" class="form-control" placeholder="Stack number">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Block</label>
+                            <input type="text" name="block" id="edit_block" class="form-control" placeholder="Block">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bean Prefix</label>
+                            <input type="text" name="bean_prefix" id="edit_bean_prefix" class="form-control" placeholder="Bean prefix">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bean Category</label>
+                            <select name="bean_category" id="edit_bean_category" class="form-select">
+                                <option value="">Select Bean Category</option>
+                                {% for bean in beans %}
+                                <option value="{{ bean.name }}">{{ bean.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Origin Depot</label>
+                            <input type="text" name="origin_depot" id="edit_origin_depot" class="form-control" placeholder="Origin depot">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Destination</label>
+                            <input type="text" name="destination" id="edit_destination" class="form-control" placeholder="Destination">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Driver Name</label>
+                            <input type="text" name="driver_name" id="edit_driver_name" class="form-control" placeholder="Driver name">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Transporter</label>
+                            <input type="text" name="transporter" id="edit_transporter" class="form-control" placeholder="Transporter">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Season</label>
+                            <input type="text" name="season" id="edit_season" class="form-control" placeholder="Season">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Bags</label>
+                            <input type="number" name="bags" id="edit_bags" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">CMC Tonnage</label>
+                            <input type="number" step="0.01" name="cmc_tonnage" id="edit_cmc_tonnage" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Barry Tonnage</label>
+                            <input type="number" step="0.01" name="barry_tonnage" id="edit_barry_tonnage" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">AMP Tonnage</label>
+                            <input type="number" step="0.01" name="amp_tonnage" id="edit_amp_tonnage" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Expected Tonnage</label>
+                            <input type="number" step="0.01" name="expected_tonnage" id="edit_expected_tonnage" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Country</label>
+                            <select name="country" id="edit_country" class="form-select">
+                                <option value="">Select Country</option>
+                                {% for country in countries %}
+                                <option value="{{ country.country }}">{{ country.country }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Weight</label>
+                            <input type="number" step="0.01" name="weight" id="edit_weight" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Remarks</label>
+                            <textarea name="remarks" id="edit_remarks" class="form-control" rows="2" placeholder="Additional remarks"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="updateBCGStockBtn">
+                    <i class="fas fa-save"></i> Update Entry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal fade" id="viewStockModal" tabindex="-1" aria-labelledby="viewStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewStockModalLabel">BCG Stock Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <strong>Warehouse:</strong> <span id="view_warehouse"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Contract Number:</strong> <span id="view_contract_number"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Bean Prefix:</strong> <span id="view_bean_prefix"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Bean Category:</strong> <span id="view_bean_category"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Stack Number:</strong> <span id="view_stack_number"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Block:</strong> <span id="view_block"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Origin Depot:</strong> <span id="view_origin_depot"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Destination:</strong> <span id="view_destination"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Driver Name:</strong> <span id="view_driver_name"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Transporter:</strong> <span id="view_transporter"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Season:</strong> <span id="view_season"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Bags:</strong> <span id="view_bags"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>CMC Tonnage:</strong> <span id="view_cmc_tonnage"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Barry Tonnage:</strong> <span id="view_barry_tonnage"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>AMP Tonnage:</strong> <span id="view_amp_tonnage"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Expected Tonnage:</strong> <span id="view_expected_tonnage"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Country:</strong> <span id="view_country"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Weight:</strong> <span id="view_weight"></span>
+                    </div>
+                    <div class="col-md-12 mb-2">
+                        <strong>Remarks:</strong> <span id="view_remarks"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Added By:</strong> <span id="view_added_by"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Added Date:</strong> <span id="view_added_date"></span>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>Last Updated:</strong> <span id="view_last_updated"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © AMP.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Required CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css">
+
+<!-- Required JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  // Initialize Select2 when the modal is shown
+
+</script>
+
+<script>
+$(document).ready(function () {
+    // Initialize Select2
+    $('#edit_warehouse,  #edit_bean_category, #edit_country').select2({
+        dropdownParent: $('#editBCGStockModal'),
+        placeholder: "Select an option",
+        allowClear: true
+    });
+
+
+    $('#addBCGStockModal').on('shown.bs.modal', function () {
+    $('#warehouse,#bean_category, #country,#vehicle_assignment').select2({
+        dropdownParent: $('#addBCGStockModal'),
+        placeholder: "Select an option",
+        allowClear: true
+    });
+});
+
+// Destroy Select2 when modal is hidden to prevent issues
+$('#addBCGStockModal').on('hidden.bs.modal', function () {
+    $('#warehouse, #bean_category, #country, #vehicle_assignment').select2('destroy');
+});
+    //  $('#warehouse').select2({
+    //     dropdownParent: $('#addBCGStockModal'),
+    //     placeholder: "Select an option",
+    //     allowClear: true
+    // });
+    
+    let table = $('#bcgStockTable').DataTable({
+    processing: true,
+    // serverSide: true,
+    responsive: true,
+    ajax: {
+        url: "/warehouse/list-bcg-stock-daily/",
+        data: function (d) {
+            d.warehouse = $('#warehouseFilter').val();
+        },
+        error: function(xhr, error, thrown) {
+            console.error("DataTables error:", error, thrown);
+            // Display a user-friendly error message
+            Swal.fire("Error", "Failed to load data. Please try again or contact support if the problem persists.", "error");
+        }
+    },
+    columns: [
+        { data: 'id' },
+        { data: 'warehouse_name' },
+        { data: 'date' },
+        { data: 'contract_number' },
+        { data: 'bean_prefix' },
+        { data: 'bean_category' },
+        { data: 'stack_number' },
+        { data: 'block' },
+        { data: 'origin_depot' },
+        { data: 'destination' },
+        { data: 'driver_name' },
+        { data: 'transporter' },
+        { data: 'season' },
+        { data: 'bags', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 0, '') },
+        { data: 'cmc_tonnage', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 3, '') },
+        { data: 'barry_tonnage', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 3, '') },
+        { data: 'amp_tonnage', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 3, '') },
+        { data: 'expected_tonnage', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 3, '') },
+        { data: 'country', className: 'text-center' },
+        { data: 'weight', className: 'text-end', render: $.fn.dataTable.render.number(',', '.', 3, '') },
+        { data: 'added_by' },
+        { data: 'added_date' },
+        {
+            data: null,
+            orderable: false,
+            className: 'text-center',
+            render: function (data, type, row) {
+                return `
+                    <div class="btn-group btn-group-sm" style="display: flex; gap: 5px;">
+                        <button class="btn btn-info view-stock" data-id="${row.id}" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-primary edit-stock" data-id="${row.id}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger delete-stock" data-id="${row.id}" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    ],
+    dom: 'Bfrtip',
+    buttons: [
+        {
+            extend: 'colvis',
+            text: 'Columns',
+            className: 'btn btn-sm btn-outline-secondary'
+        },
+        {
+            extend: 'csv',
+            text: 'CSV',
+            className: 'btn btn-sm btn-outline-primary',
+            exportOptions: {
+                columns: ':visible'
+            }
+        },
+        {
+            extend: 'excel',
+            text: 'Excel',
+            className: 'btn btn-sm btn-outline-success',
+            exportOptions: {
+                columns: ':visible'
+            }
+        },
+        {
+            extend: 'pdf',
+            text: 'PDF',
+            className: 'btn btn-sm btn-outline-danger',
+            exportOptions: {
+                columns: ':visible'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print',
+            className: 'btn btn-sm btn-outline-dark',
+            exportOptions: {
+                columns: ':visible'
+            }
+        }
+    ],
+    order: [[2, 'desc']], // Sort by date (column index 2) descending
+    pageLength: 25,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+    language: {
+        emptyTable: "No BCG stock entries found",
+        zeroRecords: "No matching entries found"
+    }
+});
+
+
+
+    // Apply warehouse filter
+    $('#warehouseFilter').on('change', function() {
+        table.ajax.reload();
+    });
+    
+    // Save new BCG stock entry
+    $('#saveBCGStockBtn').on('click', function() {
+        const form = $('#addBCGStockForm');
+        const formData = new FormData(form[0]);
+        
+        // Basic validation
+        if (!formData.get('warehouse')) {
+            Swal.fire('Error', 'Warehouse is a required field', 'error');
+            return;
+        }
+        
+        $.ajax({
+            url: "{% url 'create_bcg_stock_daily' %}",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            beforeSend: function() {
+                $('#saveBCGStockBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    Swal.fire('Success', response.message, 'success');
+                    $('#addBCGStockModal').modal('hide');
+                    form[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'An error occurred while saving the entry';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.message) errorMsg = response.message;
+                } catch (e) {
+                    // Use default error message
+                }
+                Swal.fire('Error', errorMsg, 'error');
+            },
+            complete: function() {
+                $('#saveBCGStockBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Save Entry');
+            }
+        });
+    });
+    
+    // View BCG stock details
+    $('#bcgStockTable').on('click', '.view-stock', function() {
+        const stockId = $(this).data('id');
+        
+        $.ajax({
+            url: `/warehouse/get-bcg-stock-daily/${stockId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#view_warehouse').text(response.warehouse_name || 'N/A');
+                    $('#view_contract_number').text(response.contract_number || 'N/A');
+                    $('#view_bean_prefix').text(response.bean_prefix || 'N/A');
+                    $('#view_bean_category').text(response.bean_category || 'N/A');
+                    $('#view_stack_number').text(response.stack_number || 'N/A');
+                    $('#view_block').text(response.block || 'N/A');
+                    $('#view_origin_depot').text(response.origin_depot || 'N/A');
+                    $('#view_destination').text(response.destination || 'N/A');
+                    $('#view_driver_name').text(response.driver_name || 'N/A');
+                    $('#view_transporter').text(response.transporter || 'N/A');
+                    $('#view_season').text(response.season || 'N/A');
+                    $('#view_bags').text(response.bags || '0');
+                    $('#view_cmc_tonnage').text(response.cmc_tonnage || '0');
+                    $('#view_barry_tonnage').text(response.barry_tonnage || '0');
+                    $('#view_amp_tonnage').text(response.amp_tonnage || '0');
+                    $('#view_expected_tonnage').text(response.expected_tonnage || '0');
+                    $('#view_country').text(response.country || 'N/A');
+                    $('#view_weight').text(response.weight || '0');
+                    $('#view_remarks').text(response.remarks || 'N/A');
+                    $('#view_added_by').text(response.added_by || 'N/A');
+                    $('#view_added_date').text(response.added_date || 'N/A');
+                    $('#view_last_updated').text(response.last_updated || 'N/A');
+                    
+                    $('#viewStockModal').modal('show');
+                } else {
+                    Swal.fire('Error', response.error || 'Failed to fetch stock details', 'error');
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('Error', 'Failed to fetch stock details', 'error');
+            }
+        });
+    });
+    
+    // Edit BCG stock - load data
+    $('#bcgStockTable').on('click', '.edit-stock', function() {
+        const stockId = $(this).data('id');
+        
+        $.ajax({
+            url: `/warehouse/get-bcg-stock-daily/${stockId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#edit_stock_id').val(response.id);
+                    $('#edit_warehouse').val(response.warehouse_id).trigger('change');
+                    $('#edit_contract_number').val(response.contract_number);
+                    $('#edit_stack_number').val(response.stack_number);
+                    $('#edit_block').val(response.block);
+                    $('#edit_bean_prefix').val(response.bean_prefix);
+                    $('#edit_bean_category').val(response.bean_category).trigger('change');
+                    $('#edit_origin_depot').val(response.origin_depot);
+                    $('#edit_destination').val(response.destination);
+                    $('#edit_driver_name').val(response.driver_name);
+                    $('#edit_transporter').val(response.transporter);
+                    $('#edit_season').val(response.season);
+                    $('#edit_bags').val(response.bags);
+                    $('#edit_cmc_tonnage').val(response.cmc_tonnage);
+                    $('#edit_barry_tonnage').val(response.barry_tonnage);
+                    $('#edit_amp_tonnage').val(response.amp_tonnage);
+                    $('#edit_expected_tonnage').val(response.expected_tonnage);
+                    $('#edit_country').val(response.country).trigger('change');
+                    $('#edit_weight').val(response.weight);
+                    $('#edit_remarks').val(response.remarks);
+                    
+                    $('#editBCGStockModal').modal('show');
+                } else {
+                    Swal.fire('Error', response.error || 'Failed to fetch stock details', 'error');
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('Error', 'Failed to fetch stock details', 'error');
+            }
+        });
+    });
+    
+    // Update BCG stock entry
+    $('#updateBCGStockBtn').on('click', function() {
+        const form = $('#editBCGStockForm');
+        const formData = new FormData(form[0]);
+        const stockId = $('#edit_stock_id').val();
+        
+        // Basic validation
+        if (!formData.get('warehouse')) {
+            Swal.fire('Error', 'Warehouse is a required field', 'error');
+            return;
+        }
+        
+        $.ajax({
+            url: `/warehouse/bcg-stock-daily/${stockId}/update/`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            beforeSend: function() {
+                $('#updateBCGStockBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+            },
+            success: function(response) {
+                if (response.message) {
+                    Swal.fire('Success', response.message, 'success');
+                    $('#editBCGStockModal').modal('hide');
+                    table.ajax.reload();
+                } else {
+                    Swal.fire('Error', response.error || 'Failed to update entry', 'error');
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'An error occurred while updating the entry';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.error) errorMsg = response.error;
+                } catch (e) {
+                    // Use default error message
+                }
+                Swal.fire('Error', errorMsg, 'error');
+            },
+            complete: function() {
+                $('#updateBCGStockBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Update Entry');
+            }
+        });
+    });
+    
+    // Delete BCG stock entry
+    $('#bcgStockTable').on('click', '.delete-stock', function() {
+        const stockId = $(this).data('id');
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/warehouse/delete-bcg-stock-daily/${stockId}/`,
+                    type: "DELETE",
+                    headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+                    success: function(response) {
+                        Swal.fire('Deleted!', response.message || 'Entry deleted successfully.', 'success');
+                        table.ajax.reload();
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'Failed to delete entry';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error) errorMsg = response.error;
+                        } catch (e) {
+                            // Use default error message
+                        }
+                        Swal.fire('Error!', errorMsg, 'error');
+                    }
+                });
+            }
+        });
+    });
+    
+    // Reset form when modal is closed
+    $('#addBCGStockModal, #editBCGStockModal').on('hidden.bs.modal', function() {
+        $(this).find('form')[0].reset();
+        $(this).find('select').trigger('change');
+    });
+});
+</script>
+{% endblock %}

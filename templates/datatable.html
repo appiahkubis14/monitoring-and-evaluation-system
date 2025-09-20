@@ -1,0 +1,184 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+{% block custom_css %}
+    <!-- DataTables -->
+    <link href="{% static 'libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <!-- Responsive datatable examples -->
+    <link href="{% static 'libs/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css' %}" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 id="pageTitle" class="fs-16 fw-semibold mb-1 mb-md-2"></h4>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">AMP LOGISTCIS</a></li>
+                    {% for crumb in path|getcrumbs  %}
+                        {% if forloop.last %}
+                            <li class="breadcrumb-item active">{{ crumb }}</li>
+                        {% else %}
+                            <li class="breadcrumb-item"><a href="/{{ crumb|lower }}">{{ crumb }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<!--    end row -->
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-2">
+                        <h4 class="card-title">{{ title }}</h4>
+
+                        <div class="btn-group">
+                            {% if "{{app_name}}" %}
+                                {% if "{{app_name}}.add_{{model_name}}" in perms %}
+                                    <a id="addActionButton" class="btn btn-primary" href="/admin{{ path }}add/?embed=true&next={{ path }}">Add</a>
+                                {% endif %}
+                                {% if title|lower in request.models_ctx.can_import.import_export %}
+                                    {% if "{{app_name}}.add_{{model_name}}" in perms %}
+                                        <a id="importActionButton" class="btn btn-outline-primary" href="/admin{{ path }}import/?embed=true&next={{ path }}">Import</a>
+                                    {% endif %}
+                                    <a id="exportActionButton" class="btn btn-outline-primary" href="/admin{{ path }}export/?embed=true">Export</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                    </div> 
+
+                    <table id="alternative-page-datatable" class="table table-hover table-striped dt-responsive nowrap w-100">
+                        <thead>
+                            <tr>
+                                {% comment %} {% for field in fields %}
+                                    <th> {{ field|thtreat }} </th>
+                                {% endfor %} {% endcomment %}
+                            </tr>
+                        </thead>
+                    
+                    
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
+
+                </div> <!-- end card body-->
+            </div> <!-- end card -->
+        </div><!-- end col-->
+    </div>
+    <!-- end row-->
+{% endblock %}
+
+{% block vis_charts %}
+    <!-- Required datatable js -->
+    <script src="{% static 'libs/datatables.net/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-bs5/js/dataTables.bootstrap5.min.js' %}"></script>
+
+    <!-- Responsive examples -->
+    <script src="{% static 'libs/datatables.net-responsive/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'libs/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js' %}"></script>
+
+    <!-- Datatable init js -->
+    <script src="{% static 'js/pages/moment.min.js' %}"></script>
+    <script>
+        function generateColumns(columnData, currentPageURL){
+            let resultData = columnData.replace('[', '').replace(']', '').split(',').map(value=>{
+                const fieldValue = String(value).replaceAll("'","").trim()
+
+                if(fieldValue === "id"){
+                    return {
+                        title: fieldValue,
+                        render: (data, type, row, meta) => {
+                            return `<a href="/admin${currentPageURL}${data}/change/?embed=true&next=${currentPageURL}">${data}</a>`
+                        }
+                    }
+                }
+                if (fieldValue.includes('photo')){
+                    return {
+                        title: fieldValue, 
+                        render: (data, type, row, meta) => {
+                            return `<img src="${data}" class="rounded" alt="photo" style="width: 1rem; height: 1rem;">`;
+                        }
+                    }
+                }
+                if(fieldValue.includes('date') || value.includes('submitted_on')){
+                    return {
+                        title: fieldValue, 
+                        render: (data, type, row, meta) => {
+                            return moment(data).format('lll');
+                        }
+                    }
+                }
+                return {"title": fieldValue};
+            })
+
+            resultData.push(
+                {
+                    title: "actions", data: null, defaultContent: "",  orderable: false,
+                    render: (data, type, row, meta) => { 
+                        
+                        return `<div id="actionbtns" class="d-flex align-items-center">
+                                    {% if "{{app_name}}.change_{{model_name}}" in perms  %}
+                                        <a href="/admin${currentPageURL}${row[0]}/change/?embed=true&next=${currentPageURL}">
+                                            <svg width="1rem" height="1rem" fill="none" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="m21.28 6.4-9.54 9.54c-0.95 0.95-3.77 1.39-4.4 0.76s-0.2-3.45 0.75-4.4l9.55-9.55c0.2355-0.25694 0.5206-0.46348 0.8382-0.60718 0.3175-0.1437 0.6609-0.2216 1.0094-0.22894 0.3484-0.00733 0.6948 0.05601 1.0181 0.18622s0.6169 0.32461 0.863 0.57141 0.4397 0.5409 0.569 0.86456c0.1293 0.32367 0.1918 0.67017 0.1835 1.0186s-0.0872 0.69164-0.2317 1.0088c-0.1446 0.31715-0.3519 0.60174-0.6095 0.83655v0z" fill="#28235e" stroke="#28235e" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                                <path d="M11 4H6C4.93913 4 3.92178 4.42142 3.17163 5.17157C2.42149 5.92172 2 6.93913 2 8V18C2 19.0609 2.42149 20.0783 3.17163 20.8284C3.92178 21.5786 4.93913 22 6 22H17C19.21 22 20 20.2 20 18V13" stroke="#28235e" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
+                                    {% if "{{app_name}}.delete_{{model_name}}" in perms  %}
+                                        <a href="/admin${currentPageURL}${row[0]}/delete/?embed=true&next=${currentPageURL}">
+                                            <svg width="1rem" height="1rem" fill="#000000" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M5.755,20.283,4,8H20L18.245,20.283A2,2,0,0,1,16.265,22H7.735A2,2,0,0,1,5.755,20.283ZM21,4H16V3a1,1,0,0,0-1-1H9A1,1,0,0,0,8,3V4H3A1,1,0,0,0,3,6H21a1,1,0,0,0,0-2Z" fill="#f00"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
+                                </div>`
+                    }
+                }
+            )
+
+            return resultData;
+        };
+
+        document.body.onload = () => {
+            let currentPage = 1;
+            const urlPath = document.location.pathname
+            const dataColumns = `{{ fields|safe|escapejs }}`;
+            const requestObj = `{{ request.GET|safe|escapejs}}`;
+            let tableData = [];
+
+            let objDataColumns = generateColumns(dataColumns, urlPath);
+        
+            let altPageTable = new DataTable('#alternative-page-datatable', {
+                columns: objDataColumns,
+                serverSide: true,
+                ajax: {
+                    url: `${urlPath}pagination/?page=${currentPage}`,
+                    contentType: 'application/json; charset=utf-8',
+                    dataSrc: function(json){
+                        console.log(json.data);
+                        return json.data.map(fieldData => Object.values(fieldData))
+                    }
+                },
+                paging: true,
+                lengthMenu: [10, 15, 25, 30, 50, 100],
+            });
+        }
+    </script>
+{% endblock %}

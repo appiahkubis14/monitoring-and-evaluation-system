@@ -1,0 +1,19 @@
+{% load static %}
+
+<!-- Left Sidebar Start -->
+<div class="sidebar-left w-72">
+  <div data-simplebar class="h-100">
+    <div id="sidebar-menu">
+      <ul class="left-menu list-unstyled" id="side-menu">
+        {% if sidebar_items %}
+          {% include "partials/sidebar_menu_recursive.html" with items=sidebar_items level=1 %}
+        {% else %}
+          <li>
+            <span class="text-muted px-3 py-2 block">No menu items available</span>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+<!-- Left Sidebar End -->

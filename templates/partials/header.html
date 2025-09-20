@@ -1,0 +1,798 @@
+{% load i18n static %}
+<!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> -->
+
+<!-- Start topbar -->
+<header id="page-topbar">
+    <div class="navbar-header">
+
+        <div class="navbar-logo-box">
+            <div style="display: flex; align-items: center; gap: 16px; padding: 10px;">
+                <a href="/dashboard/" class="logo logo-dark" style="display: flex; align-items: center;">
+                    <span class="logo-sm" style="display: none;">
+                        <img src="{% static 'images/amp_logo.svg' %}" alt="logo-sm-dark" style="width: 40px;" height="40">
+                    </span>
+                    <span class="logo-lg">
+                        <img src="{% static 'images/amp_logo.svg' %}" alt="logo-dark" style="width: 40px;"  height="40">
+                    </span>
+                </a>
+                <a href="/dashboard/">
+                    <div style="display: flex; flex-direction: column;align-items: center;">
+                        <div>
+                            <h4 style="margin: 0; font-size: 20px; font-weight: bolder; letter-spacing: 1px; color: #333;">
+                                AMP 
+                            </h4>
+                        </div>
+                        <div>
+                            <h6 style="margin: 0; font-size: 9px;  letter-spacing: 1px; color: #333;">
+                                LOGISTICS
+                            </h6>
+                        </div>
+                        
+                        <div style="display: flex;align-items: flex-end;">
+                            <h6 style="margin: 0; font-size: 6px; letter-spacing: 1px; color: #333;display: flex;align-items: flex-end;">
+                                (GH) LTD
+                            </h6>
+                        </div>
+                        
+                    </div>
+                    <a href="/" class="logo logo-light">
+                        <span class="logo-sm">
+                            <img src="{% static 'images/amp_logo.svg' %}" alt="logo-sm-light" style="width: 40px;"  height="30">
+                        </span>
+                        <span class="logo-lg">
+                            <img src="{% static 'images/amp_logo.svg' %}" alt="logo-light"  style="width: 40px;"  height="30">
+                        </span>
+                    </a>
+                </a>
+            </div>
+
+            
+
+            <button type="button" class="btn btn-sm top-icon sidebar-btn" id="sidebar-btn">
+                <i class="mdi mdi-menu-open align-middle fs-19"></i>
+            </button>
+        </div>
+ 
+        <div class="d-flex justify-content-between menu-sm px-3 ms-auto">
+            <div class="d-flex align-items-center gap-2">
+                <div class="dropdown d-none d-lg-block">
+                    <!-- <button type="button" class="btn btn-primary btn-sm fs-14 d-inline" data-bs-toggle="dropdown">
+                        Apps
+                        <i class="mdi mdi-chevron-down align-middle"></i>
+                    </button> -->
+                    <div class="dropdown-menu dropdown-menu-start dropdown-menu-animated">
+                        <a href="#" class="dropdown-item">
+                            <div class="dropdown-icon"><i class="fa fa-boxes"></i></div>
+                            <span class="dropdown-content">Inventory Manager</span>
+                            <div class="dropdown-addon"><span class="badge badge-warning rounded-pill">20</span></div>
+                        </a>
+                        <div class="dropdown-submenu">
+                            <a href="#" class="dropdown-item">
+                                <div class="dropdown-icon"><i class="fa fa-project-diagram"></i></div>
+                                <span class="dropdown-content">Project manager</span>
+                                <div class="dropdown-addon"><i class="mdi mdi-chevron-right align-middle"></i></div>
+                            </a>
+                            <div class="dropdown-submenu-menu dropdown-submenu-end">
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Create project</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Delete project</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Ongoing project</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Completed project</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Urgent project</span></a>
+                            </div>
+                        </div>
+                        <div class="dropdown-submenu">
+                            <a href="#" class="dropdown-item">
+                                <div class="dropdown-icon"><i class="fa fa-tasks"></i></div>
+                                <span class="dropdown-content">Task manager</span>
+                                <div class="dropdown-addon"><i class="mdi mdi-chevron-right align-middle"></i></div>
+                            </a>
+                            <div class="dropdown-submenu-menu dropdown-submenu-end">
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Show task</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Assign task</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Assign member</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Completed task</span> </a>
+                                <a href="#" class="dropdown-item"><i class="dropdown-bullet"></i> <span class="dropdown-content">Urgent task</span></a>
+                            </div>
+                        </div>
+                        <a href="#" class="dropdown-item">
+                            <div class="dropdown-icon"><i class="fa fa-dollar-sign"></i></div>
+                            <span class="dropdown-content">Invoice</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="apps-contact.html" class="dropdown-item">
+                            <div class="dropdown-icon"><i class="fa fa-user-cog"></i></div>
+                            <span class="dropdown-content">My Account</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="dropdown d-none d-lg-block">
+                    <!-- <button type="button" class="btn btn-primary btn-sm fs-14" data-bs-toggle="dropdown" aria-haspopup="false" aria-expanded="false">
+                        Features
+                        <i class="mdi mdi-chevron-down align-middle"></i>
+                    </button> -->
+                    <div class="dropdown-menu dropdown-menu-start dropdown-menu-lg-widest dropdown-menu-widest dropdown-menu-animated bg-primary-subtle overflow-hidden">
+                        <div class="dropdown-row justify-content-center">
+                            <div class="p-2 menu-image">
+                                <img src="{% static 'images/mega-menu.png' %}" alt="mega-menu image" class="img-fluid" style="height: 200px;">
+                            </div>
+                            <div class="dropdown-col">
+                                <h2 class="">Welcome back!</h2>
+                                <p class="text-muted mb-0">
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium, commodi hic qui aspernatur doloremque quos tempora placeat culpa illum, voluptatibus delectus provident cumque
+                                    aliquid enim, laborum aliquam. Quod, perferendis unde.
+                                </p>
+                                <div class="mt-3">
+                                    <a href="auth-login.html" class="btn btn-dark btn-wider">Login</a>
+                                </div>
+                            </div>
+                            <div class="dropdown-col border-start border-primary border-opacity-50">
+                                <h4 class="dropdown-header">Features</h4>
+                                <div class="grid-nav grid-nav-action">
+                                    <div class="grid-nav-row">
+                                        <a href="/" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-window-restore"></i></div>
+                                            <span class="grid-nav-content">Dashboard</span>
+                                        </a>
+                                        <a href="apps-kanban.html" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-clipboard"></i></div>
+                                            <span class="grid-nav-content">TODO List</span>
+                                        </a>
+                                        <a href="#" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-question-circle"></i></div>
+                                            <span class="grid-nav-content">Help Center</span>
+                                        </a>
+                                    </div>
+                                    <div class="grid-nav-row">
+                                        <a href="#" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-images"></i></div>
+                                            <span class="grid-nav-content">Gallery</span>
+                                        </a>
+                                        <a href="#" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-chart-bar"></i></div>
+                                            <span class="grid-nav-content">Scrumboard</span>
+                                        </a>
+                                        <a href="#" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-bookmark"></i></div>
+                                            <span class="grid-nav-content">Docs</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-col border-start border-primary border-opacity-50">
+                                <h4 class="dropdown-header">Tools</h4>
+                                <a href="#" class="dropdown-item"><i class="mdi mdi-checkbox-blank-circle align-middle dropdown-bullet me-2"></i> <span class="dropdown-content">Components</span> </a>
+                                <a href="#" class="dropdown-item"><i class="mdi mdi-checkbox-blank-circle align-middle dropdown-bullet me-2"></i> <span class="dropdown-content">Form Wizard</span> </a>
+                                <a href="#" class="dropdown-item"><i class="mdi mdi-checkbox-blank-circle align-middle dropdown-bullet me-2"></i> <span class="dropdown-content">Documentation</span> </a>
+                                <a href="#" class="dropdown-item"><i class="mdi mdi-checkbox-blank-circle align-middle dropdown-bullet me-2"></i> <span class="dropdown-content">Knowledge Base</span> </a>
+                                <a href="#" class="dropdown-item"><i class="mdi mdi-checkbox-blank-circle align-middle dropdown-bullet me-2"></i> <span class="dropdown-content">Inventory Manager</span></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Dark Mode Toggle Button -->
+                    <button id="fullscreen-toggle" class="btn btn-sm top-icon">
+                        <i class="fas fa-maximize"></i> <!-- Moon Icon for Dark Mode -->
+                    </button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Dark Mode Toggle Button -->
+                    <button id="theme-toggle" class="btn btn-sm top-icon">
+                        <i class="fas fa-moon"></i> <!-- Moon Icon for Dark Mode -->
+                    </button>
+                </div>
+
+                 <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                        const toggleBtn = document.getElementById('fullscreen-toggle');
+                        
+                        toggleBtn.addEventListener('click', toggleFullscreen);
+                        
+                        function toggleFullscreen() {
+                            if (!document.fullscreenElement) {
+                            document.documentElement.requestFullscreen().catch(err => {
+                                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                            });
+                            } else {
+                            if (document.exitFullscreen) {
+                                document.exitFullscreen();
+                            }
+                            }
+                        }
+
+                    });
+
+                    </script>
+                
+                <style>
+                    #theme-toggle {
+                        background-color: #007bff;
+                        color: white;
+                        border: none;
+                        border-radius: 5px;
+                        padding: 8px 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: background-color 0.3s ease, transform 0.3s ease;
+                    }
+                
+                    #theme-toggle i {
+                        font-size: 16px;
+                    }
+                
+                    #theme-toggle:hover {
+                        background-color: #0056b3;
+                        transform: scale(1.05);
+                    }
+                
+                    #theme-toggle:active {
+                        background-color: #004085;
+                        transform: scale(0.98);
+                    }
+                
+                    /* === Softened Dark Mode === */
+                    body.dark-mode {
+                        background-color: #383636; /* Softer than pure black */
+                        color: #ffffff;
+                    }
+                
+                    body.dark-mode .navbar,
+                    body.dark-mode .footer,
+                    body.dark-mode .dropdown-menu,
+                    body.dark-mode .card,
+                    body.dark-mode .modal,
+                    body.dark-mode .offcanvas,
+                    body.dark-mode .list-group-item,
+                    body.dark-mode .form-control,
+                    body.dark-mode .btn,
+                    body.dark-mode .table {
+                        background-color: #3a3838 !important; /* Soft dark background for containers */
+                        color: #ffffff !important;
+                    }
+                
+                    body.dark-mode .dropdown-item {
+                        color: #ffffff !important;
+                        background-color: #413f3f;
+                    }
+                
+                    body.dark-mode a {
+                        color: #ffffff;
+                    }
+                
+                    body.dark-mode a:hover {
+                        color: #dddddd;
+                    }
+                
+                    body.dark-mode .text-muted {
+                        color: #bbbbbb !important;
+                    }
+                
+                    body.dark-mode .text-primary {
+                        color: #ffffff !important;
+                    }
+                
+                    body.dark-mode .border {
+                        border-color: #333 !important;
+                    }
+                
+                    /* Form elements */
+                    body.dark-mode input,
+                    body.dark-mode textarea,
+                    body.dark-mode select {
+                        background-color: #2a2a2a;
+                        color: #ffffff;
+                        border-color: #444;
+                    }
+                
+                    body.dark-mode input::placeholder,
+                    body.dark-mode textarea::placeholder {
+                        color: #aaaaaa;
+                    }
+                
+                    /* Buttons */
+                    body.dark-mode .btn-primary {
+                        background-color: #007bff;
+                        border-color: #007bff;
+                        color: #ffffff;
+                    }
+                
+                    body.dark-mode .btn-primary:hover {
+                        background-color: #0056b3;
+                        border-color: #0056b3;
+                    }
+                
+                    /* Card elements */
+                    body.dark-mode .card-header,
+                    body.dark-mode .card-title,
+                    body.dark-mode .card-body,
+                    body.dark-mode .card-footer {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+
+                    body.dark-mode table.dataTable {
+                        background-color: #242424;
+                        color: #ffffff;
+                    }
+
+                    body.dark-mode table.dataTable thead {
+                        background-color: #333333;
+                        color: #ffffff;
+                    }
+
+                    body.dark-mode table.dataTable tbody tr {
+                        background-color: #2a2a2a;
+                        color: #ffffff;
+                    }
+
+                    body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
+                        background-color: #2a2a2a;
+                        color: #ffffff !important;
+                        border: 1px solid #444444;
+                    }
+
+                    body.dark-mode .dataTables_wrapper .dataTables_filter input,
+                    body.dark-mode .dataTables_wrapper .dataTables_length select {
+                        background-color: #1e1e1e;
+                        color: #ffffff;
+                        border: 1px solid #444;
+                    }
+                    body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+                        background-color: #444444;
+                        color: #ffffff !important;
+                    }
+                
+                    /* Dropdowns */
+                    body.dark-mode .dropdown-menu {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                
+                    body.dark-mode .dropdown-item:hover {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                
+                    /* Offcanvas */
+                    body.dark-mode .offcanvas {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .offcanvas-header {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .offcanvas-body {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .offcanvas-footer {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    /* Modal */
+                    body.dark-mode .modal-content {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .modal-header {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .modal-body {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .modal-footer {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    /* List group */
+                    body.dark-mode .list-group-item {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .list-group-item:hover {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    /* Table */
+                    body.dark-mode .table {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .table thead {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .table tbody tr {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .table tbody tr:hover {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    /* Footer */
+                    body.dark-mode .footer {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .footer a {
+                        color: #ffffff;
+                    }
+                    body.dark-mode .footer a:hover {
+                        color: #dddddd;
+                    }
+                    /* Sidebar */
+                    body.dark-mode .sidebar {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .sidebar a {
+                        color: #ffffff;
+                    }
+                    body.dark-mode .sidebar a:hover {
+                        color: #dddddd;
+                    }
+                    /* Sidebar menu */
+                    body.dark-mode .sidebar-menu {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .sidebar-menu a {
+                        color: #ffffff;
+                    }
+                    body.dark-mode .sidebar-menu a:hover {
+                        color: #dddddd;
+                    }
+                    /* Sidebar menu items */
+                    body.dark-mode .sidebar-menu-item {
+                        background-color: #3b3a3a;
+                        color: #ffffff;
+                    } 
+                    body.dark-mode .sidebar-menu-item:hover {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }
+                    /* Sidebar menu item active */
+                    body.dark-mode .sidebar-menu-item.active {
+                        background-color: #444444;
+                        color: #ffffff;
+                    }   
+                    body.dark-mode .sidebar-menu-item.active:hover {
+                        background-color: #555555;
+                        color: #ffffff;
+                    }
+                    /* Sidebar menu item active link */
+                    body.dark-mode .sidebar-menu-item.active a {
+                        color: #ffffff;
+                    }
+
+                </style>
+                
+                
+                <script>
+                    // Toggle dark mode when button is clicked
+                    document.querySelector("#theme-toggle").addEventListener("click", function() {
+                        const currentTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
+                        localStorage.setItem("theme", currentTheme); // Save theme in localStorage
+                        document.body.classList.toggle("dark-mode");
+                
+                        // Change icon based on theme
+                        const icon = document.querySelector("#theme-toggle i");
+                        if (document.body.classList.contains("dark-mode")) {
+                            icon.classList.remove("fa-moon");
+                            icon.classList.add("fa-sun");
+                        } else {
+                            icon.classList.remove("fa-sun");
+                            icon.classList.add("fa-moon");
+                        }
+                    });
+                
+                    // Apply saved theme from localStorage on page load
+                    const savedTheme = localStorage.getItem("theme") || "light";
+                    if (savedTheme === "dark") {
+                        document.body.classList.add("dark-mode");
+                        document.querySelector("#theme-toggle i").classList.replace("fa-moon", "fa-sun");
+                    }
+                </script>
+                
+
+                <!-- Start Notification -->
+                <div class="dropdown d-inline-block">
+                    <button type="button" class="btn btn-sm top-icon" id="page-header-notifications-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell align-middle"></i>
+                        <span class="btn-marker"><i class="marker marker-dot text-danger"></i><span>
+                    </button>
+                         
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-md dropdown-menu-end p-0" aria-labelledby="page-header-notifications-dropdown">
+                        <div class="p-3 bg-info">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="text-white m-0"><i class="far fa-bell me-2"></i> Notifications </h6>
+                                </div>
+                                <div class="col-auto">
+                                    <a href="#!" class="badge bg-info-subtle text-info"> 8+</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div data-simplebar style="max-height: 230px;">
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-primary me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-file-document-outline"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">New report has been recived</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 3 min ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-success me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-cart-variant"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">Last order was completed</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 1 hour ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-danger me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-account-group"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">Completed meeting canceled</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 5 hour ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-warning me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-send-outline"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">New feedback received</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 6 hour ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-secondary me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-download-box"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">New update was available</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 1 day ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                            <a href="" class="text-reset notification-item">
+                                <div class="d-flex">
+                                    <div class="avatar avatar-xs avatar-label-info me-3">
+                                        <span class="rounded fs-16">
+                                            <i class="mdi mdi-hexagram-outline"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h6 class="mb-1">Your password was changed</h6>
+                                        <div class="fs-12 text-muted">
+                                            <p class="mb-0"><i class="mdi mdi-clock-outline"></i> 2 day ago</p>
+                                        </div>
+                                    </div>
+                                    <i class="mdi mdi-chevron-right align-middle ms-2"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="p-2 border-top">
+                            <div class="d-grid">
+                                <a class="btn btn-sm btn-link font-size-14 text-center" href="javascript:void(0)">
+                                    <i class="mdi mdi-arrow-right-circle me-1"></i> View More..
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Notification -->
+
+
+                <!-- Start Activities -->
+                <div class="d-inline-block activities">
+                    <button type="button" class="btn btn-sm top-icon" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-rightsidabar">
+                        <i class="fas fa-table align-middle"></i>
+                    </button>
+                </div>
+                <!-- End Activities -->
+
+                <!-- Start Profile -->
+                <div class="dropdown d-inline-block">
+                    <button type="button" class="btn btn-sm top-icon p-0" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <img class="rounded avatar-2xs p-0" src="{% static 'images/users/avatar-6.png' %}" alt="Header Avatar">
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-wide dropdown-menu-end dropdown-menu-animated overflow-hidden py-0">
+                        <div class="card border-0">
+                            <div class="card-header bg-primary rounded-0">
+                                <div class="rich-list-item w-100 p-0">
+                                    <div class="rich-list-prepend">
+                                        <div class="avatar avatar-label-light avatar-circle">
+                                            <div class="avatar-display"><i class="fa fa-user-alt"></i></div>
+                                        </div>
+                                    </div>
+                                    <div class="rich-list-content">
+                                        <h3 class="rich-list-title text-white">{{ user.username }}</h3>
+                                        <span class="rich-list-subtitle text-white">{{ user.email }}  {{"-"}}   {{user.employee_profile.position}}</span>
+                                    </div>
+                                    <div class="rich-list-append"><span class="badge badge-label-light fs-6">6+</span></div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="grid-nav grid-nav-flush grid-nav-action grid-nav-no-rounded">
+                                    <div class="grid-nav-row">
+                                        <a href="#" class="grid-nav-item" data-bs-toggle="modal" data-bs-target="#profileModal">
+                                            <div class="grid-nav-icon"><i class="far fa-address-card"></i></div>
+                                            <span class="grid-nav-content">Profile</span>
+                                          </a>
+                                          
+                                        <a href="#!" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-comments"></i></div>
+                                            <span class="grid-nav-content">Messages</span>
+                                        </a>
+                                        <a href="#!" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-clone"></i></div>
+                                            <span class="grid-nav-content">Activities</span>
+                                        </a>
+                                    </div>
+                                    <div class="grid-nav-row">
+                                        <a href="#!" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-calendar-check"></i></div>
+                                            <span class="grid-nav-content">Tasks</span>
+                                        </a>
+                                        <a href="#!" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-sticky-note"></i></div>
+                                            <span class="grid-nav-content">Notes</span>
+                                        </a>
+                                        <a href="#!" class="grid-nav-item">
+                                            <div class="grid-nav-icon"><i class="far fa-bell"></i></div>
+                                            <span class="grid-nav-content">Notification</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer card-footer-bordered rounded-0"><a href="/accounts/logout" data-bs-toggle="modal" data-bs-target="#modal8" class="btn btn-label-danger">Sign out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Profile -->
+            </div>
+        </div>
+        <!-- End menu -->
+    </div>
+    <!-- Profile Modal -->
+
+    <style>
+        .modal-backdrop {
+          z-index: 1000 !important; 
+          background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+        .modal {
+          z-index: 1050 !important;
+        }
+        .modal-backdrop.show {
+          background-color: rgba(0, 0, 0, 0.3);
+        }
+      </style>
+      
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+
+                <div class="modal-header bg-primary text-white rounded-top">
+                    <h5 class="modal-title" id="profileModalLabel">
+                        <i class="fa fa-user-circle me-2"></i>Profile Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-4 text-center">
+                            {% if user.employee_profile.photo %}
+                            <img src="{{ user.employee_profile.photo.url }}" 
+                                class="img-fluid rounded-circle shadow" 
+                                style="width: 150px; height: 150px; cursor: pointer;" 
+                                alt="User Photo"
+                                data-bs-toggle="modal" data-bs-target="#photoModal">
+                            {% else %}
+                            <!-- Fallback Icon -->
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">
+                                <i class="fa fa-user-alt fa-3x text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <h5 class="mt-3">{{ user.employee_profile.employee_name }}</h5>
+                            <span class="text-muted">{{ user.employee_profile.position }}</span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-sm-6 mb-3"><strong>Email:</strong> {{ user.email }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Phone:</strong> {{ user.employee_profile.phone }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Alt. Phone:</strong> {{ user.employee_profile.phone_2|default:"N/A" }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Ghana Card:</strong> {{ user.employee_profile.ghana_card }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Date of Birth:</strong> {{ user.employee_profile.date_of_birth }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Gender:</strong> {{ user.employee_profile.gender }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Department:</strong> {{ user.employee_profile.department }}</div>
+                                <div class="col-sm-6 mb-3"><strong>Hire Date:</strong> {{ user.employee_profile.hire_date }}</div>
+
+                                {% if user.employee_profile.license_number %}
+                                    <div class="col-sm-6 mb-3"><strong>License Number:</strong> {{ user.employee_profile.license_number }}</div>
+                                    <div class="col-sm-6 mb-3"><strong>License Expiry:</strong> {{ user.employee_profile.license_expiry_date }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-labelledby="photoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center">
+                {% if user.employee_profile.photo %}
+                    <img src="{{ user.employee_profile.photo.url }}" class="img-fluid rounded shadow" alt="Full-size Photo" style="width: 500px; height: 500px;" >
+                {% else %}
+                    <p class="text-muted">No photo available.</p>
+                    <!-- Optionally show a placeholder -->
+                    <img src="{% static 'images/default-profile.png' %}" class="img-fluid rounded shadow" alt="Default Photo" style="width: 500px; height: 500px;" >
+                {% endif %}
+                </div>
+
+          </div>
+        </div>
+    </div>
+</header>

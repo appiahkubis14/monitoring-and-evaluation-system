@@ -1,0 +1,158 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Reports Dashboard</h4>
+                <p class="text-muted mb-0">Generate and view system reports</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">AMP</a></li>
+                    <li class="breadcrumb-item active">Reports</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">Generate Reports</h4>
+            </div>
+            <div class="card-body">
+                <!-- Report Selection Cards -->
+                <div class="row">
+                    <!-- Weekly Report Card -->
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card card-height-100 bg-primary bg-opacity-10 border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="fs-14 mb-3">Weekly Report</h5>
+                                        <p class="text-muted mb-2">Daily bags issued and AMP transport</p>
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#weeklyReportModal">
+                                            Generate Report
+                                        </button>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-calendar-week text-primary fs-24"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Beans Report Card -->
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card card-height-100 bg-success bg-opacity-10 border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="fs-14 mb-3">Monthly Beans Report</h5>
+                                        <p class="text-muted mb-2">Beans received by origin and weight</p>
+                                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#monthlyBeansModal">
+                                            Generate Report
+                                        </button>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-weight-scale text-success fs-24"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transport Report Card -->
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card card-height-100 bg-warning bg-opacity-10 border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="fs-14 mb-3">Transport Report</h5>
+                                        <p class="text-muted mb-2">Beans transported by transporters</p>
+                                        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#transportReportModal">
+                                            Generate Report
+                                        </button>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-truck text-warning fs-24"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Sack Report Card -->
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card card-height-100 bg-info bg-opacity-10 border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="fs-14 mb-3">Monthly Sack Report</h5>
+                                        <p class="text-muted mb-2">Sack transactions and balances</p>
+                                        <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#sackReportModal">
+                                            Generate Report
+                                        </button>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-sack text-info fs-24"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quality Report Card -->
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card card-height-100 bg-danger bg-opacity-10 border-0">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h5 class="fs-14 mb-3">Quality Report</h5>
+                                        <p class="text-muted mb-2">Bean quality metrics by category</p>
+                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#qualityReportModal">
+                                            Generate Report
+                                        </button>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-chart-line text-danger fs-24"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modals -->
+{% include 'warehouse/reports/report_modals.html' %}
+
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © AMP.
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}

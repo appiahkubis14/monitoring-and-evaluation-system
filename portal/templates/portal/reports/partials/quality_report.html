@@ -1,0 +1,88 @@
+{% load i18n static %}
+{% load filters %}
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Bean Category</th>
+                <th>Total Bags</th>
+                <th>Total Tonnage (MT)</th>
+                <th>Average Weight per Bag (kg)</th>
+                <th>Percentage of Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in quality_data %}
+            <tr>
+                <td>{{ data.bean_category|default:"Unknown" }}</td>
+                <td>{{ data.total_bags|default:0 }}</td>
+                <td>{{ data.total_tonnage|default:0|floatformat:2 }}</td>
+                <td>
+                    {% if data.total_bags > 0 and data.total_tonnage > 0 %}
+                        {{ data.total_tonnage|mul:1000|div:data.total_bags|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>
+                    {% if data.total_bags > 0 and total_bags > 0 %}
+                        {{ data.total_bags|div:total_bags|mul:100|floatformat:1 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td>Total</td>
+                <td>{{ total_bags }}</td>
+                <td>{{ total_tonnage|floatformat:2 }}</td>
+                <td>
+                    {% if total_bags > 0 %}
+                        {{ total_tonnage|mul:1000|div:total_bags|floatformat:2 }}
+                    {% else %}
+                        0.00
+                    {% endif %}
+                </td>
+                <td>100%</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+{% if quality_data %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Quality Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for data in quality_data %}
+                    <div class="col-md-3 mb-3">
+                        <div class="bg-light p-3 rounded text-center">
+                            <h6>{{ data.bean_category|default:"Unknown" }}</h6>
+                            <h4>{{ data.total_bags|default:0 }}</h4>
+                            <small>
+                                {% if data.total_bags > 0 and total_bags > 0 %}
+                                    {{ data.total_bags|div:total_bags|mul:100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle"></i> No quality data found for the selected criteria.
+</div>
+{% endif %}

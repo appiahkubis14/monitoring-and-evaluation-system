@@ -1,0 +1,77 @@
+{% load i18n static %}
+{% load filters %}
+
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Transporter</th>
+                <th>Total Bags</th>
+                <th>Total Tonnage (MT)</th>
+                <th>Total Trips</th>
+                <th>Average Bags per Trip</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transporter, data in transporter_data.items %}
+            <tr>
+                <td>{{ transporter }}</td>
+                <td>{{ data.total_bags }}</td>
+                <td>{{ data.total_tonnage|floatformat:2 }}</td>
+                <td>{{ data.trip_count }}</td>
+                <td>
+                    {% if data.trip_count > 0 %}
+                        {{ data.total_bags|div:data.trip_count|floatformat:1 }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if transporter_data %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h5>Breakdown by Origin</h5>
+        {% for transporter, data in transporter_data.items %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">{{ transporter }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Origin</th>
+                                <th>Bags</th>
+                                <th>Tonnage (MT)</th>
+                                <th>Trips</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for origin, origin_data in data.origins.items %}
+                            <tr>
+                                <td>{{ origin }}</td>
+                                <td>{{ origin_data.bags }}</td>
+                                <td>{{ origin_data.tonnage|floatformat:2 }}</td>
+                                <td>{{ origin_data.trips }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle"></i> No data found for the selected criteria.
+</div>
+{% endif %}

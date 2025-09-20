@@ -1,0 +1,129 @@
+
+{% load i18n static %}
+{% load filters %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Sack Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Country</th>
+                                <th>Total Sacks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Ghana</td>
+                                <td>{{ sack_data.total_ghana|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Ivory Coast</td>
+                                <td>{{ sack_data.total_ivc|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Nigeria</td>
+                                <td>{{ sack_data.total_nigeria|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Cameroon</td>
+                                <td>{{ sack_data.total_cameroon|default:0 }}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>Total</td>
+                                <td>{{ total_sacks }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Sack Operations</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Issued</td>
+                                <td>{{ sack_data.total_issued|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Torn</td>
+                                <td>{{ sack_data.total_torn|default:0 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Retrieved</td>
+                                <td>{{ sack_data.total_retrieved|default:0 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if total_sacks > 0 %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Distribution by Country</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <h6>Ghana</h6>
+                            <h4>{{ sack_data.total_ghana|default:0 }}</h4>
+                            <small>{{ sack_data.total_ghana|default:0|div:total_sacks|mul:100|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <h6>Ivory Coast</h6>
+                            <h4>{{ sack_data.total_ivc|default:0 }}</h4>
+                            <small>{{ sack_data.total_ivc|default:0|div:total_sacks|mul:100|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <h6>Nigeria</h6>
+                            <h4>{{ sack_data.total_nigeria|default:0 }}</h4>
+                            <small>{{ sack_data.total_nigeria|default:0|div:total_sacks|mul:100|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <h6>Cameroon</h6>
+                            <h4>{{ sack_data.total_cameroon|default:0 }}</h4>
+                            <small>{{ sack_data.total_cameroon|default:0|div:total_sacks|mul:100|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle"></i> No sack data found for the selected criteria.
+</div>
+{% endif %}

@@ -1,0 +1,26 @@
+/* Increase sidebar width */
+.sidebar-mini.sidebar-collapse .main-sidebar {
+    width: 500px !important;
+}
+
+.sidebar-mini.sidebar-collapse .main-sidebar .nav-sidebar,
+.sidebar-mini.sidebar-collapse .main-sidebar .sidebar {
+    width: 300px !important;
+}
+
+.sidebar-mini.sidebar-collapse .content-wrapper,
+.sidebar-mini.sidebar-collapse .main-footer,
+.sidebar-mini.sidebar-collapse .main-header {
+    margin-left: 500px !important;
+}
+
+/* Optional: fix logo alignment if stretched */
+.brand-link {
+    width: 300px !important;
+    text-align: center;
+}
+
+/* Optional: fix text cutoff in sidebar items */
+.nav-sidebar .nav-link {
+    white-space: normal;
+}

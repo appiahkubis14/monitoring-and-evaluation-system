@@ -1,0 +1,203 @@
+{% extends 'web_base.html' %}
+{% load static %}
+{% load tz %} {# to use timezone aware filters #}
+{% load custom_filters %}
+
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block main_content %}
+<div class="container py-4">
+    
+   
+
+    <div class="row g-4">
+
+        <!-- Profile Card -->
+        <div class="col-md-6 animate__animated animate__fadeInUp">
+            <div class="card border-primary shadow-sm h-100">
+                <div class="card-header bg-primary text-white text-center fw-bold">
+                    Profile
+                </div>
+                <div class="card-body text-center">
+                    {% if user.employee_profile.photo %}
+                        <img src="{{ user.employee_profile.photo.url }}" 
+                             class="img-fluid rounded-circle shadow mb-3" 
+                             style="width: 120px; height: 120px; object-fit: cover; cursor: pointer;" 
+                             alt="User Photo"
+                             data-bs-toggle="modal" data-bs-target="#photoModal">
+                    {% else %}
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" 
+                             style="width: 120px; height: 120px;">
+                            <i class="fa fa-user-alt fa-2x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <h5 class="card-title mb-1">{{ user.employee_profile.employee_name }}</h5>
+                    <small class="text-muted">{{ user.employee_profile.position }}</small>
+
+                    <div class="row text-start mt-3">
+                        <div class="col-6 mb-2"><strong>Email:</strong> <span class="text-primary">{{ user.email }}</span></div>
+                        <div class="col-6 mb-2"><strong>Phone:</strong> <span class="text-primary">{{ user.employee_profile.phone }}</span></div>
+                        <div class="col-6 mb-2"><strong>Alt. Phone:</strong> <span class="text-primary">{{ user.employee_profile.phone_2|default:"N/A" }}</span></div>
+                        <div class="col-6 mb-2"><strong>Ghana Card:</strong> <span class="text-primary">{{ user.employee_profile.ghana_card }}</span></div>
+                        <div class="col-6 mb-2"><strong>Date of Birth:</strong> <span class="text-primary">{{ user.employee_profile.date_of_birth }}</span></div>
+                        <div class="col-6 mb-2"><strong>Gender:</strong> <span class="text-primary">{{ user.employee_profile.gender }}</span></div>
+                        <div class="col-6 mb-2"><strong>Department:</strong> <span class="text-primary">{{ user.employee_profile.department }}</span></div>
+                        <div class="col-6 mb-2"><strong>Hire Date:</strong> <span class="text-primary">{{ user.employee_profile.hire_date }}</span></div>
+
+                        {% if user.employee_profile.license_number %}
+                            <div class="col-6 mb-2"><strong>License No:</strong> <span class="text-primary">{{ user.employee_profile.license_number }}</span></div>
+                            <div class="col-6 mb-2"><strong>Expiry Date:</strong> <span class="text-primary">{{ user.employee_profile.license_expiry_date }}</span></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Groups Card -->
+        <!-- Groups Card -->
+        <div class="col-md-6 animate__animated animate__fadeInUp animate__delay-1s">
+            <div class="card border-success shadow-sm h-100">
+                <div class="card-header bg-success text-white text-center fw-bold">
+                    Groups <span class="badge bg-light text-dark flex gap-2"><span></span>{{ user.groups.count }}</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for group in user.groups.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <!-- Add icon logic if you want -->
+                                    {{ group.name }}
+                                </span>
+                                <small class="text-muted">
+                                    {% for perm in group.permissions.all|slice:":3" %}
+                                        {{ perm.name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                        No perms
+                                    {% endfor %}
+                                </small>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">No groups assigned</li>
+                        {% endfor %}
+                    </ul>
+        
+                    {% if user.is_superuser %}
+                        <a href="{% url 'admin:auth_group_changelist' %}" class="btn btn-sm btn-outline-success mt-3 w-100">
+                            Admin Panel
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+
+        <div class="col-md-6 animate__animated animate__fadeInUp animate__delay-2s">
+            <div class="card border-warning shadow-sm h-100">
+                <div class="card-header bg-warning text-dark text-center fw-bold">
+                    <i class="fa fa-lock me-2"></i>Permissions
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        {% for perm in permissions %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    {% if "add" in perm %}
+                                        <i class="fa fa-plus-circle text-success me-2"></i>{{ user.employee_profile.employee_name }} can add {{ perm }}
+                                    {% elif "change" in perm %}
+                                        <i class="fa fa-edit text-primary me-2"></i>{{ user.employee_profile.employee_name }} can edit {{ perm }}
+                                    {% elif "delete" in perm %}
+                                        <i class="fa fa-trash-alt text-danger me-2"></i>{{ user.employee_profile.employee_name }} can delete {{ perm }}
+                                    {% elif "view" in perm %}
+                                        <i class="fa fa-eye text-info me-2"></i>{{ user.employee_profile.employee_name }} can view {{ perm }}
+                                    {% else %}
+                                        <i class="fa fa-question-circle text-muted me-2"></i>{{ user.employee_profile.employee_name }} has the permission to {{ perm }}
+                                    {% endif %}
+                                </span>
+                                <i class="fa fa-check text-success"></i>  <!-- Checkmark at the end -->
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted text-center">
+                                <i class="fa fa-exclamation-circle"></i> No permissions assigned
+                            </li>
+                        {% endfor %}
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="col-md-6 animate__animated animate__fadeInUp animate__delay-3s">
+            <div class="card border-info shadow-sm h-100">
+                <div class="card-header bg-info text-white text-center fw-bold">
+                    System Notifications <span class="badge bg-light text-dark">{{ notifications.count }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <small>Total: {{ notifications.count }}</small>
+                        <small>Unread: {{ notifications_unread_count }}</small>
+                        <small>Critical: {{ critical_notifications_count }}</small>
+                    </div>
+                    <div class="mt-2" style="max-height: 300px; overflow-y: auto;">
+                        {% for notification in notifications %}
+                            <div class="alert {% if notification.type == 'error' %}alert-danger{% elif notification.type == 'warning' %}alert-warning{% else %}alert-info{% endif %} py-2 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if notification.type %}
+                                            <span class="badge bg-light text-dark me-2">{{ notification.type|title }}</span>
+                                        {% endif %}
+                                        <small>{{ notification.message|truncatechars:50 }}</small><br>
+                                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="markAsRead({{ notification.id }})">
+                                        Mark Read
+                                    </button>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="alert alert-secondary py-2">
+                                <small>No notifications.</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+    .hover-lift {
+        transition: all 0.3s ease-in-out;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+    }
+    .bg-gradient-primary {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+        color: white;
+    }
+    .list-group-item {
+        background: transparent;
+        border: none;
+    }
+    .card-header {
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

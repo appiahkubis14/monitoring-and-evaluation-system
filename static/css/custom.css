@@ -1,0 +1,163 @@
+:root {
+    --bs-green: #0871B9;
+}
+
+::selection {
+  background-color: #0871B9;
+  color: #fff;
+}
+
+body header#page-topbar button#sidebar-btn,
+body header#page-topbar button#page-header-user-dropdown,
+body header#page-topbar button#page-header-notifications-dropdown,
+body header#page-topbar > div > div:nth-child(2) > div:nth-child(2) > div button{
+    background-color: #c6c6c6;
+}
+
+.btn-primary {
+  --bs-btn-color: #000;
+  --bs-btn-bg: #0871B9;
+  --bs-btn-border-color: #0871B9;
+  --bs-btn-hover-color: #000;
+  --bs-btn-hover-bg: #4B3CCC;
+  --bs-btn-hover-border-color: #675ED1;
+  --bs-btn-focus-shadow-rgb: 48,168,92;
+  --bs-btn-active-color: #000;
+  --bs-btn-active-bg: #5244D0;
+  --bs-btn-active-border-color: #675ED1;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #000;
+  --bs-btn-disabled-bg: #0871B9;
+  --bs-btn-disabled-border-color: #0871B9;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #0871B9;
+  --bs-btn-border-color: #0871B9;
+  --bs-btn-hover-color: #000;
+  --bs-btn-hover-bg: #0871B9;
+  --bs-btn-hover-border-color: #0871B9;
+  --bs-btn-focus-shadow-rgb: 56,198,108;
+  --bs-btn-active-color: #000;
+  --bs-btn-active-bg: #0871B9;
+  --bs-btn-active-border-color: #0871B9;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #0871B9;
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: #0871B9;
+  --bs-gradient: none;
+}
+
+body, body .text-custom-blue {
+    color: #0871B9;
+}
+
+
+body button.btn-primary, 
+body button.btn-primary:hover,
+body button.btn-primary:active,
+body button.btn-primary:focus,
+body button.btn-primary:focus-visible,
+body button.btn.top-icon:hover,
+body button.btn.top-icon:focus,
+body button.btn.top-icon:active,
+body button.btn.top-icon:focus-visible {
+    background-color: #0871B9 !important;
+    border-color: #0871B9;
+    color: #fff;
+}
+
+body #side-menu .mm-active > a {
+    border-left-color: #0871B9;
+    color: #0871B9 !important;
+}
+
+body #side-menu .mm-active,
+body #side-menu li .active,
+body #side-menu .mm-active > a i,
+body #side-menu .mm-active .active,
+body #side-menu .mm-active .active i,
+body #side-menu .mm-active .active a,
+.sidebar-collpsed .sidebar-left #sidebar-menu > ul > li:hover > a,
+.sidebar-collpsed .sidebar-left #sidebar-menu > ul > li:hover > a i {
+    color: #0871B9 !important;
+}
+
+body button.btn.top-icon i {
+    color: #fff;
+}
+
+body #log_formbody {
+    width: 100%;
+}
+
+body #log_formbody p:not(:last-child) label {
+    display: none;
+}
+
+body #log_formbody p:not(:last-child) input {
+    display: block;
+    width: 100%;
+    padding: .3rem .65rem;
+    font-size: .8rem;
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--bs-body-color);
+    background-color: var(--bs-tertiary-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--bs-border-color);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: .3rem;
+    -webkit-transition: border-color .15s ease-in-out;
+    -webkit-box-shadow: .15s ease-in-out;
+    transition: border-color .15s ease-in-out; 
+    -webkit-box-shadow: .15s ease-in-out;
+    transition: border-color .15s ease-in-out;
+    box-shadow: .15s ease-in-out;
+    transition: border-color .15s ease-in-out;
+    box-shadow: .15s ease-in-out;
+    -webkit-box-shadow: .15s ease-in-out;
+}
+
+body #log_formbody p:nth-child(3){
+    margin-bottom: 0.5rem;
+}
+
+body #log_formbody p #id_password_helptext{
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+body #log_formbody p #id_password_helptext a {
+    font-size: 0.825rem;
+}
+
+body #log_formbody p:last-child {
+    display: flex;
+    align-items: center;
+    column-gap: 0.325rem; 
+    flex-direction: row;
+    font-size: 0.825rem;
+}
+
+body #actionbtns {
+    column-gap: 0.25rem;
+}
+
+body #actionbtns button {
+    border-color: transparent;
+    background-color: transparent;
+}
+
+body #actionbtns button:active svg{
+    transform: scale( -1rem, -1rem);
+    transition: transform 0.3s ease;
+}
+
+/* body #addActionButton {
+    background-color: #0871B9;
+    border-color: #0871B9;
+    color: #fff;
+} */

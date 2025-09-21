@@ -1,27 +1,30 @@
 from django.contrib.auth.decorators import login_required
-from .models import SidebarMenu
+# from .models import SidebarMenu
 from utils import sidebar
 
-def user_has_all_permissions(user, permissions):
-    return all(user.has_perm(perm) for perm in permissions)
+
+
+
+
+
+
+from django.contrib.auth.decorators import login_required
+# from .models import SidebarMenu
 
 def user_has_any_group(user_group_names, allowed_groups):
-    return bool(user_group_names & set(allowed_groups))
+    """Check if user has any of the allowed groups"""
+    return bool(set(user_group_names) & set(allowed_groups))
 
 def filter_sidebar_level(items, user_group_names, user):
+    """Recursively filter sidebar items based on user groups"""
     filtered_items = {}
 
     for item_name, item_data in items.items():
         allowed_groups = item_data.get("groups", [])
-        required_permissions = item_data.get("permissions", [])
         
-        # Check if user has required groups AND permissions
-        has_group = not allowed_groups or user_has_any_group(user_group_names, allowed_groups)
-        has_perm = not required_permissions or user_has_all_permissions(user, required_permissions)
-        
-        # Only proceed if user has both required groups AND permissions
-        if not (has_group and has_perm):
-            continue  # Skip this item completely
+        # Check if user has required groups
+        if allowed_groups and not user_has_any_group(user_group_names, allowed_groups):
+            continue  # Skip this item
         
         # Recursively filter nested sub-items if any
         sub_items = item_data.get("sub_items", {})
@@ -46,6 +49,7 @@ def filter_sidebar_level(items, user_group_names, user):
     return filtered_items
 
 def sidebar_context(request):
+    """Generate sidebar context based on user roles"""
     if not request.user.is_authenticated:
         return {}
 
@@ -58,21 +62,10 @@ def sidebar_context(request):
         request.user
     )
 
-    model_permissions = {}
-    code_names = []
-
-    for perm in request.user.get_all_permissions():
-        try:
-            app_label, codename = perm.split(".")
-            code_names.append(codename)
-            action, model = codename.split("_", 1)
-            model_permissions.setdefault(model, []).append(action)
-        except ValueError:
-            continue
+    print(filtered_sidebar_items)
 
     return {
         "sidebar_items": filtered_sidebar_items,
         "path": request.path,
-        "model_permissions": model_permissions,
         "current_user": request.user
     }

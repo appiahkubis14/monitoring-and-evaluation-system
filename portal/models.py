@@ -141,19 +141,21 @@ class Farmer(TimeStampModel):
     extension_services = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"{self.user_profile.user.get_full_name()} - {self.farmer_id}"
+        return f"{self.user_profile.user.get_full_name()} - {self.national_id}"
     
     class Meta:
         verbose_name = "Farmer"
         verbose_name_plural = "Farmers"
     
     def save(self, *args, **kwargs):
-        if not self.farmer_id:
-            # Generate farmer ID if not provided
+        if not self.national_id:
+            # Generate national ID if not provided
             count = Farmer.objects.count() + 1
             district_code = self.user_profile.district.code if self.user_profile.district and self.user_profile.district.code else "DF"
-            self.farmer_id = f"MNG{district_code}{count:04d}"
+            self.national_id = f"MNG{district_code}{count:04d}"
         super().save(*args, **kwargs)
+
+
 
 class Farm(TimeStampModel):
     FARM_STATUS = (
@@ -272,7 +274,7 @@ class Loan(TimeStampModel):
         if not self.loan_id:
             # Generate loan ID if not provided
             count = Loan.objects.count() + 1
-            farmer_code = self.farmer.farmer_id
+            farmer_code = self.farmer.national_id[-4:] if self.farmer.national_id else "0000"
             self.loan_id = f"LN{farmer_code}{count:04d}"
         super().save(*args, **kwargs)
 

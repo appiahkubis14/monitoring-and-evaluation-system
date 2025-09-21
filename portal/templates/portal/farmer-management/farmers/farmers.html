@@ -1,0 +1,1060 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Farmer Management</h4>
+                <p class="text-muted mb-0">Manage mango farmers and their farm locations</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">M&E System</a></li>
+                    <li class="breadcrumb-item active">Farmers</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(45deg, #0871B9, #FEBE14);
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(45deg, #0ab39c, #0871B9);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .farmer-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .farmer-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid #0871B9;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .map-container {
+        height: 500px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .farmer-detail-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #0871B9;
+    }
+    .farm-marker {
+        background-color: #0ab39c;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#addFarmerModal">
+                        <i class="fas fa-user-plus me-2"></i>Add New Farmer
+                    </button>
+                    <button class="btn btn-gradient-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                </div>
+                <ul class="nav nav-tabs" id="farmerTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab" aria-controls="list" aria-selected="true">
+                            <i class="fas fa-list me-2"></i>All Farmers
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail" type="button" role="tab" aria-controls="detail" aria-selected="false">
+                            <i class="fas fa-map-marked-alt me-2"></i>Farmer Details & Map
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="farmerTabContent">
+    <!-- List Tab -->
+    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+        <div class="table-responsive">
+            <table id="farmerTable" class="table table-striped table-bordered datatable" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>FIRST NAME</th>
+                        <th>LAST NAME</th>
+                        <th>NATIONAL ID</th>
+                        <th>DISTRICT</th>
+                        <th>REGION</th>
+                        <th>FARM SIZE (ha)</th>
+                        <th>EXPERIENCE (years)</th>
+                        <th>PHONE</th>
+                        <th>REGISTRATION DATE</th>
+                        <th>STATUS</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be loaded via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detail Tab -->
+    <div class="tab-pane fade" id="detail" role="tabpanel" aria-labelledby="detail-tab">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Select Farmer</h5>
+                    </div>
+                    <div class="card-body">
+                        <select id="farmerSelect" class="form-select mb-3">
+                            <option value="">Select a farmer...</option>
+                            <!-- Farmers will be loaded via AJAX -->
+                        </select>
+                        <div id="farmerDetailContainer" class="farmer-detail-card" style="display: none;">
+                            <h4 id="farmerName" class="mb-3"></h4>
+                            <div class="row">
+                                <div class="col-12">
+                                    <p><span class="detail-label">National ID:</span> <span id="farmerNationalId"></span></p>
+                                    <p><span class="detail-label">Phone:</span> <span id="farmerPhone"></span></p>
+                                    <p><span class="detail-label">Email:</span> <span id="farmerEmail"></span></p>
+                                    <p><span class="detail-label">Location:</span> <span id="farmerLocation"></span></p>
+                                    <p><span class="detail-label">Farm Size:</span> <span id="farmerFarmSize"></span> hectares</p>
+                                    <p><span class="detail-label">Experience:</span> <span id="farmerExperience"></span> years</p>
+                                    <p><span class="detail-label">Primary Crop:</span> <span id="farmerPrimaryCrop"></span></p>
+                                    <p><span class="detail-label">Farms:</span> <span id="farmerFarmsCount"></span></p>
+                                    <p><span class="detail-label">Status:</span> <span id="farmerStatus" class="badge bg-success"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Farm Locations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="farmMap" class="map-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Farmer Modal -->
+<div class="modal fade" id="addFarmerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Add New Farmer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addFarmerForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">First Name*</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Last Name*</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">National ID*</label>
+                                <input type="text" name="national_id" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" name="phone_number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">District*</label>
+                                <select name="district_id" class="form-control" required>
+                                    <option value="">Select District</option>
+                                    <!-- Districts will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Size (hectares)*</label>
+                                <input type="number" name="farm_size" class="form-control" step="0.1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" name="years_of_experience" class="form-control" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Primary Crop</label>
+                                <input type="text" name="primary_crop" class="form-control" value="Mango">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Gender</label>
+                                <select name="gender" class="form-control">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="date_of_birth" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Cooperative Membership</label>
+                                <input type="text" name="cooperative_membership" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Bank Account Number</label>
+                                <input type="text" name="bank_account_number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" name="bank_name" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <textarea name="address" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="extension_services" class="form-check-input" id="extensionServices">
+                                <label class="form-check-label" for="extensionServices">Extension Services</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: space-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Farmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Farmer Modal -->
+<div class="modal fade" id="editFarmerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Edit Farmer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editFarmerForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="id" id="editFarmerId">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">First Name*</label>
+                                <input type="text" name="first_name" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Last Name*</label>
+                                <input type="text" name="last_name" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">National ID*</label>
+                                <input type="text" name="national_id" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" name="phone_number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">District*</label>
+                                <select name="district_id" class="form-control" required>
+                                    <option value="">Select District</option>
+                                    <!-- Districts will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Size (hectares)*</label>
+                                <input type="number" name="farm_size" class="form-control" step="0.1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Years of Experience</label>
+                                <input type="number" name="years_of_experience" class="form-control" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Primary Crop</label>
+                                <input type="text" name="primary_crop" class="form-control" value="Mango">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Gender</label>
+                                <select name="gender" class="form-control">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="date_of_birth" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Cooperative Membership</label>
+                                <input type="text" name="cooperative_membership" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Bank Account Number</label>
+                                <input type="text" name="bank_account_number" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" name="bank_name" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <textarea name="address" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="extension_services" class="form-check-input" id="extensionServices">
+                                <label class="form-check-label" for="extensionServices">Extension Services</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: space-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Farmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this farmer? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring & Evaluation System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Include Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+// Initialize map
+let farmMap = null;
+let farmMarkers = [];
+
+$(document).ready(function() {
+    // Initialize DataTables
+    var farmerTable = $('#farmerTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "/farmers/list/",
+            type: "GET"
+        },
+        columns: [
+            { "data": "first_name" },
+            { "data": "last_name" },
+            { "data": "national_id" },
+            { "data": "district" },
+            { "data": "region" },
+            { "data": "farm_size" },
+            { "data": "years_of_experience" },
+            { "data": "phone_number" },
+            { "data": "registration_date" },
+            {
+            "data": "status",
+            "render": function(data, type, row) {
+                return `<span class="badge ${data === 'Active' ? 'bg-success' : 'bg-secondary'}">${data}</span>`;
+            }
+        },
+        {
+            "data": "id",
+            "render": function(data, type, row) {
+                return `
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary view-btn" data-id="${data}" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning edit-btn" data-id="${data}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${data}" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    ],
+    order: [[8, 'desc']],
+    dom: 'Bfrtip',
+    buttons: [
+        {
+            extend: "copy",
+            text: '<i class="fas fa-copy"></i> Copy',
+            className: "btn btn-sm btn-outline-secondary",
+        },
+        {
+            extend: "csv",
+            text: '<i class="fas fa-file-csv"></i> CSV',
+            className: "btn btn-sm btn-outline-success",
+        },
+        {
+            extend: "excel",
+            text: '<i class="fas fa-file-excel"></i> Excel',
+            className: "btn btn-sm btn-outline-primary",
+        },
+        {
+            extend: "pdf",
+            text: '<i class="fas fa-file-pdf"></i> PDF',
+            className: "btn btn-sm btn-outline-danger",
+        },
+        {
+            text: '<i class="fas fa-sync-alt"></i> Refresh',
+            className: "btn btn-sm btn-outline-info",
+            action: function (e, dt, node, config) {
+                dt.ajax.reload();
+            }
+        }
+    ]
+});
+
+// Initialize map
+function initMap() {
+    farmMap = L.map('farmMap').setView([7.9465, -1.0232], 8); // Default center on Ghana
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(farmMap);
+}
+
+// Load districts for dropdowns
+function loadDistricts() {
+    $.ajax({
+        url: "/farmers/districts/",
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const districtSelect = $('select[name="district_id"]');
+                districtSelect.empty().append('<option value="">Select District</option>');
+                
+                response.districts.forEach(function(district) {
+                    districtSelect.append(
+                        $('<option>', {
+                            value: district.id,
+                            text: `${district.name} - ${district.region}`
+                        })
+                    );
+                });
+            }
+        }
+    });
+}
+
+// Load farmers for detail tab dropdown
+function loadFarmersForDropdown() {
+    $.ajax({
+        url: "/farmers/list/",
+        type: "GET",
+        data: { length: 1000 }, // Get all farmers
+        success: function(response) {
+            const farmerSelect = $('#farmerSelect');
+            farmerSelect.empty().append('<option value="">Select a farmer...</option>');
+            
+            response.data.forEach(function(farmer) {
+                farmerSelect.append(
+                    $('<option>', {
+                        value: farmer.id,
+                        text: `${farmer.first_name} ${farmer.last_name} (${farmer.national_id})`
+                    })
+                );
+            });
+        }
+    });
+}
+
+// Update map with farm locations
+function updateFarmMap(farmerId) {
+    // Clear existing markers
+    farmMarkers.forEach(marker => farmMap.removeLayer(marker));
+    farmMarkers = [];
+    
+    // Load new farm data
+    $.ajax({
+        url: `/farmers/geojson/${farmerId}/`,
+        type: "GET",
+        success: function(response) {
+            if (response.features && response.features.length > 0) {
+                // Create a feature group for all farms
+                const farmGroup = L.featureGroup();
+                
+                response.features.forEach(function(feature) {
+                    const coords = feature.geometry.coordinates;
+                    const properties = feature.properties;
+                    
+                    // Create custom marker
+                    const marker = L.marker([coords[1], coords[0]], {
+                        icon: L.divIcon({
+                            className: 'farm-marker',
+                            html: '<div style="background-color: #0ab39c; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    
+                    // Create popup content
+                    const popupContent = `
+                        <div class="farm-popup">
+                            <h6>${properties.name}</h6>
+                            <p><strong>Code:</strong> ${properties.farm_code}</p>
+                            <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                            <p><strong>Status:</strong> ${properties.status_display}</p>
+                            <p><strong>Registered:</strong> ${properties.registration_date}</p>
+                        </div>
+                    `;
+                    
+                    marker.bindPopup(popupContent);
+                    farmGroup.addLayer(marker);
+                    farmMarkers.push(marker);
+                });
+                
+                // Add all markers to map and fit bounds
+                farmGroup.addTo(farmMap);
+                farmMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
+            } else {
+                // Show message if no farms found
+                farmMap.setView([7.9465, -1.0232], 8);
+                L.popup()
+                    .setLatLng([7.9465, -1.0232])
+                    .setContent('No farm locations found for this farmer')
+                    .openOn(farmMap);
+            }
+        },
+        error: function() {
+            // Show error message
+            farmMap.setView([7.9465, -1.0232], 8);
+            L.popup()
+                .setLatLng([7.9465, -1.0232])
+                .setContent('Error loading farm locations')
+                .openOn(farmMap);
+        }
+    });
+}
+
+// Load farmer details
+function loadFarmerDetails(farmerId) {
+    $.ajax({
+        url: `/farmers/detail/${farmerId}/`,
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const farmer = response.farmer;
+                
+                // Update detail card
+                $('#farmerName').text(`${farmer.first_name} ${farmer.last_name}`);
+                $('#farmerNationalId').text(farmer.national_id);
+                $('#farmerPhone').text(farmer.phone_number);
+                $('#farmerEmail').text(farmer.email);
+                $('#farmerLocation').text(`${farmer.district}, ${farmer.region}`);
+                $('#farmerFarmSize').text(farmer.farm_size);
+                $('#farmerExperience').text(farmer.years_of_experience);
+                $('#farmerPrimaryCrop').text(farmer.primary_crop);
+                $('#farmerFarmsCount').text(response.farms_count);
+                $('#farmerStatus').text(farmer.status).removeClass('bg-success bg-secondary')
+                    .addClass(farmer.status === 'Active' ? 'bg-success' : 'bg-secondary');
+                
+                // Show detail container
+                $('#farmerDetailContainer').show();
+                
+                // Update map
+                updateFarmMap(farmerId);
+            }
+        },
+        error: function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load farmer details'
+            });
+        }
+    });
+}
+
+// Farmer selection change handler
+$('#farmerSelect').change(function() {
+    const farmerId = $(this).val();
+    if (farmerId) {
+        loadFarmerDetails(farmerId);
+    } else {
+        $('#farmerDetailContainer').hide();
+        // Reset map to default view
+        farmMap.setView([7.9465, -1.0232], 8);
+    }
+});
+
+// Tab change handler
+$('#farmerTabs button').on('click', function (e) {
+    e.preventDefault();
+    $(this).tab('show');
+    
+    if ($(this).attr('id') === 'detail-tab') {
+        // Initialize map if not already done
+        if (!farmMap) {
+            initMap();
+        }
+        // Load farmers for dropdown
+        loadFarmersForDropdown();
+    }
+});
+
+// Add farmer form submission
+$('#addFarmerForm').submit(function(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const data = {};
+    formData.forEach(field => {
+        data[field.name] = field.value;
+    });
+    
+    $('#addFarmerModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+    $.ajax({
+        url: "/farmers/create/",
+        type: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        success: function(response) {
+            if (response.success) {
+                $('#addFarmerModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                farmerTable.ajax.reload();
+                loadFarmersForDropdown();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: xhr.responseJSON?.error || 'An error occurred while saving the farmer.'
+            });
+        },
+        complete: function() {
+            $('#addFarmerModal button[type="submit"]').prop('disabled', false).html('Save Farmer');
+        }
+    });
+});
+// Edit button click
+$('#farmerTable').on('click', '.edit-btn', function() {
+    const farmerId = $(this).data('id');
+    console.log("Editing farmer ID:", farmerId);
+    
+    // Load farmer data and populate edit form
+    $.ajax({
+        url: `/farmers/detail/${farmerId}/`,
+        type: "GET",
+        success: function(response) {
+            console.log('Response received:', response);
+            
+            if (response && response.farmer) {
+                const farmer = response.farmer;
+                
+                // Populate edit form
+                $('#editFarmerId').val(farmerId);
+                $('#editFarmerForm input[name="first_name"]').val(farmer.first_name || '');
+                $('#editFarmerForm input[name="last_name"]').val(farmer.last_name || '');
+                $('#editFarmerForm input[name="national_id"]').val(farmer.national_id || '');
+                $('#editFarmerForm input[name="email"]').val(farmer.email || '');
+                $('#editFarmerForm input[name="phone_number"]').val(farmer.phone_number || '');
+                $('#editFarmerForm input[name="farm_size"]').val(farmer.farm_size || '');
+                $('#editFarmerForm input[name="years_of_experience"]').val(farmer.years_of_experience || '');
+                $('#editFarmerForm input[name="primary_crop"]').val(farmer.primary_crop || '');
+                $('#editFarmerForm input[name="cooperative_membership"]').val(farmer.cooperative_membership || '');
+                $('#editFarmerForm input[name="bank_account_number"]').val(farmer.bank_account_number || '');
+                $('#editFarmerForm input[name="bank_name"]').val(farmer.bank_name || '');
+                $('#editFarmerForm textarea[name="address"]').val(farmer.address || '');
+                
+                if (farmer.gender) {
+                    $('#editFarmerForm select[name="gender"]').val(farmer.gender.toLowerCase());
+                }
+                
+                if (farmer.date_of_birth) {
+                    $('#editFarmerForm input[name="date_of_birth"]').val(farmer.date_of_birth);
+                } else {
+                    $('#editFarmerForm input[name="date_of_birth"]').val('');
+                }
+                
+                // FIX: Check if loadDistricts returns a promise before calling .then()
+                const districtsPromise = loadDistricts();
+                
+                if (districtsPromise && typeof districtsPromise.then === 'function') {
+                    districtsPromise.then(() => {
+                        // Additional logic to set district selection if needed
+                        $('#editFarmerModal').modal('show');
+                    }).catch(error => {
+                        console.error('Error loading districts:', error);
+                        $('#editFarmerModal').modal('show'); // Still show modal even if districts fail
+                    });
+                } else {
+                    // If loadDistricts doesn't return a promise, just show the modal
+                    console.warn('loadDistricts did not return a promise');
+                    $('#editFarmerModal').modal('show');
+                }
+                
+            } else {
+                console.error('Unexpected response format:', response);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Farmer data format is incorrect'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load farmer data: ' + error
+            });
+        }
+    });
+});
+// Edit form submission
+$('#editFarmerForm').submit(function(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const data = {};
+    formData.forEach(field => {
+        data[field.name] = field.value;
+    });
+    
+    const farmerId = data.id;
+    
+    $('#editFarmerModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+    $.ajax({
+        url: `/farmers/update/${farmerId}/`,
+        type: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        success: function(response) {
+            if (response.success) {
+                $('#editFarmerModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                farmerTable.ajax.reload();
+                loadFarmersForDropdown();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: xhr.responseJSON?.error || 'An error occurred while updating the farmer.'
+            });
+        },
+        complete: function() {
+            $('#editFarmerModal button[type="submit"]').prop('disabled', false).html('Update Farmer');
+        }
+    });
+});
+
+// Delete button click
+$('#farmerTable').on('click', '.delete-btn', function() {
+    const farmerId = $(this).data('id');
+    
+    // Store farmer ID for deletion
+    $('#deleteModal').data('farmerId', farmerId);
+    $('#deleteModal').modal('show');
+});
+
+// Confirm delete
+$('#confirmDeleteBtn').click(function() {
+    const farmerId = $('#deleteModal').data('farmerId');
+    
+    $.ajax({
+        url: "/farmers/delete/",
+        type: "POST",
+        data: JSON.stringify({ id: farmerId }),
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        success: function(response) {
+            if (response.success) {
+                $('#deleteModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                farmerTable.ajax.reload();
+                loadFarmersForDropdown();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: xhr.responseJSON?.error || 'An error occurred while deleting the farmer.'
+            });
+        }
+    });
+});
+
+// View button click
+$('#farmerTable').on('click', '.view-btn', function() {
+    const farmerId = $(this).data('id');
+    
+    // Switch to detail tab
+    $('#detail-tab').tab('show');
+    
+    // Select the farmer in dropdown and load details
+    setTimeout(() => {
+        $('#farmerSelect').val(farmerId).trigger('change');
+    }, 300);
+});
+
+// Export button click
+$('#exportBtn').click(function() {
+    Swal.fire({
+        title: 'Export Format',
+        text: 'Choose export format',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'CSV',
+        cancelButtonText: 'JSON',
+        showDenyButton: true,
+        denyButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/farmers/export/?format=csv';
+        } else if (result.isDismissed) {
+            window.location.href = '/farmers/export/?format=json';
+        }
+    });
+});
+
+// Initial load
+loadDistricts();
+});
+</script>
+{% endblock %}

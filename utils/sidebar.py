@@ -38,7 +38,7 @@ class Sidebar:
             "sub_items": {
                 "Farmers": {
                     "icon": "fas fa-user-friends", 
-                    "url": "/farmers/list/", 
+                    "url": "/farmers/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value]
                 },
 

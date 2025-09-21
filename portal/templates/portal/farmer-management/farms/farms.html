@@ -1,0 +1,1431 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Farm Management</h4>
+                <p class="text-muted mb-0">Manage mango farms and their geographical data</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">M&E System</a></li>
+                    <li class="breadcrumb-item"><a href="/farmers/">Farmers</a></li>
+                    <li class="breadcrumb-item active">Farms</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(45deg,  #0871B9,#FEBE14);
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(45deg,#FEBE14,  #0871B9);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .farm-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .farm-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid  #0871B9;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .map-container {
+        height: 500px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .farm-detail-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color:  #0871B9;
+    }
+    .farm-marker {
+        background-color:#FEBE14;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .stats-card {
+        background: linear-gradient(135deg,  #0871B9 0%,#FEBE14 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-active { background-color: #d1fae5; color: #065f46; }
+    .status-delayed { background-color: #fef3c7; color: #92400e; }
+    .status-critical { background-color: #fee2e2; color: #b91c1c; }
+    .status-completed { background-color: #dbeafe; color: #1e40af; }
+    .status-abandoned { background-color: #e5e7eb; color: #374151; }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#addFarmModal">
+                        <i class="fas fa-tractor me-2"></i>Add New Farm
+                    </button>
+                    <button class="btn btn-gradient-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                </div>
+                <ul class="nav nav-tabs" id="farmTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab" aria-controls="list" aria-selected="true">
+                            <i class="fas fa-list me-2"></i>All Farms
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#map" type="button" role="tab" aria-controls="map" aria-selected="false">
+                            <i class="fas fa-map-marked-alt me-2"></i>Farm Map
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="false">
+                            <i class="fas fa-chart-pie me-2"></i>Statistics
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail" type="button" role="tab" aria-controls="detail" aria-selected="false">
+                            <i class="fas fa-info-circle me-2"></i>Farm Details
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="farmTabContent">
+    <!-- List Tab -->
+    <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select id="statusFilter" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="delayed">Delayed</option>
+                    <option value="critical">Critical</option>
+                    <option value="completed">Completed</option>
+                    <option value="abandoned">Abandoned</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select id="farmerFilter" class="form-select">
+                    <option value="">All Farmers</option>
+                    <!-- Farmers will be loaded via AJAX -->
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="farmTable" class="table table-striped table-bordered datatable" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>FARM CODE</th>
+                        <th>NAME</th>
+                        <th>FARMER</th>
+                        <th>NATIONAL ID</th>
+                        <th>AREA (ha)</th>
+                        <th>STATUS</th>
+                        <th>SOIL TYPE</th>
+                        <th>IRRIGATION</th>
+                        <th>REGISTRATION DATE</th>
+                        <th>LAST VISIT</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be loaded via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Map Tab -->
+    <div class="tab-pane fade" id="map" role="tabpanel" aria-labelledby="map-tab">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">All Farm Locations</h5>
+            </div>
+            <div class="card-body">
+                <div id="allFarmsMap" class="map-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Tab -->
+    <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+        <div class="row" id="statsContainer">
+            <!-- Statistics will be loaded via AJAX -->
+        </div>
+    </div>
+
+    <!-- Detail Tab -->
+    <div class="tab-pane fade" id="detail" role="tabpanel" aria-labelledby="detail-tab">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Select Farm</h5>
+                    </div>
+                    <div class="card-body">
+                        <select id="farmSelect" class="form-select mb-3">
+                            <option value="">Select a farm...</option>
+                            <!-- Farms will be loaded via AJAX -->
+                        </select>
+                        <div id="farmDetailContainer" class="farm-detail-card" style="display: none;">
+                            <h4 id="farmName" class="mb-3"></h4>
+                            <div class="row">
+                                <div class="col-12">
+                                    <p><span class="detail-label">Farm Code:</span> <span id="farmCode"></span></p>
+                                    <p><span class="detail-label">Farmer:</span> <span id="farmFarmer"></span></p>
+                                    <p><span class="detail-label">Area:</span> <span id="farmArea"></span> hectares</p>
+                                    <p><span class="detail-label">Status:</span> <span id="farmStatus"></span></p>
+                                    <p><span class="detail-label">Soil Type:</span> <span id="farmSoilType"></span></p>
+                                    <p><span class="detail-label">Irrigation:</span> <span id="farmIrrigation"></span></p>
+                                    <p><span class="detail-label">Coverage:</span> <span id="farmIrrigationCoverage"></span></p>
+                                    <p><span class="detail-label">Registered:</span> <span id="farmRegistrationDate"></span></p>
+                                    <p><span class="detail-label">Last Visit:</span> <span id="farmLastVisit"></span></p>
+                                    <p><span class="detail-label">Crops:</span> <span id="farmCropsCount"></span></p>
+                                    <p><span class="detail-label">Visits:</span> <span id="farmVisitsCount"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Farm Location & Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="farmMap" class="map-container mb-3"></div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Crops</h6>
+                                <div id="farmCropsList" class="mt-2">
+                                    <!-- Crops will be loaded via AJAX -->
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Recent Visits</h6>
+                                <div id="farmVisitsList" class="mt-2">
+                                    <!-- Visits will be loaded via AJAX -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Farm Modal -->
+<div class="modal fade" id="addFarmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white bg-primary">
+                <h5 class="modal-title">Add New Farm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addFarmForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farmer*</label>
+                                <select name="farmer_id" class="form-control" required>
+                                    <option value="">Select Farmer</option>
+                                    <!-- Farmers will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Name*</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Area (hectares)*</label>
+                                <input type="number" name="area_hectares" class="form-control" step="0.1" min="0.1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="critical">Critical</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="abandoned">Abandoned</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Latitude*</label>
+                                <input type="number" name="latitude" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Longitude*</label>
+                                <input type="number" name="longitude" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Soil Type</label>
+                                <input type="text" name="soil_type" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Irrigation Type</label>
+                                <input type="text" name="irrigation_type" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Irrigation Coverage (%)</label>
+                                <input type="number" name="irrigation_coverage" class="form-control" min="0" max="100" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Altitude (meters)</label>
+                                <input type="number" name="altitude" class="form-control" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Slope (degrees)</label>
+                                <input type="number" name="slope" class="form-control" step="0.1" min="0" max="90">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Farm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Farm Modal -->
+<div class="modal fade" id="editFarmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white bg-primary">
+                <h5 class="modal-title">Edit Farm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editFarmForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="id" id="editFarmId">
+                <div class="modal-body">
+                    <!-- Same form structure as add farm, fields will be populated via JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Farm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Crop Modal -->
+<div class="modal fade" id="addCropModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header text-white bg-success">
+                <h5 class="modal-title">Add Crop to Farm</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addCropForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="farm_id" id="cropFarmId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Mango Variety*</label>
+                        <select name="variety_id" class="form-control" required>
+                            <option value="">Select Variety</option>
+                            <!-- Varieties will be loaded via AJAX -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Planting Date*</label>
+                        <input type="date" name="planting_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Planting Density (trees/hectare)*</label>
+                        <input type="number" name="planting_density" class="form-control" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Total Trees*</label>
+                        <input type="number" name="total_trees" class="form-control" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expected Yield (tons/hectare)</label>
+                        <input type="number" name="expected_yield" class="form-control" step="0.1" min="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Crop</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this farm? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring & Evaluation System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Include Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+// Initialize maps
+let allFarmsMap = null;
+let farmMap = null;
+let farmMarkers = [];
+let allFarmsMarkers = [];
+
+$(document).ready(function() {
+    // Initialize DataTables
+    var farmTable = $('#farmTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "/farmers/farms/list/",
+            type: "GET",
+            data: function(d) {
+                d.status = $('#statusFilter').val();
+                d.farmer_id = $('#farmerFilter').val();
+            }
+        },
+        columns: [
+            { 
+                "data": "farm_code",
+                "render": function(data) {
+                    return `<strong>${data}</strong>`;
+                }
+            },
+            { "data": "name" },
+            { "data": "farmer_name" },
+            { "data": "national_id" },
+            { "data": "area_hectares" },
+            {
+                "data": "status",
+                "render": function(data, type, row) {
+                    const statusClass = `status-${data}`;
+                    return `<span class="status-badge ${statusClass}">${row.status_display}</span>`;
+                }
+            },
+            { "data": "soil_type" },
+            { 
+                "data": "irrigation_type",
+                "render": function(data) {
+                    return data || 'None';
+                }
+            },
+            { "data": "registration_date" },
+            { "data": "last_visit_date" },
+            {
+                "data": "id",
+                "render": function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary view-btn" data-id="${data}" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning edit-btn" data-id="${data}" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success crop-btn" data-id="${data}" title="Add Crop">
+                                <i class="fas fa-seedling"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${data}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        order: [[8, 'desc']],
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: "copy",
+                text: '<i class="fas fa-copy"></i> Copy',
+                className: "btn btn-sm btn-outline-secondary",
+            },
+            {
+                extend: "csv",
+                text: '<i class="fas fa-file-csv"></i> CSV',
+                className: "btn btn-sm btn-outline-success",
+            },
+            {
+                extend: "excel",
+                text: '<i class="fas fa-file-excel"></i> Excel',
+                className: "btn btn-sm btn-outline-primary",
+            },
+            {
+                extend: "pdf",
+                text: '<i class="fas fa-file-pdf"></i> PDF',
+                className: "btn btn-sm btn-outline-danger",
+            },
+            {
+                text: '<i class="fas fa-sync-alt"></i> Refresh',
+                className: "btn btn-sm btn-outline-info",
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload();
+                }
+            }
+        ]
+    });
+
+    // Initialize maps
+    function initAllFarmsMap() {
+        allFarmsMap = L.map('allFarmsMap').setView([7.9465, -1.0232], 8); // Default center on Ghana
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(allFarmsMap);
+        
+        // Load all farms data
+        loadAllFarmsMapData();
+    }
+
+    function initFarmMap() {
+        farmMap = L.map('farmMap').setView([7.9465, -1.0232], 8);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(farmMap);
+    }
+
+    // Load all farms for map
+    function loadAllFarmsMapData() {
+        // Clear existing markers
+        allFarmsMarkers.forEach(marker => allFarmsMap.removeLayer(marker));
+        allFarmsMarkers = [];
+        
+        $.ajax({
+            url: "/farmers/farms/geojson/all/",
+            type: "GET",
+            success: function(response) {
+                if (response.features && response.features.length > 0) {
+                    const farmGroup = L.featureGroup();
+                    
+                    response.features.forEach(function(feature) {
+                        const coords = feature.geometry.coordinates;
+                        const properties = feature.properties;
+                        
+                        // Create custom marker with color based on status
+                        let markerColor = '#0ab39c'; // Default green for active
+                        if (properties.status === 'delayed') markerColor = '#f59e0b'; // Amber
+                        if (properties.status === 'critical') markerColor = '#ef4444'; // Red
+                        if (properties.status === 'completed') markerColor = '#3b82f6'; // Blue
+                        if (properties.status === 'abandoned') markerColor = '#6b7280'; // Gray
+                        
+                        const marker = L.marker([coords[1], coords[0]], {
+                            icon: L.divIcon({
+                                className: 'farm-marker',
+                                html: `<div style="background-color: ${markerColor}; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>`,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        });
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div class="farm-popup">
+                                <h6>${properties.name}</h6>
+                                <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                                <p><strong>Status:</strong> ${properties.status_display}</p>
+                                <p><strong>Farmer:</strong> ${properties.farmer_name}</p>
+                                <button class="btn btn-sm btn-primary mt-2 view-farm-btn" data-id="${properties.id}">
+                                    View Details
+                                </button>
+                            </div>
+                        `;
+                        
+                        marker.bindPopup(popupContent);
+                        farmGroup.addLayer(marker);
+                        allFarmsMarkers.push(marker);
+                    });
+                    
+                    // Add all markers to map and fit bounds
+                    farmGroup.addTo(allFarmsMap);
+                    allFarmsMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
+                    
+                    // Add click handler for view buttons in popups
+                    allFarmsMap.on('popupopen', function(e) {
+                        $('.view-farm-btn').click(function() {
+                            const farmId = $(this).data('id');
+                            $('#detail-tab').tab('show');
+                            setTimeout(() => {
+                                $('#farmSelect').val(farmId).trigger('change');
+                            }, 300);
+                        });
+                    });
+                }
+            }
+        });
+    }
+
+    // Load farmers for dropdowns
+    function loadFarmersForDropdowns() {
+        $.ajax({
+            url: "/farmers/list/",
+            type: "GET",
+            data: { length: 1000 }, // Get all farmers
+            success: function(response) {
+                const farmerSelect = $('select[name="farmer_id"]');
+                const farmerFilter = $('#farmerFilter');
+                
+                farmerSelect.empty().append('<option value="">Select Farmer</option>');
+                farmerFilter.empty().append('<option value="">All Farmers</option>');
+                
+                response.data.forEach(function(farmer) {
+                    const option = $('<option>', {
+                        value: farmer.id,
+                        text: `${farmer.first_name} ${farmer.last_name} (${farmer.national_id})`
+                    });
+                    
+                    farmerSelect.append(option.clone());
+                    farmerFilter.append(option.clone());
+                });
+            }
+        });
+    }
+
+    // Load mango varieties for dropdown
+    function loadMangoVarieties() {
+        $.ajax({
+            url: "/farmers/farms/varieties/",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const varietySelect = $('select[name="variety_id"]');
+                    varietySelect.empty().append('<option value="">Select Variety</option>');
+                    
+                    response.varieties.forEach(function(variety) {
+                        varietySelect.append(
+                            $('<option>', {
+                                value: variety.id,
+                                text: `${variety.name}${variety.scientific_name ? ' (' + variety.scientific_name + ')' : ''}`
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    // Load farms for detail tab dropdown
+    function loadFarmsForDropdown() {
+        $.ajax({
+            url: "/farmers/farms/list/",
+            type: "GET",
+            data: { length: 1000 }, // Get all farms
+            success: function(response) {
+                const farmSelect = $('#farmSelect');
+                farmSelect.empty().append('<option value="">Select a farm...</option>');
+                
+                response.data.forEach(function(farm) {
+                    farmSelect.append(
+                        $('<option>', {
+                            value: farm.id,
+                            text: `${farm.farm_code} - ${farm.name} (${farm.farmer_name})`
+                        })
+                    );
+                });
+            }
+        });
+    }
+
+    // Load farm statistics
+    function loadFarmStats() {
+        $.ajax({
+            url: "/farmers/farms/stats/",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const stats = response.stats;
+                    const statsContainer = $('#statsContainer');
+                    
+                    statsContainer.empty();
+                    
+                    // Create stats cards
+                    const statsCards = [
+                        {
+                            title: 'Total Farms',
+                            value: stats.total_farms,
+                            icon: 'fas fa-tractor',
+                            color: 'primary'
+                        },
+                        {
+                            title: 'Total Area (ha)',
+                            value: stats.total_area.toFixed(2),
+                            icon: 'fas fa-ruler-combined',
+                            color: 'success'
+                        },
+                        {
+                            title: 'Avg Farm Size (ha)',
+                            value: stats.avg_farm_size.toFixed(2),
+                            icon: 'fas fa-chart-pie',
+                            color: 'info'
+                        },
+                        {
+                            title: 'Recent Registrations',
+                            value: stats.recent_registrations,
+                            icon: 'fas fa-calendar-plus',
+                            color: 'warning'
+                        }
+                    ];
+                    
+                    statsCards.forEach(function(card) {
+                        statsContainer.append(`
+                            <div class="col-md-3 mb-3">
+                                <div class="stats-card bg-${card.color}">
+                                    <i class="${card.icon} fa-2x mb-2"></i>
+                                    <h3 class="stats-number">${card.value}</h3>
+                                    <p>${card.title}</p>
+                                </div>
+                            </div>
+                        `);
+                    });
+                    
+                    // Add status distribution
+                    if (stats.farms_by_status.length > 0) {
+                        let statusHtml = `
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Farms by Status</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Status</th>
+                                                        <th>Count</th>
+                                                        <th>Area (ha)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                        `;
+                        
+                        stats.farms_by_status.forEach(function(item) {
+                            const statusClass = `status-${item.status}`;
+                            statusHtml += `
+                                <tr>
+                                    <td><span class="status-badge ${statusClass}">${getStatusDisplay(item.status)}</span></td>
+                                    <td>${item.count}</td>
+                                    <td>${item.total_area.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        statusHtml += `
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        statsContainer.append(statusHtml);
+                    }
+                    
+                    // Add district distribution
+                    if (stats.farms_by_district.length > 0) {
+                        let districtHtml = `
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Top Districts</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>District</th>
+                                                        <th>Farms</th>
+                                                        <th>Area (ha)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                        `;
+                        
+                        stats.farms_by_district.slice(0, 5).forEach(function(item) {
+                            districtHtml += `
+                                <tr>
+                                    <td>${item.farmer__user_profile__district__name || 'Unknown'}</td>
+                                    <td>${item.count}</td>
+                                    <td>${item.total_area.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        districtHtml += `
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        statsContainer.append(districtHtml);
+                    }
+                }
+            }
+        });
+    }
+
+    // Helper function to get status display text
+    function getStatusDisplay(status) {
+        const statusMap = {
+            'active': 'Active',
+            'delayed': 'Delayed',
+            'critical': 'Critical',
+            'completed': 'Completed',
+            'abandoned': 'Abandoned'
+        };
+        return statusMap[status] || status;
+    }
+
+    // Update farm map with specific farm data
+    function updateFarmMap(farmId) {
+        // Clear existing markers
+        farmMarkers.forEach(marker => farmMap.removeLayer(marker));
+        farmMarkers = [];
+        
+        // Load farm data
+        $.ajax({
+            url: `/farmers/farms/geojson/${farmId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.features && response.features.length > 0) {
+                    const farmGroup = L.featureGroup();
+                    
+                    response.features.forEach(function(feature) {
+                        const coords = feature.geometry.coordinates;
+                        const properties = feature.properties;
+                        
+                        if (properties.type === 'location') {
+                            // Create marker for farm location
+                            const marker = L.marker([coords[1], coords[0]], {
+                                icon: L.divIcon({
+                                    className: 'farm-marker',
+                                    html: '<div style="background-color:#FEBE14; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                })
+                            });
+                            
+                            const popupContent = `
+                                <div class="farm-popup">
+                                    <h6>${properties.name}</h6>
+                                    <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                    <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                                    <p><strong>Status:</strong> ${properties.status_display}</p>
+                                </div>
+                            `;
+                            
+                            marker.bindPopup(popupContent);
+                            farmGroup.addLayer(marker);
+                            farmMarkers.push(marker);
+                        } else if (properties.type === 'boundary') {
+                            // Create polygon for farm boundary
+                            const polygon = L.geoJSON(feature.geometry, {
+                                style: {
+                                    color: '#0ab39c',
+                                    weight: 3,
+                                    opacity: 0.8,
+                                    fillColor: '#0ab39c',
+                                    fillOpacity: 0.2
+                                }
+                            });
+                            
+                            const popupContent = `
+                                <div class="farm-popup">
+                                    <h6>${properties.name} Boundary</h6>
+                                    <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                    <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                                </div>
+                            `;
+                            
+                            polygon.bindPopup(popupContent);
+                            farmGroup.addLayer(polygon);
+                            farmMarkers.push(polygon);
+                        }
+                    });
+                    
+                    // Add all features to map and fit bounds
+                    farmGroup.addTo(farmMap);
+                    farmMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
+                } else {
+                    // Show message if no data found
+                    farmMap.setView([7.9465, -1.0232], 8);
+                    L.popup()
+                        .setLatLng([7.9465, -1.0232])
+                        .setContent('No location data found for this farm')
+                        .openOn(farmMap);
+                }
+            }
+        });
+    }
+
+    // Load farm details
+    function loadFarmDetails(farmId) {
+        $.ajax({
+            url: `/farmers/farms/detail/${farmId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const farm = response.farm;
+                    
+                    // Update detail card
+                    $('#farmName').text(farm.name);
+                    $('#farmCode').text(farm.farm_code);
+                    $('#farmFarmer').text(`${farm.farmer_name} (${farm.national_id})`);
+                    $('#farmArea').text(farm.area_hectares);
+                    $('#farmStatus').html(`<span class="status-badge status-${farm.status}">${farm.status_display}</span>`);
+                    $('#farmSoilType').text(farm.soil_type);
+                    $('#farmIrrigation').text(farm.irrigation_type);
+                    $('#farmIrrigationCoverage').text(`${farm.irrigation_coverage}%`);
+                    $('#farmRegistrationDate').text(farm.registration_date);
+                    $('#farmLastVisit').text(farm.last_visit_date);
+                    $('#farmCropsCount').text(response.crops_count);
+                    $('#farmVisitsCount').text(response.visits_count);
+                    
+                    // Update crops list
+                    const cropsList = $('#farmCropsList');
+                    cropsList.empty();
+                    
+                    if (response.crops.length > 0) {
+                        response.crops.forEach(function(crop) {
+                            cropsList.append(`
+                                <div class="card mb-2">
+                                    <div class="card-body py-2">
+                                        <h6 class="card-title mb-1">${crop.variety}</h6>
+                                        <p class="card-text mb-1 small">
+                                            Planted: ${crop.planting_date} | 
+                                            Density: ${crop.planting_density} trees/ha |
+                                            Total: ${crop.total_trees} trees
+                                        </p>
+                                        ${crop.expected_yield ? `<p class="card-text mb-0 small">Expected Yield: ${crop.expected_yield} tons/ha</p>` : ''}
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        cropsList.append('<p class="text-muted">No crops recorded</p>');
+                    }
+                    
+                    // Update visits list
+                    const visitsList = $('#farmVisitsList');
+                    visitsList.empty();
+                    
+                    if (response.visits.length > 0) {
+                        response.visits.forEach(function(visit) {
+                            visitsList.append(`
+                                <div class="card mb-2">
+                                    <div class="card-body py-2">
+                                        <h6 class="card-title mb-1">${visit.visit_date}</h6>
+                                        <p class="card-text mb-1 small">${visit.purpose}</p>
+                                        <p class="card-text mb-0 small">By: ${visit.conducted_by}</p>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        visitsList.append('<p class="text-muted">No visits recorded</p>');
+                    }
+                    
+                    // Show detail container
+                    $('#farmDetailContainer').show();
+                    
+                    // Update map
+                    updateFarmMap(farmId);
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load farm details'
+                });
+            }
+        });
+    }
+
+    // Farm selection change handler
+    $('#farmSelect').change(function() {
+        const farmId = $(this).val();
+        if (farmId) {
+            loadFarmDetails(farmId);
+        } else {
+            $('#farmDetailContainer').hide();
+            // Reset map to default view
+            if (farmMap) {
+                farmMap.setView([7.9465, -1.0232], 8);
+            }
+        }
+    });
+
+    // Filter change handlers
+    $('#statusFilter, #farmerFilter').change(function() {
+        farmTable.ajax.reload();
+    });
+
+    // Tab change handler
+    $('#farmTabs button').on('click', function (e) {
+        e.preventDefault();
+        $(this).tab('show');
+        
+        if ($(this).attr('id') === 'map-tab') {
+            // Initialize all farms map if not already done
+            if (!allFarmsMap) {
+                initAllFarmsMap();
+            }
+        } else if ($(this).attr('id') === 'stats-tab') {
+            // Load statistics
+            loadFarmStats();
+        } else if ($(this).attr('id') === 'detail-tab') {
+            // Initialize farm map if not already done
+            if (!farmMap) {
+                initFarmMap();
+            }
+            // Load farms for dropdown
+            loadFarmsForDropdown();
+        }
+    });
+
+    // Add farm form submission
+    $('#addFarmForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        $('#addFarmModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: "/farmers/farms/create/",
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#addFarmModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    farmTable.ajax.reload();
+                    loadFarmsForDropdown();
+                    if (allFarmsMap) {
+                        loadAllFarmsMapData();
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while saving the farm.'
+                });
+            },
+            complete: function() {
+                $('#addFarmModal button[type="submit"]').prop('disabled', false).html('Save Farm');
+            }
+        });
+    });
+
+    // Edit button click
+    $('#farmTable').on('click', '.edit-btn', function() {
+        const farmId = $(this).data('id');
+        
+        // Load farm data and populate edit form
+        $.ajax({
+            url: `/farmers/farms/detail/${farmId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const farm = response.farm;
+                    
+                    // Populate edit form
+                    $('#editFarmId').val(farmId);
+                    $('#editFarmForm input[name="name"]').val(farm.name);
+                    $('#editFarmForm input[name="area_hectares"]').val(farm.area_hectares);
+                    $('#editFarmForm select[name="status"]').val(farm.status);
+                    $('#editFarmForm input[name="soil_type"]').val(farm.soil_type);
+                    $('#editFarmForm input[name="irrigation_type"]').val(farm.irrigation_type);
+                    $('#editFarmForm input[name="irrigation_coverage"]').val(farm.irrigation_coverage);
+                    $('#editFarmForm input[name="altitude"]').val(farm.altitude);
+                    $('#editFarmForm input[name="slope"]').val(farm.slope);
+                    
+                    if (farm.latitude && farm.longitude) {
+                        $('#editFarmForm input[name="latitude"]').val(farm.latitude);
+                        $('#editFarmForm input[name="longitude"]').val(farm.longitude);
+                    }
+                    
+                    // Load farmers and select the current one
+                    loadFarmersForDropdowns().then(() => {
+                        $('#editFarmForm select[name="farmer_id"]').val(farm.farmer_id);
+                        $('#editFarmModal').modal('show');
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load farm data'
+                });
+            }
+        });
+    });
+
+    // Edit form submission
+    $('#editFarmForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        const farmId = data.id;
+        
+        $('#editFarmModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+        $.ajax({
+            url: `/farmers/farms/update/${farmId}/`,
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#editFarmModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    farmTable.ajax.reload();
+                    loadFarmsForDropdown();
+                    if (allFarmsMap) {
+                        loadAllFarmsMapData();
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while updating the farm.'
+                });
+            },
+            complete: function() {
+                $('#editFarmModal button[type="submit"]').prop('disabled', false).html('Update Farm');
+            }
+        });
+    });
+
+    // Crop button click
+    $('#farmTable').on('click', '.crop-btn', function() {
+        const farmId = $(this).data('id');
+        
+        // Set farm ID in crop form
+        $('#cropFarmId').val(farmId);
+        
+        // Load mango varieties
+        loadMangoVarieties();
+        
+        // Show crop modal
+        $('#addCropModal').modal('show');
+    });
+
+    // Add crop form submission
+    $('#addCropForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        const farmId = data.farm_id;
+        
+        $('#addCropModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
+
+        $.ajax({
+            url: `/farmers/farms/${farmId}/add-crop/`,
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#addCropModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    // Reload farm details if currently viewing this farm
+                    const currentFarmId = $('#farmSelect').val();
+                    if (currentFarmId == farmId) {
+                        loadFarmDetails(farmId);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while adding the crop.'
+                });
+            },
+            complete: function() {
+                $('#addCropModal button[type="submit"]').prop('disabled', false).html('Add Crop');
+            }
+        });
+    });
+
+    // Delete button click
+    $('#farmTable').on('click', '.delete-btn', function() {
+        const farmId = $(this).data('id');
+        
+        // Store farm ID for deletion
+        $('#deleteModal').data('farmId', farmId);
+        $('#deleteModal').modal('show');
+    });
+
+    // Confirm delete
+    $('#confirmDeleteBtn').click(function() {
+        const farmId = $('#deleteModal').data('farmId');
+        
+        $.ajax({
+            url: "/farmers/farms/delete/",
+            type: "POST",
+            data: JSON.stringify({ id: farmId }),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    farmTable.ajax.reload();
+                    loadFarmsForDropdown();
+                    if (allFarmsMap) {
+                        loadAllFarmsMapData();
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while deleting the farm.'
+                });
+            }
+        });
+    });
+
+    // View button click
+    $('#farmTable').on('click', '.view-btn', function() {
+        const farmId = $(this).data('id');
+        
+        // Switch to detail tab
+        $('#detail-tab').tab('show');
+        
+        // Select the farm in dropdown and load details
+        setTimeout(() => {
+            $('#farmSelect').val(farmId).trigger('change');
+        }, 300);
+    });
+
+    // Export button click
+    $('#exportBtn').click(function() {
+        Swal.fire({
+            title: 'Export Format',
+            text: 'Choose export format',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'CSV',
+            cancelButtonText: 'JSON',
+            showDenyButton: true,
+            denyButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/farmers/farms/export/?format=csv';
+            } else if (result.isDismissed) {
+                window.location.href = '/farmers/farms/export/?format=json';
+            }
+        });
+    });
+
+    // Initial load
+    loadFarmersForDropdowns();
+    loadMangoVarieties();
+});
+</script>
+{% endblock %}

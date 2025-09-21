@@ -1,0 +1,436 @@
+import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.views.decorators.http import require_http_methods
+from django.db import transaction
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.serializers import serialize
+from portal.models import Farmer, Farm, District, Region, UserProfile
+
+@login_required
+def farmer_management(request):
+    """Main farmer management page with tabs"""
+    return render(request, 'portal/farmer-management/farmers/farmers.html')
+
+@require_http_methods(["GET"])
+@login_required
+def farmer_list(request):
+    """Server-side processing for farmers datatable"""
+    draw = int(request.GET.get('draw', 1))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 10))
+    search_value = request.GET.get('search[value]', '')
+    
+    # Base queryset with related data
+    queryset = Farmer.objects.select_related(
+        'user_profile__user', 
+        'user_profile__district__region'
+    ).all()
+    
+    # Apply search filter
+    if search_value:
+        queryset = queryset.filter(
+            Q(user_profile__user__first_name__icontains=search_value) |
+            Q(user_profile__user__last_name__icontains=search_value) |
+            Q(national_id__icontains=search_value) |
+            Q(user_profile__district__name__icontains=search_value) |
+            Q(user_profile__district__region__name__icontains=search_value)
+        )
+    
+    # Total records count
+    total_records = Farmer.objects.count()
+    total_filtered = queryset.count()
+    
+    # Apply ordering
+    order_column_index = int(request.GET.get('order[0][column]', 0))
+    order_direction = request.GET.get('order[0][dir]', 'asc')
+    
+    # Map column index to model field
+    column_mapping = {
+        0: 'user_profile__user__first_name',
+        1: 'user_profile__user__last_name',
+        2: 'national_id',
+        3: 'user_profile__district__name',
+        4: 'farm_size',
+        5: 'years_of_experience',
+        6: 'user_profile__user__date_joined'
+    }
+    
+    order_column = column_mapping.get(order_column_index, 'user_profile__user__first_name')
+    if order_direction == 'desc':
+        order_column = f'-{order_column}'
+    
+    queryset = queryset.order_by(order_column)
+    
+    # Apply pagination
+    paginator = Paginator(queryset, length)
+    page_number = (start // length) + 1
+    page_obj = paginator.get_page(page_number)
+    
+    # Prepare data for response
+    data = []
+    for farmer in page_obj:
+        data.append({
+            'id': farmer.id,
+            'first_name': farmer.user_profile.user.first_name,
+            'last_name': farmer.user_profile.user.last_name,
+            'national_id': farmer.national_id,
+            'district': farmer.user_profile.district.name if farmer.user_profile.district else 'N/A',
+            'region': farmer.user_profile.district.region.name if farmer.user_profile.district and farmer.user_profile.district.region else 'N/A',
+            'farm_size': farmer.farm_size,
+            'years_of_experience': farmer.years_of_experience,
+            'phone_number': farmer.user_profile.phone_number or 'N/A',
+            'registration_date': farmer.user_profile.user.date_joined.strftime('%Y-%m-%d'),
+            'farms_count': farmer.farms.count(),
+            'status': 'Active' if farmer.user_profile.user.is_active else 'Inactive'
+        })
+    
+    response = {
+        'draw': draw,
+        'recordsTotal': total_records,
+        'recordsFiltered': total_filtered,
+        'data': data
+    }
+    
+    return JsonResponse(response)
+
+@require_http_methods(["GET"])
+@login_required
+def get_farmer_detail(request, farmer_id):
+    """Get detailed information about a specific farmer"""
+    try:
+        farmer = Farmer.objects.select_related(
+            'user_profile__user',
+            'user_profile__district__region'
+        ).prefetch_related('farms').get(id=farmer_id)
+        
+        # Get farms with their locations
+        farms_data = []
+        for farm in farmer.farms.all():
+            farms_data.append({
+                'id': farm.id,
+                'name': farm.name,
+                'farm_code': farm.farm_code,
+                'area_hectares': farm.area_hectares,
+                'status': farm.get_status_display(),
+                'latitude': farm.location.y if farm.location else None,
+                'longitude': farm.location.x if farm.location else None,
+                'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A'
+            })
+        
+        data = {
+            'success': True,
+            'farmer': {
+                'id': farmer.id,
+                'first_name': farmer.user_profile.user.first_name,
+                'last_name': farmer.user_profile.user.last_name,
+                'national_id': farmer.national_id,
+                'email': farmer.user_profile.user.email,
+                'phone_number': farmer.user_profile.phone_number,
+                'district': farmer.user_profile.district.name if farmer.user_profile.district else 'N/A',
+                'region': farmer.user_profile.district.region.name if farmer.user_profile.district and farmer.user_profile.district.region else 'N/A',
+                'address': farmer.user_profile.address,
+                'gender': farmer.user_profile.get_gender_display() if farmer.user_profile.gender else 'N/A',
+                'date_of_birth': farmer.user_profile.date_of_birth.strftime('%Y-%m-%d') if farmer.user_profile.date_of_birth else 'N/A',
+                'farm_size': farmer.farm_size,
+                'years_of_experience': farmer.years_of_experience,
+                'primary_crop': farmer.primary_crop,
+                'secondary_crops': farmer.secondary_crops or [],
+                'cooperative_membership': farmer.cooperative_membership or 'None',
+                'extension_services': 'Yes' if farmer.extension_services else 'No',
+                'bank_account_number': farmer.user_profile.bank_account_number or 'Not provided',
+                'bank_name': farmer.user_profile.bank_name or 'Not provided',
+                'registration_date': farmer.user_profile.user.date_joined.strftime('%Y-%m-%d %H:%M'),
+                'status': 'Active' if farmer.user_profile.user.is_active else 'Inactive'
+            },
+            'farms': farms_data,
+            'farms_count': len(farms_data)
+        }
+        
+        return JsonResponse(data)
+        
+    except Farmer.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
+
+@require_http_methods(["GET"])
+@login_required
+def farmer_get_farm_geojson(request, farmer_id):
+    """Get GeoJSON data for all farms of a specific farmer"""
+    try:
+        farmer = Farmer.objects.get(id=farmer_id)
+        farms = farmer.farms.all()
+        
+        features = []
+        for farm in farms:
+            if farm.location:
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [farm.location.x, farm.location.y]
+                    },
+                    'properties': {
+                        'id': farm.id,
+                        'name': farm.name,
+                        'farm_code': farm.farm_code,
+                        'area_hectares': farm.area_hectares,
+                        'status': farm.status,
+                        'status_display': farm.get_status_display(),
+                        'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A'
+                    }
+                }
+                features.append(feature)
+        
+        geojson = {
+            'type': 'FeatureCollection',
+            'features': features
+        }
+        
+        return JsonResponse(geojson)
+        
+    except Farmer.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
+
+@require_http_methods(["POST"])
+@login_required
+@transaction.atomic
+def create_farmer(request):
+    """Create a new farmer with user profile"""
+    try:
+        data = json.loads(request.body)
+        print(data)
+        
+        # Required fields
+        required_fields = ['first_name', 'last_name', 'national_id', 'district_id', 'farm_size']
+        for field in required_fields:
+            if not data.get(field):
+                return JsonResponse({'success': False, 'error': f'{field} is required'}, status=400)
+        
+        # Check if national ID already exists
+        if Farmer.objects.filter(national_id=data['national_id']).exists():
+            return JsonResponse({'success': False, 'error': 'National ID already exists'}, status=400)
+        
+        # Create user first
+        from django.contrib.auth.models import User
+        username = f"farmer_{data['national_id']}"
+        email = data.get('email', f"{username}@example.com")
+        
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password='default_password',  # Should be changed on first login
+            first_name=data['first_name'],
+            last_name=data['last_name']
+        )
+        
+        # Create user profile
+        district = District.objects.get(id=data['district_id'])
+        
+        user_profile = UserProfile.objects.create(
+            user=user,
+            role='farmer',
+            phone_number=data.get('phone_number', ''),
+            district=district,
+            address=data.get('address', ''),
+            date_of_birth=data.get('date_of_birth'),
+            gender=data.get('gender'),
+            bank_account_number=data.get('bank_account_number', ''),
+            bank_name=data.get('bank_name', '')
+        )
+        
+        # Create farmer
+        farmer = Farmer.objects.create(
+            user_profile=user_profile,
+            national_id=data['national_id'],
+            farm_size=data['farm_size'],
+            years_of_experience=data.get('years_of_experience', 0),
+            primary_crop=data.get('primary_crop', 'Mango'),
+            secondary_crops=data.get('secondary_crops', []),
+            cooperative_membership=data.get('cooperative_membership', ''),
+            extension_services=True if data.get('extension_services') == "on" else False
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Farmer created successfully',
+            'id': farmer.id
+        })
+        
+    except District.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'District not found'}, status=404)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_http_methods(["POST"])
+@login_required
+@transaction.atomic
+def update_farmer(request, farmer_id):
+    """Update an existing farmer"""
+    try:
+        data = json.loads(request.body)
+        farmer = Farmer.objects.get(id=farmer_id)
+        
+        # Update user data
+        user = farmer.user_profile.user
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        if 'email' in data:
+            user.email = data['email']
+        user.save()
+        
+        # Update user profile
+        profile = farmer.user_profile
+        if 'phone_number' in data:
+            profile.phone_number = data['phone_number']
+        if 'district_id' in data:
+            district = District.objects.get(id=data['district_id'])
+            profile.district = district
+        if 'address' in data:
+            profile.address = data['address']
+        if 'date_of_birth' in data:
+            profile.date_of_birth = data['date_of_birth']
+        if 'gender' in data:
+            profile.gender = data['gender']
+        if 'bank_account_number' in data:
+            profile.bank_account_number = data['bank_account_number']
+        if 'bank_name' in data:
+            profile.bank_name = data['bank_name']
+        profile.save()
+        
+        # Update farmer data
+        if 'farm_size' in data:
+            farmer.farm_size = data['farm_size']
+        if 'years_of_experience' in data:
+            farmer.years_of_experience = data['years_of_experience']
+        if 'primary_crop' in data:
+            farmer.primary_crop = data['primary_crop']
+        if 'secondary_crops' in data:
+            farmer.secondary_crops = data['secondary_crops']
+        if 'cooperative_membership' in data:
+            farmer.cooperative_membership = data['cooperative_membership']
+        if 'extension_services' in data:
+            farmer.extension_services = data['extension_services']
+        farmer.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Farmer updated successfully'
+        })
+        
+    except Farmer.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
+    except District.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'District not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_http_methods(["POST"])
+@login_required
+@transaction.atomic
+def delete_farmer(request):
+    """Delete a farmer (soft delete)"""
+    try:
+        data = json.loads(request.body)
+        farmer_id = data.get('id')
+        
+        if not farmer_id:
+            return JsonResponse({'success': False, 'error': 'Farmer ID is required'}, status=400)
+        
+        farmer = Farmer.objects.get(id=farmer_id)
+        farmer.delete()  # This will set is_deleted=True due to TimeStampModel
+        
+        return JsonResponse({'success': True, 'message': 'Farmer deleted successfully'})
+        
+    except Farmer.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_http_methods(["GET"])
+@login_required
+def get_districts(request):
+    """Get all districts for dropdowns"""
+    districts = District.objects.select_related('region').all()
+    
+    data = []
+    for district in districts:
+        data.append({
+            'id': district.id,
+            'name': district.name,
+            'region': district.region.name,
+            'code': district.code or ''
+        })
+    
+    return JsonResponse({'success': True, 'districts': data})
+
+@require_http_methods(["GET"])
+@login_required
+def farmer_export(request):
+    """Export farmers data in various formats"""
+    import csv
+    from django.http import HttpResponse
+    from datetime import datetime
+    
+    format_type = request.GET.get('format', 'csv')
+    farmers = Farmer.objects.select_related(
+        'user_profile__user', 
+        'user_profile__district__region'
+    ).all()
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="farmers_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow([
+            'First Name', 'Last Name', 'National ID', 'Email', 'Phone', 
+            'District', 'Region', 'Farm Size (ha)', 'Experience (years)',
+            'Primary Crop', 'Registration Date', 'Status'
+        ])
+        
+        for farmer in farmers:
+            writer.writerow([
+                farmer.user_profile.user.first_name,
+                farmer.user_profile.user.last_name,
+                farmer.national_id,
+                farmer.user_profile.user.email,
+                farmer.user_profile.phone_number or '',
+                farmer.user_profile.district.name if farmer.user_profile.district else '',
+                farmer.user_profile.district.region.name if farmer.user_profile.district and farmer.user_profile.district.region else '',
+                farmer.farm_size,
+                farmer.years_of_experience,
+                farmer.primary_crop,
+                farmer.user_profile.user.date_joined.strftime('%Y-%m-%d'),
+                'Active' if farmer.user_profile.user.is_active else 'Inactive'
+            ])
+        
+        return response
+    
+    elif format_type == 'json':
+        data = []
+        for farmer in farmers:
+            data.append({
+                'first_name': farmer.user_profile.user.first_name,
+                'last_name': farmer.user_profile.user.last_name,
+                'national_id': farmer.national_id,
+                'email': farmer.user_profile.user.email,
+                'phone': farmer.user_profile.phone_number,
+                'district': farmer.user_profile.district.name if farmer.user_profile.district else '',
+                'region': farmer.user_profile.district.region.name if farmer.user_profile.district and farmer.user_profile.district.region else '',
+                'farm_size': farmer.farm_size,
+                'experience_years': farmer.years_of_experience,
+                'primary_crop': farmer.primary_crop,
+                'registration_date': farmer.user_profile.user.date_joined.strftime('%Y-%m-%d'),
+                'status': 'Active' if farmer.user_profile.user.is_active else 'Inactive'
+            })
+        
+        return JsonResponse({'farmers': data})
+    
+    else:
+        return JsonResponse({'success': False, 'error': 'Unsupported format'}, status=400)

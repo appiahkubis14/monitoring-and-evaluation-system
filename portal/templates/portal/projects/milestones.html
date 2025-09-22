@@ -1,0 +1,959 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Project Milestones</h4>
+                <p class="text-muted mb-0">Track and manage project milestones and deliverables</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">M&E System</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'project_tracking' %}">Project Tracking</a></li>
+                    <li class="breadcrumb-item active">Milestones</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Project Milestones</h5>
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#addMilestoneModal">
+                        <i class="fas fa-plus me-2"></i>Add Milestone
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <select id="project-select" class="form-select">
+                            <option value="">Select a project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="status-filter" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-secondary w-100" id="refresh-btn">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Milestones Summary Cards -->
+                <div class="row mb-4" id="milestones-summary">
+                    <div class="col-md-2">
+                        <div class="card bg-primary text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">Total</h6>
+                                <h3 id="total-milestones">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card bg-success text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">Completed</h6>
+                                <h3 id="completed-milestones">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card bg-warning text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">In Progress</h6>
+                                <h3 id="progress-milestones">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card bg-danger text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">Delayed</h6>
+                                <h3 id="delayed-milestones">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card bg-info text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">Pending</h6>
+                                <h3 id="pending-milestones">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card bg-secondary text-white text-center">
+                            <div class="card-body">
+                                <h6 class="card-title">Completion %</h6>
+                                <h3 id="completion-percent">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Milestones Table -->
+                <div class="table-responsive">
+                    <table id="milestones-table" class="table table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Project</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Weight</th>
+                                <th>Completion</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Milestone Modal -->
+<div class="modal fade" id="addMilestoneModal" tabindex="-1" aria-labelledby="addMilestoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMilestoneModalLabel">Add New Milestone</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="milestone-form">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-project" class="form-label">Project *</label>
+                                <select class="form-select" id="milestone-project" name="project_id" required>
+                                    <option value="">Select a project</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-name" class="form-label">Milestone Name *</label>
+                                <input type="text" class="form-control" id="milestone-name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="milestone-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="milestone-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-due-date" class="form-label">Due Date *</label>
+                                <input type="date" class="form-control" id="milestone-due-date" name="due_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-status" class="form-label">Status</label>
+                                <select class="form-select" id="milestone-status" name="status">
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-weight" class="form-label">Weight (%)</label>
+                                <input type="number" class="form-control" id="milestone-weight" name="weight" min="0" max="100" step="0.1" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-assigned-to" class="form-label">Assigned To</label>
+                                <select class="form-select" id="milestone-assigned-to" name="assigned_to_id">
+                                    <option value="">Select staff member</option>
+                                    {% for staff in staff_members %}
+                                    <option value="{{ staff.id }}">{{ staff.user_profile.user.get_full_name }} - {{ staff.designation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-dependencies" class="form-label">Dependencies</label>
+                                <select class="form-select" id="milestone-dependencies" name="dependencies" multiple>
+                                    <option value="">No dependencies</option>
+                                    <!-- Will be populated dynamically -->
+                                </select>
+                                <small class="form-text text-muted">Hold Ctrl to select multiple dependencies</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="milestone-notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="milestone-notes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient-primary">Create Milestone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Milestone Modal -->
+<div class="modal fade" id="editMilestoneModal" tabindex="-1" aria-labelledby="editMilestoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMilestoneModalLabel">Edit Milestone</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="edit-milestone-form">
+                <input type="hidden" id="edit-milestone-id" name="id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-project" class="form-label">Project *</label>
+                                <select class="form-select" id="milestone-project" name="project_id" required>
+                                    <option value="">Select a project</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-name" class="form-label">Milestone Name *</label>
+                                <input type="text" class="form-control" id="milestone-name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="milestone-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="milestone-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-due-date" class="form-label">Due Date *</label>
+                                <input type="date" class="form-control" id="milestone-due-date" name="due_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-status" class="form-label">Status</label>
+                                <select class="form-select" id="milestone-status" name="status">
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="milestone-weight" class="form-label">Weight (%)</label>
+                                <input type="number" class="form-control" id="milestone-weight" name="weight" min="0" max="100" step="0.1" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-assigned-to" class="form-label">Assigned To</label>
+                                <select class="form-select" id="milestone-assigned-to" name="assigned_to_id">
+                                    <option value="">Select staff member</option>
+                                    {% for staff in staff_members %}
+                                    <option value="{{ staff.id }}">{{ staff.user_profile.user.get_full_name }} - {{ staff.designation }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="milestone-dependencies" class="form-label">Dependencies</label>
+                                <select class="form-select" id="milestone-dependencies" name="dependencies" multiple>
+                                    <option value="">No dependencies</option>
+                                    <!-- Will be populated dynamically -->
+                                </select>
+                                <small class="form-text text-muted">Hold Ctrl to select multiple dependencies</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="milestone-notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="milestone-notes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient-primary">Update Milestone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Milestone Detail Modal -->
+<div class="modal fade" id="milestoneDetailModal" tabindex="-1" aria-labelledby="milestoneDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="milestoneDetailModalLabel">Milestone Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="milestone-detail-content">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring & Evaluation System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+// CSRF token setup for AJAX requests
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Global variables
+let milestonesTable = null;
+let currentProjectId = null;
+
+// Initialize when document is ready
+$(document).ready(function() {
+    // Initialize DataTable
+    initializeMilestonesTable();
+    
+    // Set up event listeners
+    $('#milestone-form').on('submit', handleMilestoneCreate);
+    $('#edit-milestone-form').on('submit', handleMilestoneUpdate);
+    $('#refresh-btn').on('click', function() {
+        if (milestonesTable) {
+            milestonesTable.ajax.reload(null, false);
+        }
+        loadMilestonesSummary();
+    });
+    
+    $('#project-select').on('change', function() {
+        currentProjectId = $(this).val();
+        if (milestonesTable) {
+            milestonesTable.ajax.reload(null, false);
+        }
+        loadMilestonesSummary();
+        loadDependenciesDropdown(currentProjectId);
+    });
+    
+    $('#status-filter').on('change', function() {
+        if (milestonesTable) {
+            milestonesTable.ajax.reload(null, false);
+        }
+    });
+    
+    // Load dependencies when project changes in add modal
+    $('#milestone-project').on('change', function() {
+        const projectId = $(this).val();
+        loadDependenciesDropdown(projectId);
+    });
+    
+    // Load initial summary
+    loadMilestonesSummary();
+});
+
+// Initialize DataTable for milestones
+function initializeMilestonesTable() {
+    milestonesTable = $('#milestones-table').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '/projects/milestones/data/',
+            type: 'GET',
+            data: function(d) {
+                d.project_id = $('#project-select').val();
+                d.status = $('#status-filter').val();
+            }
+        },
+         buttons: [
+            {
+                extend: "copy",
+                text: '<i class="fas fa-copy"></i> Copy',
+                className: "btn btn-sm btn-outline-secondary",
+            },
+            {
+                extend: "csv",
+                text: '<i class="fas fa-file-csv"></i> CSV',
+                className: "btn btn-sm btn-outline-success",
+            },
+            {
+                extend: "excel",
+                text: '<i class="fas fa-file-excel"></i> Excel',
+                className: "btn btn-sm btn-outline-primary",
+            },
+            {
+                extend: "pdf",
+                text: '<i class="fas fa-file-pdf"></i> PDF',
+                className: "btn btn-sm btn-outline-danger",
+            },
+            {
+                text: '<i class="fas fa-sync-alt"></i> Refresh',
+                className: "btn btn-sm btn-outline-info",
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload();
+                }
+            }
+        ],
+        dom: '<"d-flex justify-content-between mb-3"Bf>rtip',
+        columns: [
+            { 
+                data: 'name',
+                render: function(data, type, row) {
+                    return `<a href="#" class="view-milestone" data-id="${row.id}">${data}</a>`;
+                }
+            },
+            { data: 'project_name' },
+            { 
+                data: 'due_date',
+                render: function(data) {
+                    return new Date(data).toLocaleDateString();
+                }
+            },
+            { 
+                data: 'status',
+                render: function(data, type, row) {
+                    const statusClass = getStatusClass(data);
+                    const statusDisplay = row.status_display;
+                    return `<span class="badge ${statusClass}">${statusDisplay}</span>`;
+                }
+            },
+            { data: 'assigned_to' },
+            { 
+                data: 'weight',
+                render: function(data) {
+                    return `${data}%`;
+                }
+            },
+            { 
+                data: 'completion_date',
+                render: function(data, type, row) {
+                    if (row.status === 'completed' && data) {
+                        return new Date(data).toLocaleDateString();
+                    }
+                    return '-';
+                }
+            },
+            {
+                data: 'id',
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary view-milestone" data-id="${data}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary edit-milestone" data-id="${data}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-milestone" data-id="${data}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                },
+                orderable: false
+            }
+        ],
+        order: [[2, 'asc']],
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        drawCallback: function(settings) {
+            // Add event listeners to action buttons
+            $('.view-milestone').on('click', function() {
+                const milestoneId = $(this).data('id');
+                viewMilestoneDetails(milestoneId);
+            });
+            
+            $('.edit-milestone').on('click', function() {
+                const milestoneId = $(this).data('id');
+                editMilestone(milestoneId);
+            });
+            
+            $('.delete-milestone').on('click', function() {
+                const milestoneId = $(this).data('id');
+                deleteMilestone(milestoneId);
+            });
+        }
+    });
+}
+
+// Function to show SweetAlert notifications
+function showAlert(icon, title, text, confirmButtonText = 'OK') {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        confirmButtonText: confirmButtonText
+    });
+}
+
+// Function to show confirmation dialog
+function showConfirm(title, text, confirmButtonText = 'Yes', cancelButtonText = 'Cancel') {
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0ab39c',
+        cancelButtonColor: '#f06548',
+        confirmButtonText: confirmButtonText,
+        cancelButtonText: cancelButtonText
+    });
+}
+
+// Get CSS class for status badge
+function getStatusClass(status) {
+    switch(status) {
+        case 'completed': return 'bg-success';
+        case 'in_progress': return 'bg-primary';
+        case 'delayed': return 'bg-danger';
+        case 'cancelled': return 'bg-secondary';
+        default: return 'bg-warning';
+    }
+}
+
+// Load milestones summary statistics
+function loadMilestonesSummary() {
+    const projectId = $('#project-select').val();
+    
+    $.ajax({
+        url: '/projects/milestones/summary/',
+        type: 'GET',
+        data: { project_id: projectId },
+        success: function(data) {
+            if (data.success) {
+                $('#total-milestones').text(data.summary.total);
+                $('#completed-milestones').text(data.summary.completed);
+                $('#progress-milestones').text(data.summary.in_progress);
+                $('#delayed-milestones').text(data.summary.delayed);
+                $('#pending-milestones').text(data.summary.pending);
+                $('#completion-percent').text(data.summary.completion_percent + '%');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading milestones summary:', error);
+        }
+    });
+}
+
+// Load dependencies dropdown for a project
+function loadDependenciesDropdown(projectId) {
+    if (!projectId) {
+        $('#milestone-dependencies').html('<option value="">No dependencies available</option>');
+        return;
+    }
+    
+    $.ajax({
+        url: `/projects/${projectId}/milestones/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const $dropdown = $('#milestone-dependencies');
+                $dropdown.empty().append('<option value="">No dependencies</option>');
+                
+                data.milestones.forEach(milestone => {
+                    $dropdown.append(
+                        $('<option></option>').val(milestone.id).text(milestone.name)
+                    );
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading dependencies:', error);
+        }
+    });
+}
+
+// Handle milestone creation
+function handleMilestoneCreate(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const milestoneData = {};
+    
+    $.each(formData, function() {
+        if (this.name === 'dependencies') {
+            if (!milestoneData[this.name]) {
+                milestoneData[this.name] = [];
+            }
+            milestoneData[this.name].push(this.value);
+        } else {
+            milestoneData[this.name] = this.value;
+        }
+    });
+    
+    // Show loading state
+    const submitButton = $(this).find('button[type="submit"]');
+    const originalText = submitButton.html();
+    submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...');
+    
+    $.ajax({
+        url: '/projects/milestones/create/',
+        type: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: JSON.stringify(milestoneData),
+        success: function(data) {
+            if (data.success) {
+                $('#addMilestoneModal').modal('hide');
+                showAlert('success', 'Success', data.message).then(() => {
+                    if (milestonesTable) {
+                        milestonesTable.ajax.reload(null, false);
+                    }
+                    loadMilestonesSummary();
+                    $('#milestone-form')[0].reset();
+                });
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            let errorMessage = 'Failed to create milestone.';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {}
+            
+            showAlert('error', 'Error', errorMessage);
+        },
+        complete: function() {
+            submitButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+// View milestone details
+function viewMilestoneDetails(milestoneId) {
+    $.ajax({
+        url: `/projects/milestones/${milestoneId}/detail/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                renderMilestoneDetails(data.milestone);
+                $('#milestoneDetailModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading milestone details:', error);
+            showAlert('error', 'Error', 'Failed to load milestone details.');
+        }
+    });
+}
+
+// Render milestone details
+function renderMilestoneDetails(milestone) {
+    const statusClass = getStatusClass(milestone.status);
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-8">
+                <h4>${milestone.name}</h4>
+                <p class="text-muted">${milestone.description || 'No description'}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge ${statusClass} fs-6">${milestone.status_display}</span>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Milestone Information</h5>
+                <table class="table table-sm">
+                    <tr>
+                        <th>Project:</th>
+                        <td>${milestone.project_name}</td>
+                    </tr>
+                    <tr>
+                        <th>Due Date:</th>
+                        <td>${new Date(milestone.due_date).toLocaleDateString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Completion Date:</th>
+                        <td>${milestone.completion_date ? new Date(milestone.completion_date).toLocaleDateString() : 'Not completed'}</td>
+                    </tr>
+                    <tr>
+                        <th>Weight:</th>
+                        <td>${milestone.weight}%</td>
+                    </tr>
+                    <tr>
+                        <th>Assigned To:</th>
+                        <td>${milestone.assigned_to || 'Not assigned'}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5>Additional Information</h5>
+                <table class="table table-sm">
+                    <tr>
+                        <th>Created:</th>
+                        <td>${new Date(milestone.created_at).toLocaleDateString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated:</th>
+                        <td>${new Date(milestone.updated_at).toLocaleDateString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Dependencies:</th>
+                        <td>
+                            ${milestone.dependencies && milestone.dependencies.length > 0 ? 
+                                milestone.dependencies.map(dep => dep.name).join(', ') : 'None'}
+                        </td>
+                    </tr>
+                </table>
+                
+                ${milestone.notes ? `
+                <h5 class="mt-3">Notes</h5>
+                <div class="border p-3 bg-light">
+                    ${milestone.notes}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    $('#milestone-detail-content').html(content);
+}
+
+// Edit milestone - Load data into modal
+function editMilestone(milestoneId) {
+    $.ajax({
+        url: `/projects/milestones/${milestoneId}/detail/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                populateEditModal(data.milestone);
+                $('#editMilestoneModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading milestone details:', error);
+            showAlert('error', 'Error', 'Failed to load milestone details.');
+        }
+    });
+}
+
+// Populate edit modal with milestone data
+function populateEditModal(milestone) {
+    $('#edit-milestone-id').val(milestone.id);
+    $('#edit-milestone-form input[name="name"]').val(milestone.name);
+    $('#edit-milestone-form textarea[name="description"]').val(milestone.description || '');
+    $('#edit-milestone-form input[name="due_date"]').val(milestone.due_date);
+    $('#edit-milestone-form select[name="status"]').val(milestone.status);
+    $('#edit-milestone-form input[name="weight"]').val(milestone.weight);
+    $('#edit-milestone-form select[name="assigned_to_id"]').val(milestone.assigned_to_id || '');
+    $('#edit-milestone-form textarea[name="notes"]').val(milestone.notes || '');
+    
+    // Load dependencies for this project
+    loadDependenciesForEdit(milestone.project_id, milestone.dependencies);
+}
+
+// Load dependencies for edit modal
+function loadDependenciesForEdit(projectId, currentDependencies) {
+    if (!projectId) return;
+    
+    $.ajax({
+        url: `/projects/${projectId}/milestones/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const $dropdown = $('#edit-milestone-form select[name="dependencies"]');
+                $dropdown.empty().append('<option value="">No dependencies</option>');
+                
+                data.milestones.forEach(milestone => {
+                    const isSelected = currentDependencies && currentDependencies.some(dep => dep.id === milestone.id);
+                    $dropdown.append(
+                        $('<option></option>')
+                            .val(milestone.id)
+                            .text(milestone.name)
+                            .prop('selected', isSelected)
+                    );
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading dependencies:', error);
+        }
+    });
+}
+
+// Handle milestone update
+function handleMilestoneUpdate(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const milestoneData = {};
+    
+    $.each(formData, function() {
+        if (this.name === 'dependencies') {
+            if (!milestoneData[this.name]) {
+                milestoneData[this.name] = [];
+            }
+            milestoneData[this.name].push(this.value);
+        } else {
+            milestoneData[this.name] = this.value;
+        }
+    });
+    
+    // Show loading state
+    const submitButton = $(this).find('button[type="submit"]');
+    const originalText = submitButton.html();
+    submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...');
+    
+    $.ajax({
+        url: `/projects/milestones/update/${milestoneData.id}/`,
+        type: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: JSON.stringify(milestoneData),
+        success: function(data) {
+            if (data.success) {
+                $('#editMilestoneModal').modal('hide');
+                showAlert('success', 'Success', data.message).then(() => {
+                    if (milestonesTable) {
+                        milestonesTable.ajax.reload(null, false);
+                    }
+                    loadMilestonesSummary();
+                });
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            let errorMessage = 'Failed to update milestone.';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {}
+            
+            showAlert('error', 'Error', errorMessage);
+        },
+        complete: function() {
+            submitButton.prop('disabled', false).html(originalText);
+        }
+    });
+}
+
+// Delete milestone
+function deleteMilestone(milestoneId) {
+    showConfirm('Delete Milestone', 'Are you sure you want to delete this milestone? This action cannot be undone.', 'Yes, delete it')
+        .then((result) => {
+            if (result.isConfirmed) {
+                // Show loading indicator
+                Swal.fire({
+                    title: 'Deleting Milestone',
+                    text: 'Please wait...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                $.ajax({
+                    url: '/projects/milestones/delete/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    data: JSON.stringify({ id: milestoneId }),
+                    success: function(data) {
+                        if (data.success) {
+                            Swal.close();
+                            showAlert('success', 'Success', data.message).then(() => {
+                                if (milestonesTable) {
+                                    milestonesTable.ajax.reload(null, false);
+                                }
+                                loadMilestonesSummary();
+                            });
+                        } else {
+                            Swal.close();
+                            showAlert('error', 'Error', data.error);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.close();
+                        let errorMessage = 'Failed to delete milestone.';
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error) {
+                                errorMessage = response.error;
+                            }
+                        } catch (e) {}
+                        
+                        showAlert('error', 'Error', errorMessage);
+                    }
+                });
+            }
+        });
+}
+</script>
+{% endblock %}

@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.postgres.fields import ArrayField
 from datetime import date
 import uuid
+from django.contrib.gis.db.models import GeometryField
 
 # Custom managers for soft delete functionality
 class TimeStampManager(models.Manager):
@@ -79,10 +80,17 @@ class District(TimeStampModel):
     def __str__(self):
         return f"{self.name} ({self.region.name})"
     
+
+class societyTble(models.Model):
+    soceity = models.CharField(max_length=250, unique=True)
+    soceity_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    
     class Meta:
-        verbose_name = "District"
-        verbose_name_plural = "Districts"
-        unique_together = ('region', 'name')
+        verbose_name = "Society"
+        verbose_name_plural = "Societies"
+        # unique_together = ('district', 'soceity')
 
 # User Profile and Staff Models
 class UserProfile(TimeStampModel):
@@ -178,6 +186,9 @@ class Farm(TimeStampModel):
     status = models.CharField(max_length=20, choices=FARM_STATUS, default='active')
     registration_date = models.DateField(default=timezone.now)
     last_visit_date = models.DateField(blank=True, null=True)
+    boundary_coord = ArrayField(ArrayField(models.FloatField()), blank=True, null=True)
+    geom = GeometryField(blank=True, null=True, srid=4326)
+    validation_status = models.BooleanField(default=False)
     
     # Geo-referencing details
     altitude = models.FloatField(blank=True, null=True)
@@ -308,6 +319,119 @@ class LoanRepayment(TimeStampModel):
     class Meta:
         verbose_name = "Loan Repayment"
         verbose_name_plural = "Loan Repayments"
+
+
+
+# Add these models to your portal/models.py file
+
+class Milestone(TimeStampModel):
+    """Model for project milestones"""
+    MILESTONE_STATUS = (
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('delayed', 'Delayed'),
+        ('cancelled', 'Cancelled'),
+    )
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='milestones')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    due_date = models.DateField()
+    completion_date = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=MILESTONE_STATUS, default='pending')
+    weight = models.DecimalField(max_digits=5, decimal_places=2, default=0, 
+                                help_text="Weight of this milestone in overall project progress (0-100)")
+    dependencies = models.ManyToManyField('self', symmetrical=False, blank=True, 
+                                         related_name='dependent_milestones')
+    assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.name} - {self.project.code}"
+    
+    class Meta:
+        verbose_name = "Milestone"
+        verbose_name_plural = "Milestones"
+        ordering = ['due_date']
+    
+    def save(self, *args, **kwargs):
+        # Auto-set completion date if status is completed
+        if self.status == 'completed' and not self.completion_date:
+            self.completion_date = timezone.now().date()
+        super().save(*args, **kwargs)
+
+class ComplianceCategory(TimeStampModel):
+    """Model for compliance categories"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                help_text="Weight of this category in overall compliance score (0-100)")
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Compliance Category"
+        verbose_name_plural = "Compliance Categories"
+        ordering = ['name']
+
+class ComplianceCheck(TimeStampModel):
+    """Model for compliance checks"""
+    COMPLIANCE_STATUS = (
+        ('pending', 'Pending'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+        ('na', 'Not Applicable'),
+    )
+    
+    SEVERITY_LEVELS = (
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    )
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='compliance_checks')
+    category = models.ForeignKey(ComplianceCategory, on_delete=models.CASCADE, related_name='checks')
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    due_date = models.DateField()
+    completion_date = models.DateField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=COMPLIANCE_STATUS, default='pending')
+    severity = models.CharField(max_length=20, choices=SEVERITY_LEVELS, default='medium')
+    assigned_to = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    evidence_required = models.BooleanField(default=False)
+    evidence_description = models.TextField(blank=True, null=True)
+    auto_check = models.BooleanField(default=False,
+                                   help_text="Whether this check can be automatically verified")
+    check_frequency = models.CharField(max_length=20, choices=(
+        ('once', 'Once'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('quarterly', 'Quarterly'),
+        ('yearly', 'Yearly'),
+    ), default='once')
+    
+    def __str__(self):
+        return f"{self.name} - {self.project.code}"
+    
+    class Meta:
+        verbose_name = "Compliance Check"
+        verbose_name_plural = "Compliance Checks"
+        ordering = ['due_date']
+    
+    def save(self, *args, **kwargs):
+        # Auto-set completion date if status is passed/failed
+        if self.status in ['passed', 'failed'] and not self.completion_date:
+            self.completion_date = timezone.now().date()
+        super().save(*args, **kwargs)
+
+
+        # Get compliance check statistics
 
 # Farm Management Models
 class MangoVariety(TimeStampModel):

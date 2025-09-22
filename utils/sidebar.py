@@ -48,10 +48,20 @@ class Sidebar:
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value]
                 },
                
-                "Loan Management": {
+               
+            },
+        },
+
+         "Loan Management": {
+                    
                     "icon": "fas fa-hand-holding-usd", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
                     "sub_items": {
+                        "Loan Applications": {
+                            "icon": "fas fa-file-invoice-dollar", 
+                            "url": "/loans/applications/", 
+                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                        },
                         "Disbursements": {
                             "icon": "fas fa-money-check", 
                             "url": "/loans/disbursements/", 
@@ -64,13 +74,16 @@ class Sidebar:
                         },
                     }
                 },
-            },
-        },
         
         "Project Tracking": {
             "icon": "fas fa-tasks",
             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value],
             "sub_items": {
+                "Projects Overview": {
+                    "icon": "fas fa-project-diagram", 
+                    "url": "/projects/", 
+                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value]
+                },
                 "Milestones": {
                     "icon": "fas fa-map-marker-alt", 
                     "url": "/projects/milestones/", 

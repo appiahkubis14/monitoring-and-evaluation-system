@@ -272,7 +272,8 @@ def update_farmer(request, farmer_id):
     """Update an existing farmer"""
     try:
         data = json.loads(request.body)
-        farmer = Farmer.objects.get(id=farmer_id)
+        print(data)
+        farmer = Farmer.objects.get(id=data['id'])
         
         # Update user data
         user = farmer.user_profile.user
@@ -288,9 +289,9 @@ def update_farmer(request, farmer_id):
         profile = farmer.user_profile
         if 'phone_number' in data:
             profile.phone_number = data['phone_number']
-        if 'district_id' in data:
-            district = District.objects.get(id=data['district_id'])
-            profile.district = district
+        # if 'district_id' in data:
+        #     district = District.objects.get(id=data['district_id'])
+        #     profile.district = district
         if 'address' in data:
             profile.address = data['address']
         if 'date_of_birth' in data:
@@ -315,7 +316,7 @@ def update_farmer(request, farmer_id):
         if 'cooperative_membership' in data:
             farmer.cooperative_membership = data['cooperative_membership']
         if 'extension_services' in data:
-            farmer.extension_services = data['extension_services']
+            farmer.extension_services = 'True' if data['extension_services'] == "on" else False
         farmer.save()
         
         return JsonResponse({
@@ -328,7 +329,11 @@ def update_farmer(request, farmer_id):
     except District.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'District not found'}, status=404)
     except Exception as e:
+        print(e)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
 
 @require_http_methods(["POST"])
 @login_required

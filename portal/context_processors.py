@@ -62,7 +62,7 @@ def sidebar_context(request):
         request.user
     )
 
-    print(filtered_sidebar_items)
+    # print(filtered_sidebar_items)
 
     return {
         "sidebar_items": filtered_sidebar_items,

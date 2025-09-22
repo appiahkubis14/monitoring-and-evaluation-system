@@ -1,0 +1,1554 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Project Tracking</h4>
+                <p class="text-muted mb-0">Monitor and manage mango farming projects</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">M&E System</a></li>
+                    <li class="breadcrumb-item active">Project Tracking</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+
+<style>
+    .btn-gradient-primary {
+        background: #0871B9;
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: #0871B9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .project-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .project-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid #405189;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .progress-container {
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        background: #0871B9;
+        transition: width 0.3s ease;
+    }
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-planning { background-color: #e9ecef; color: #495057; }
+    .status-active { background-color: #d1fae5; color: #065f46; }
+    .status-completed { background-color: #dbeafe; color: #1e40af; }
+    .status-suspended { background-color: #fef3c7; color: #92400e; }
+    .stats-card {
+        background: #0871B9;
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .timeline-event {
+        border-left: 3px solid #0ab39c;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .timeline-event::before {
+        content: '';
+        position: absolute;
+        left: -0.5rem;
+        top: 0;
+        width: 1rem;
+        height: 1rem;
+        background-color: #0ab39c;
+        border-radius: 50%;
+    }
+    .compliance-score {
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-align: center;
+    }
+    .score-excellent { color: #065f46; }
+    .score-good { color: #0ab39c; }
+    .score-fair { color: #f59e0b; }
+    .score-poor { color: #ef4444; }
+    .gantt-chart {
+        overflow-x: auto;
+    }
+    .gantt-bar {
+        height: 30px;
+        margin-bottom: 10px;
+        position: relative;
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+        overflow: hidden;
+    }
+    .gantt-progress {
+        height: 100%;
+        background: #0871B9;
+    }
+</style>
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" id="addProjectBtn">
+                        <i class="fas fa-plus me-2"></i>New Project
+                    </button>
+                    <div class="btn-group ms-2">
+                        <button type="button" class="btn btn-gradient-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-export me-2"></i>Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" id="export-csv">CSV</a></li>
+                            <li><a class="dropdown-item" href="#" id="export-excel">Excel</a></li>
+                            <li><a class="dropdown-item" href="#" id="export-pdf">PDF</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <ul class="nav nav-tabs" id="projectTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                            <i class="fas fa-list me-2"></i>Projects Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab" aria-controls="timeline" aria-selected="false">
+                            <i class="fas fa-calendar-alt me-2"></i>Timeline View
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="milestones-tab" data-bs-toggle="tab" data-bs-target="#milestones" type="button" role="tab" aria-controls="milestones" aria-selected="false">
+                            <i class="fas fa-flag me-2"></i>Milestones
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="compliance-tab" data-bs-toggle="tab" data-bs-target="#compliance" type="button" role="tab" aria-controls="compliance" aria-selected="false">
+                            <i class="fas fa-clipboard-check me-2"></i>Compliance
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="projectTabsContent">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="stats-card">
+                                    <h6>Total Projects</h6>
+                                    <div class="stats-number" id="total-projects">0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card">
+                                    <h6>Active Projects</h6>
+                                    <div class="stats-number" id="active-projects">0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card">
+                                    <h6>Total Budget</h6>
+                                    <div class="stats-number" id="total-budget">$0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stats-card">
+                                    <h6>Overdue Projects</h6>
+                                    <div class="stats-number" id="overdue-projects">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <div class="d-flex" style="width: 70%;">
+                                        <div class="me-2" style="width: 40%;">
+                                            <input type="text" id="project-search" class="form-control" placeholder="Search projects...">
+                                        </div>
+                                        <div class="me-2" style="width: 25%;">
+                                            <select id="status-filter" class="form-select">
+                                                <option value="">All Statuses</option>
+                                                <option value="planning">Planning</option>
+                                                <option value="active">Active</option>
+                                                <option value="completed">Completed</option>
+                                                <option value="suspended">Suspended</option>
+                                            </select>
+                                        </div>
+                                        <div style="width: 25%;">
+                                            <select id="manager-filter" class="form-select">
+                                                <option value="">All Managers</option>
+                                                <!-- Will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-outline-secondary" id="refresh-btn">
+                                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table id="projects-datatable" class="table table-hover w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Status</th>
+                                        <th>Budget</th>
+                                        <th>Manager</th>
+                                        <th>Farmers</th>
+                                        <th>Progress</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Tab -->
+                    <div class="tab-pane fade" id="timeline" role="tabpanel" aria-labelledby="timeline-tab">
+                        <div class="gantt-chart" id="gantt-chart">
+                            <!-- Gantt chart will be generated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Milestones Tab -->
+                    <div class="tab-pane fade" id="milestones" role="tabpanel" aria-labelledby="milestones-tab">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <select id="project-select-milestones" class="form-select">
+                                    <option value="">Select a project to view milestones</option>
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="milestones-datatable" class="table table-hover w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Due Date</th>
+                                        <th>Completion Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Compliance Tab -->
+                    <div class="tab-pane fade" id="compliance" role="tabpanel" aria-labelledby="compliance-tab">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <select id="project-select-compliance" class="form-select">
+                                    <option value="">Select a project to view compliance</option>
+                                    <!-- Options will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div id="compliance-content">
+                            <!-- Compliance data will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProjectModalLabel">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="project-form">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-code" class="form-label">Project Code *</label>
+                                <input type="text" class="form-control" id="project-code" name="code" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-name" class="form-label">Project Name *</label>
+                                <input type="text" class="form-control" id="project-name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="project-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-start-date" class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" id="project-start-date" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-end-date" class="form-label">End Date *</label>
+                                <input type="date" class="form-control" id="project-end-date" name="end_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-budget" class="form-label">Total Budget *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="project-budget" name="total_budget" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="project-status" class="form-label">Status</label>
+                                <select class="form-select" id="project-status" name="status">
+                                    <option value="planning">Planning</option>
+                                    <option value="active">Active</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project-manager" class="form-label">Project Manager</label>
+                        <select class="form-select" id="project-manager" name="manager_id">
+                            <option value="">Select a manager</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Edit Project Modal -->
+<div class="modal fade" id="editProjectModal" tabindex="-1" aria-labelledby="editProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProjectModalLabel">Edit Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="edit-project-form">
+                <input type="hidden" id="edit-project-id" name="id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-code" class="form-label">Project Code *</label>
+                                <input type="text" class="form-control" id="edit-project-code" name="code" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-name" class="form-label">Project Name *</label>
+                                <input type="text" class="form-control" id="edit-project-name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-project-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit-project-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-start-date" class="form-label">Start Date *</label>
+                                <input type="date" class="form-control" id="edit-project-start-date" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-end-date" class="form-label">End Date *</label>
+                                <input type="date" class="form-control" id="edit-project-end-date" name="end_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-budget" class="form-label">Total Budget *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="edit-project-budget" name="total_budget" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit-project-status" class="form-label">Status</label>
+                                <select class="form-select" id="edit-project-status" name="status">
+                                    <option value="planning">Planning</option>
+                                    <option value="active">Active</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-project-manager" class="form-label">Project Manager</label>
+                        <select class="form-select" id="edit-project-manager" name="manager_id">
+                            <option value="">Select a manager</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient-primary">Update Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Project Detail Modal -->
+<div class="modal fade" id="projectDetailModal" tabindex="-1" aria-labelledby="projectDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="projectDetailModalLabel">Project Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="project-detail-content">
+                <!-- Project details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Farmer to Project Modal -->
+<div class="modal fade" id="addFarmerModal" tabindex="-1" aria-labelledby="addFarmerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFarmerModalLabel">Add Farmer to Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="add-farmer-form">
+                <input type="hidden" id="project-id" name="project_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="farmer-select" class="form-label">Select Farmer</label>
+                        <select class="form-select" id="farmer-select" name="farmer_id" required>
+                            <option value="">Select a farmer</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="enrollment-date" class="form-label">Enrollment Date</label>
+                        <input type="date" class="form-control" id="enrollment-date" name="enrollment_date" value="{% now 'Y-m-d' %}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="participation-status" class="form-label">Status</label>
+                        <select class="form-select" id="participation-status" name="status">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="withdrawn">Withdrawn</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient-primary">Add Farmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring & Evaluation System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+<!-- DataTables -->
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// CSRF token setup for AJAX requests
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Global variables
+let projectsTable = null;
+let milestonesTable = null;
+let currentProjectId = null;
+
+// Initialize when document is ready
+$(document).ready(function() {
+    // Initialize DataTables
+    initializeProjectsTable();
+    
+    // Load initial data
+    loadProjectStats();
+    loadStaffMembers();
+    loadProjectOptions();
+    
+    // Set up event listeners
+    $('#project-form').on('submit', handleProjectCreate);
+    $('#add-farmer-form').on('submit', handleAddFarmer);
+    $('#refresh-btn').on('click', function() {
+        projectsTable.ajax.reload(null, false);
+        loadProjectStats();
+    });
+    
+    $('#addProjectBtn').on('click', function() {
+        $('#addProjectModal').modal('show');
+    });
+    
+    $('#export-csv').on('click', function() {
+        exportProjects('csv');
+    });
+    
+    $('#export-excel').on('click', function() {
+        exportProjects('excel');
+    });
+    
+    $('#export-pdf').on('click', function() {
+        exportProjects('pdf');
+    });
+    
+    $('#project-select-milestones').on('change', function() {
+        if (this.value) {
+            loadMilestones(this.value);
+        } else {
+            milestonesTable.clear().draw();
+        }
+    });
+    
+    $('#project-select-compliance').on('change', function() {
+        if (this.value) {
+            loadComplianceData(this.value);
+        }
+    });
+    
+    // Load timeline data when timeline tab is shown
+    $('#timeline-tab').on('shown.bs.tab', function() {
+        loadTimelineData();
+    });
+});
+
+// Initialize Projects DataTable
+function initializeProjectsTable() {
+    projectsTable = $('#projects-datatable').DataTable({
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        ajax: {
+            url: '/projects/list/',
+            type: 'GET',
+            data: function(d) {
+                d.status = $('#status-filter').val();
+                d.manager = $('#manager-filter').val();
+                return d;
+            }
+        },
+        columns: [
+            { data: 'code' },
+            { data: 'name' },
+            { data: 'start_date' },
+            { data: 'end_date' },
+            { 
+                data: 'status',
+                render: function(data, type, row) {
+                    let statusClass = 'status-' + data;
+                    if (row.is_overdue) {
+                        statusClass += ' status-overdue';
+                    }
+                    return `<span class="status-badge ${statusClass}">${row.status_display}</span>`;
+                }
+            },
+            { 
+                data: 'total_budget',
+                render: function(data) {
+                    return '$' + data.toLocaleString();
+                }
+            },
+            { data: 'manager' },
+            { data: 'farmers_count' },
+            { 
+                data: 'progress_percent',
+                render: function(data) {
+                    return `
+                        <div class="d-flex align-items-center">
+                            <div class="progress-container flex-grow-1 me-2">
+                                <div class="progress-bar" style="width: ${data}%"></div>
+                            </div>
+                            <small>${data}%</small>
+                        </div>
+                    `;
+                }
+            },
+            {
+                data: 'id',
+                orderable: false,
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary view-project" data-id="${data}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary edit-project" data-id="${data}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-project" data-id="${data}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: "copy",
+                text: '<i class="fas fa-copy"></i> Copy',
+                className: "btn btn-sm btn-outline-secondary",
+            },
+            {
+                extend: "csv",
+                text: '<i class="fas fa-file-csv"></i> CSV',
+                className: "btn btn-sm btn-outline-success",
+            },
+            {
+                extend: "excel",
+                text: '<i class="fas fa-file-excel"></i> Excel',
+                className: "btn btn-sm btn-outline-primary",
+            },
+            {
+                extend: "pdf",
+                text: '<i class="fas fa-file-pdf"></i> PDF',
+                className: "btn btn-sm btn-outline-danger",
+            },
+            {
+                text: '<i class="fas fa-sync-alt"></i> Refresh',
+                className: "btn btn-sm btn-outline-info",
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload();
+                }
+            }
+        ],
+        language: {
+            search: "",
+            searchPlaceholder: "Search projects..."
+        },
+        initComplete: function() {
+            // Add event listeners to action buttons
+            $('#projects-datatable tbody').on('click', '.view-project', function() {
+                const projectId = $(this).data('id');
+                viewProjectDetails(projectId);
+            });
+            
+            $('#projects-datatable tbody').on('click', '.edit-project', function() {
+                const projectId = $(this).data('id');
+                editProject(projectId);
+            });
+            
+            $('#projects-datatable tbody').on('click', '.delete-project', function() {
+                const projectId = $(this).data('id');
+                deleteProject(projectId);
+            });
+            
+            // Apply filters when they change
+            $('#status-filter, #manager-filter').on('change', function() {
+                projectsTable.ajax.reload();
+            });
+            
+            // Apply search when typing in search box
+            $('#project-search').on('keyup', function() {
+                projectsTable.search(this.value).draw();
+            });
+        }
+    });
+}
+
+// Initialize Milestones DataTable
+function initializeMilestonesTable() {
+    milestonesTable = $('#milestones-datatable').DataTable({
+        responsive: true,
+        autoWidth: false,
+        columns: [
+            { data: 'name' },
+            { data: 'description' },
+            { data: 'due_date' },
+            { data: 'completion_date' },
+            { 
+                data: 'status',
+                render: function(data) {
+                    let statusClass = '';
+                    let statusIcon = '';
+                    
+                    switch(data) {
+                        case 'completed':
+                            statusClass = 'text-success';
+                            statusIcon = 'fa-check-circle';
+                            break;
+                        case 'in_progress':
+                            statusClass = 'text-primary';
+                            statusIcon = 'fa-spinner';
+                            break;
+                        default:
+                            statusClass = 'text-secondary';
+                            statusIcon = 'fa-clock';
+                    }
+                    
+                    return `<i class="fas ${statusIcon} ${statusClass}"></i> ${data.replace('_', ' ').toUpperCase()}`;
+                }
+            },
+            {
+                data: 'id',
+                orderable: false,
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary view-milestone" data-id="${data}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary edit-milestone" data-id="${data}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        language: {
+            search: "",
+            searchPlaceholder: "Search milestones..."
+        }
+    });
+}
+
+// Function to show SweetAlert notifications
+function showAlert(icon, title, text, confirmButtonText = 'OK') {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        confirmButtonText: confirmButtonText
+    });
+}
+
+// Function to show confirmation dialog
+function showConfirm(title, text, confirmButtonText = 'Yes', cancelButtonText = 'Cancel') {
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0ab39c',
+        cancelButtonColor: '#f06548',
+        confirmButtonText: confirmButtonText,
+        cancelButtonText: cancelButtonText
+    });
+}
+
+// Load project statistics
+function loadProjectStats() {
+    $.ajax({
+        url: '/projects/stats/',
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                $('#total-projects').text(data.stats.total_projects);
+                $('#active-projects').text(data.stats.active_projects);
+                $('#total-budget').text('$' + data.stats.total_budget.toLocaleString());
+                $('#overdue-projects').text(data.stats.overdue_projects);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading project stats:', error);
+            showAlert('error', 'Error', 'Failed to load project statistics.');
+        }
+    });
+}
+
+// Load staff members for dropdown
+function loadStaffMembers() {
+    $.ajax({
+        url: '/projects/staff/',
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const managerSelect = $('#project-manager');
+                const managerFilter = $('#manager-filter');
+                
+                managerSelect.empty().append('<option value="">Select a manager</option>');
+                managerFilter.empty().append('<option value="">All Managers</option>');
+                
+                $.each(data.staff, function(index, staff) {
+                    managerSelect.append($('<option>', {
+                        value: staff.id,
+                        text: `${staff.name} (${staff.designation})`
+                    }));
+                    
+                    managerFilter.append($('<option>', {
+                        value: staff.id,
+                        text: staff.name
+                    }));
+                });
+            }
+        },
+        error: function(error) {
+            console.error('Error loading staff members:', error);
+            showAlert('error', 'Error', 'Failed to load staff members.');
+        }
+    });
+}
+
+// Load project options for dropdowns
+function loadProjectOptions() {
+    $.ajax({
+        url: '/projects/list/?length=1000',
+        type: 'GET',
+        success: function(data) {
+            if (data.data) {
+                const milestonesSelect = $('#project-select-milestones');
+                const complianceSelect = $('#project-select-compliance');
+                
+                milestonesSelect.empty().append('<option value="">Select a project to view milestones</option>');
+                complianceSelect.empty().append('<option value="">Select a project to view compliance</option>');
+                
+                $.each(data.data, function(index, project) {
+                    milestonesSelect.append($('<option>', {
+                        value: project.id,
+                        text: `${project.code} - ${project.name}`
+                    }));
+                    
+                    complianceSelect.append($('<option>', {
+                        value: project.id,
+                        text: `${project.code} - ${project.name}`
+                    }));
+                });
+            }
+        },
+        error: function(error) {
+            console.error('Error loading project options:', error);
+            showAlert('error', 'Error', 'Failed to load project options.');
+        }
+    });
+}
+
+// Handle project creation
+function handleProjectCreate(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const projectData = {};
+    
+    $.each(formData, function() {
+        projectData[this.name] = this.value;
+    });
+    
+    $.ajax({
+        url: '/projects/create/',
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: JSON.stringify(projectData),
+        contentType: 'application/json',
+        success: function(data) {
+            if (data.success) {
+                $('#addProjectModal').modal('hide');
+                showAlert('success', 'Success', data.message);
+                projectsTable.ajax.reload();
+                loadProjectStats();
+                loadProjectOptions();
+                $('#project-form')[0].reset();
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error creating project:', error);
+            showAlert('error', 'Error', 'Failed to create project.');
+        }
+    });
+}
+
+// View project details
+function viewProjectDetails(projectId) {
+    $.ajax({
+        url: `/projects/detail/${projectId}/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                renderProjectDetails(data);
+                $('#projectDetailModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading project details:', error);
+            showAlert('error', 'Error', 'Failed to load project details.');
+        }
+    });
+}
+
+// Render project details
+function renderProjectDetails(data) {
+    const project = data.project;
+    const financials = data.financials;
+    const farmers = data.farmers;
+    
+    let statusClass = 'status-' + project.status;
+    if (project.is_overdue) {
+        statusClass += ' status-overdue';
+    }
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-8">
+                <h4>${project.name} (${project.code})</h4>
+                <p class="text-muted">${project.description || 'No description'}</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="status-badge ${statusClass}">${project.status_display}</span>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h5>Project Information</h5>
+                <table class="table table-sm">
+                    <tr>
+                        <th>Start Date:</th>
+                        <td>${project.start_date}</td>
+                    </tr>
+                    <tr>
+                        <th>End Date:</th>
+                        <td>${project.end_date}</td>
+                    </tr>
+                    <tr>
+                        <th>Days Remaining:</th>
+                        <td>${project.days_remaining}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Budget:</th>
+                        <td>$${project.total_budget.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Manager:</th>
+                        <td>${project.manager}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5>Progress</h5>
+                <div class="progress-container mb-2">
+                    <div class="progress-bar" style="width: ${project.progress_percent}%"></div>
+                </div>
+                <p class="text-center">${project.progress_percent}% Complete</p>
+                
+                <h5 class="mt-4">Financial Summary</h5>
+                <table class="table table-sm">
+                    <tr>
+                        <th>Total Loans:</th>
+                        <td>${financials.total_loans}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Loan Amount:</th>
+                        <td>$${financials.total_loan_amount.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Disbursed:</th>
+                        <td>$${financials.total_disbursed.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Repaid:</th>
+                        <td>$${financials.total_repaid.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                        <th>Repayment Rate:</th>
+                        <td>${financials.repayment_rate.toFixed(2)}%</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5>Participating Farmers (${data.farmers_count})</h5>
+                    <button class="btn btn-sm btn-gradient-primary" id="add-farmer-btn" data-project-id="${project.id}">
+                        <i class="fas fa-plus me-1"></i>Add Farmer
+                    </button>
+                </div>
+                
+                <div class="table-responsive mt-2">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>National ID</th>
+                                <th>District</th>
+                                <th>Enrollment Date</th>
+                                <th>Status</th>
+                                <th>Farms</th>
+                                <th>Total Area (ha)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${farmers.map(farmer => `
+                                <tr>
+                                    <td>${farmer.name}</td>
+                                    <td>${farmer.national_id}</td>
+                                    <td>${farmer.district}</td>
+                                    <td>${farmer.enrollment_date}</td>
+                                    <td><span class="status-badge status-${farmer.status}">${farmer.status_display}</span></td>
+                                    <td>${farmer.farms_count}</td>
+                                    <td>${farmer.total_area}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary edit-participation" data-id="${farmer.id}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#project-detail-content').html(content);
+    
+    // Add event listener to add farmer button
+    $('#add-farmer-btn').on('click', function() {
+        const projectId = $(this).data('project-id');
+        showAddFarmerModal(projectId);
+    });
+}
+
+// Show add farmer modal
+function showAddFarmerModal(projectId) {
+    currentProjectId = projectId;
+    $('#project-id').val(projectId);
+    
+    // Load available farmers
+    $.ajax({
+        url: `/projects/${projectId}/available-farmers/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const farmerSelect = $('#farmer-select');
+                farmerSelect.empty().append('<option value="">Select a farmer</option>');
+                
+                $.each(data.farmers, function(index, farmer) {
+                    farmerSelect.append($('<option>', {
+                        value: farmer.id,
+                        text: `${farmer.name} (${farmer.national_id}) - ${farmer.district}`
+                    }));
+                });
+                
+                $('#addFarmerModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading available farmers:', error);
+            showAlert('error', 'Error', 'Failed to load available farmers.');
+        }
+    });
+}
+
+// Handle add farmer to project
+function handleAddFarmer(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const farmerData = {};
+    
+    $.each(formData, function() {
+        farmerData[this.name] = this.value;
+    });
+    
+    $.ajax({
+        url: `/projects/${currentProjectId}/add-farmer/`,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: JSON.stringify(farmerData),
+        contentType: 'application/json',
+        success: function(data) {
+            if (data.success) {
+                $('#addFarmerModal').modal('hide');
+                showAlert('success', 'Success', data.message);
+                viewProjectDetails(currentProjectId); // Refresh the project details
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error adding farmer to project:', error);
+            showAlert('error', 'Error', 'Failed to add farmer to project.');
+        }
+    });
+}
+
+// Edit project
+// function editProject(projectId) {
+//     // TODO: Implement edit project functionality
+    
+//     showAlert('info', 'Info', 'Edit project functionality will be implemented soon.');
+// }
+
+
+function showAlert(icon, title, text, confirmButtonText = 'OK') {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        confirmButtonText: confirmButtonText
+    });
+}
+
+// Function to show confirmation dialog
+function showConfirm(title, text, confirmButtonText = 'Yes', cancelButtonText = 'Cancel') {
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0ab39c',
+        cancelButtonColor: '#f06548',
+        confirmButtonText: confirmButtonText,
+        cancelButtonText: cancelButtonText
+    });
+}
+
+// Edit project - Load data into modal
+function editProject(projectId) {
+    $.ajax({
+        url: `/projects/detail/${projectId}/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const project = data.project;
+                
+                // Populate the edit form using jQuery
+                $('#edit-project-id').val(project.id);
+                $('#edit-project-code').val(project.code);
+                $('#edit-project-name').val(project.name);
+                $('#edit-project-description').val(project.description || '');
+                $('#edit-project-start-date').val(project.start_date);
+                $('#edit-project-end-date').val(project.end_date);
+                $('#edit-project-budget').val(project.total_budget);
+                $('#edit-project-status').val(project.status);
+                
+                // Set manager if exists
+                if (project.manager_id) {
+                    $('#edit-project-manager').val(project.manager_id);
+                } else {
+                    $('#edit-project-manager').val('');
+                }
+                
+                // Show the modal
+                $('#editProjectModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading project details:', error);
+            showAlert('error', 'Error', 'Failed to load project details.');
+        }
+    });
+}
+
+// Handle edit project form submission
+$('#edit-project-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = $(this).serializeArray();
+    const projectData = {};
+    
+    $.each(formData, function() {
+        projectData[this.name] = this.value;
+    });
+    
+    // Convert numeric fields
+    projectData.total_budget = parseFloat(projectData.total_budget);
+    
+    // Show loading state
+    const submitButton = $(this).find('button[type="submit"]');
+    const originalText = submitButton.html();
+    submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...');
+    
+    // Send update request
+    $.ajax({
+        url: `/projects/update/${projectData.id}/`,
+        type: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: JSON.stringify(projectData),
+        success: function(data) {
+            if (data.success) {
+                // Close modal and show success message
+                $('#editProjectModal').modal('hide');
+                
+                showAlert('success', 'Success', data.message).then(() => {
+                    // Refresh the table and stats
+                    if (projectsTable) {
+                        projectsTable.ajax.reload(null, false);
+                    }
+                    loadProjectStats();
+                    loadProjectOptions();
+                });
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            let errorMessage = 'Failed to update project.';
+            
+            // Try to get detailed error message from response
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {
+                // Use default error message
+            }
+            
+            showAlert('error', 'Error', errorMessage);
+        },
+        complete: function() {
+            // Restore button state
+            submitButton.prop('disabled', false).html(originalText);
+        }
+    });
+});
+
+// Delete project
+function deleteProject(projectId) {
+    showConfirm('Delete Project', 'Are you sure you want to delete this project? This action cannot be undone.', 'Yes, delete it')
+        .then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/projects/delete/',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    data: JSON.stringify({ id: projectId }),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        if (data.success) {
+                            showAlert('success', 'Success', data.message);
+                            projectsTable.ajax.reload();
+                            loadProjectStats();
+                            loadProjectOptions();
+                        } else {
+                            showAlert('error', 'Error', data.error);
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error deleting project:', error);
+                        showAlert('error', 'Error', 'Failed to delete project.');
+                    }
+                });
+            }
+        });
+}
+
+// Load timeline data
+function loadTimelineData() {
+    $.ajax({
+        url: '/projects/timeline/data/',
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                renderTimeline(data.timeline);
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading timeline data:', error);
+            showAlert('error', 'Error', 'Failed to load timeline data.');
+        }
+    });
+}
+
+// Render timeline (Gantt chart)
+function renderTimeline(timelineData) {
+    const ganttChart = $('#gantt-chart');
+    ganttChart.empty();
+    
+    $.each(timelineData, function(index, project) {
+        const projectDiv = $('<div>').addClass('mb-3');
+        
+        projectDiv.html(`
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">${project.name} (${project.code})</h6>
+                <span class="status-badge status-${project.status}">${project.status_display}</span>
+            </div>
+            <div class="gantt-bar">
+                <div class="gantt-progress" style="width: ${project.progress}%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <small>${project.start}</small>
+                <small>${project.end}</small>
+            </div>
+            <small class="text-muted">Manager: ${project.manager} | Progress: ${project.progress}%</small>
+        `);
+        
+        ganttChart.append(projectDiv);
+    });
+}
+
+// Load milestones for a project
+function loadMilestones(projectId) {
+    $.ajax({
+        url: `/projects/${projectId}/milestones/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                if (!milestonesTable) {
+                    initializeMilestonesTable();
+                }
+                milestonesTable.clear();
+                milestonesTable.rows.add(data.milestones);
+                milestonesTable.draw();
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading milestones:', error);
+            showAlert('error', 'Error', 'Failed to load milestones.');
+        }
+    });
+}
+
+// Load compliance data for a project
+function loadComplianceData(projectId) {
+    $.ajax({
+        url: `/projects/${projectId}/compliance/`,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                renderComplianceData(data.compliance);
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(error) {
+            console.error('Error loading compliance data:', error);
+            showAlert('error', 'Error', 'Failed to load compliance data.');
+        }
+    });
+}
+
+// Render compliance data
+function renderComplianceData(complianceData) {
+    const complianceContent = $('#compliance-content');
+    
+    let overallScore = 0;
+    let scoreCount = 0;
+    
+    for (const category in complianceData) {
+        overallScore += complianceData[category].score;
+        scoreCount++;
+    }
+    
+    overallScore = overallScore / scoreCount;
+    
+    let overallStatus = '';
+    let overallStatusClass = '';
+    
+    if (overallScore >= 90) {
+        overallStatus = 'Excellent';
+        overallStatusClass = 'score-excellent';
+    } else if (overallScore >= 80) {
+        overallStatus = 'Good';
+        overallStatusClass = 'score-good';
+    } else if (overallScore >= 70) {
+        overallStatus = 'Fair';
+        overallStatusClass = 'score-fair';
+    } else {
+        overallStatus = 'Poor';
+        overallStatusClass = 'score-poor';
+    }
+    
+    let html = `
+        <div class="row mb-4">
+            <div class="col-md-6 mx-auto text-center">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Overall Compliance Score</h5>
+                        <div class="compliance-score ${overallStatusClass}">${overallScore.toFixed(1)}%</div>
+                        <p class="text-muted">Status: ${overallStatus}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+    `;
+    
+    for (const category in complianceData) {
+        const data = complianceData[category];
+        
+        let statusClass = '';
+        switch(data.status) {
+            case 'fully_compliant':
+                statusClass = 'text-success';
+                break;
+            case 'compliant':
+                statusClass = 'text-primary';
+                break;
+            case 'needs_improvement':
+                statusClass = 'text-warning';
+                break;
+            case 'non_compliant':
+                statusClass = 'text-danger';
+                break;
+        }
+        
+        html += `
+            <div class="col-md-6 col-lg-3 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title text-capitalize">${category}</h6>
+                        <div class="compliance-score ${statusClass}">${data.score}%</div>
+                        <p class="text-muted">Status: <span class="${statusClass} text-capitalize">${data.status.replace('_', ' ')}</span></p>
+                        
+                        ${data.issues.length > 0 ? `
+                            <h6 class="mt-3">Issues:</h6>
+                            <ul class="small">
+                                ${data.issues.map(issue => `
+                                    <li class="text-${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warning' : 'muted'}">
+                                        ${issue.description}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        ` : '<p class="text-success small">No issues found</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    complianceContent.html(html);
+}
+
+// Export projects
+function exportProjects(format) {
+    // Use DataTables built-in export functionality
+    if (format === 'csv') {
+        projectsTable.button('.buttons-csv').trigger();
+    } else if (format === 'excel') {
+        projectsTable.button('.buttons-excel').trigger();
+    } else if (format === 'pdf') {
+        projectsTable.button('.buttons-pdf').trigger();
+    }
+}
+</script>
+{% endblock %}

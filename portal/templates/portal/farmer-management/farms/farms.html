@@ -29,14 +29,14 @@
 {% block main_content %}
 <style>
     .btn-gradient-primary {
-        background: linear-gradient(45deg,  #0871B9,#FEBE14);
+        background: #0871B9;
         color: white;
         border: none;
         text-transform: uppercase;
         transition: all 0.3s ease;
     }
     .btn-gradient-primary:hover {
-        background: linear-gradient(45deg,#FEBE14,  #0871B9);
+        background: #0871B9;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
@@ -81,7 +81,7 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .stats-card {
-        background: linear-gradient(135deg,  #0871B9 0%,#FEBE14 100%);
+        background: #0871B9;
         color: white;
         border-radius: 0.5rem;
         padding: 1.5rem;
@@ -270,11 +270,12 @@
     </div>
 </div>
 
+
 <!-- Add Farm Modal -->
 <div class="modal fade" id="addFarmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header text-white bg-primary">
+            <div class="modal-header text-white ">
                 <h5 class="modal-title">Add New Farm</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -387,7 +388,7 @@
 <div class="modal fade" id="editFarmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header text-white bg-primary">
+            <div class="modal-header text-white ">
                 <h5 class="modal-title">Edit Farm</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -395,7 +396,98 @@
                 {% csrf_token %}
                 <input type="hidden" name="id" id="editFarmId">
                 <div class="modal-body">
-                    <!-- Same form structure as add farm, fields will be populated via JS -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farmer*</label>
+                                <select name="farmer_id" class="form-control" required>
+                                    <option value="">Select Farmer</option>
+                                    <!-- Farmers will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Name*</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Area (hectares)*</label>
+                                <input type="number" name="area_hectares" class="form-control" step="0.1" min="0.1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="critical">Critical</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="abandoned">Abandoned</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Latitude*</label>
+                                <input type="number" name="latitude" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Longitude*</label>
+                                <input type="number" name="longitude" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Soil Type</label>
+                                <input type="text" name="soil_type" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Irrigation Type</label>
+                                <input type="text" name="irrigation_type" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Irrigation Coverage (%)</label>
+                                <input type="number" name="irrigation_coverage" class="form-control" min="0" max="100" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Altitude (meters)</label>
+                                <input type="number" name="altitude" class="form-control" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Slope (degrees)</label>
+                                <input type="number" name="slope" class="form-control" step="0.1" min="0" max="90">
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1178,6 +1270,7 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     const farm = response.farm;
+                    console.log(farm);
                     
                     // Populate edit form
                     $('#editFarmId').val(farmId);
@@ -1196,10 +1289,15 @@ $(document).ready(function() {
                     }
                     
                     // Load farmers and select the current one
-                    loadFarmersForDropdowns().then(() => {
+                    // loadFarmersForDropdowns().then(() => {
+                    //     $('#editFarmForm select[name="farmer_id"]').val(farm.farmer_id);
+                    //     $('#editFarmModal').modal('show');
+                    // });
+                    loadFarmersForDropdowns();
+                    setTimeout(() => {
                         $('#editFarmForm select[name="farmer_id"]').val(farm.farmer_id);
                         $('#editFarmModal').modal('show');
-                    });
+                    }, 500);
                 }
             },
             error: function() {

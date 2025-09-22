@@ -28,7 +28,7 @@ def farm_list(request):
     farmer_filter = request.GET.get('farmer_id')
     
     # Base queryset with related data
-    queryset = Farm.objects.select_related(
+    queryset = Farm.objects.filter(validation_status=True).select_related(
         'farmer__user_profile__user', 
         'farmer__user_profile__district__region'
     ).all()

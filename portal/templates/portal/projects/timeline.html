@@ -1,0 +1,945 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Project Timeline</h4>
+                <p class="text-muted mb-0">Visualize project timelines and track progress</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">M&E System</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'project_tracking' %}">Project Tracking</a></li>
+                    <li class="breadcrumb-item active">Timeline</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Project Timeline View</h5>
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" id="export-timeline-btn">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <select id="project-select" class="form-select">
+                            <option value="">All Projects</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.code }} - {{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="view-type" class="form-select">
+                            <option value="gantt">Gantt Chart</option>
+                            <option value="timeline">Timeline View</option>
+                            <option value="calendar">Calendar View</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="timeframe" class="form-select">
+                            <option value="all">All Time</option>
+                            <option value="month">This Month</option>
+                            <option value="quarter">This Quarter</option>
+                            <option value="year">This Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" id="refresh-btn">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Date Range (hidden by default) -->
+                <div class="row mb-4" id="custom-date-range" style="display: none;">
+                    <div class="col-md-3">
+                        <label for="start-date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start-date">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end-date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end-date">
+                    </div>
+                    <div class="col-md-2 align-self-end">
+                        <button class="btn btn-primary" id="apply-date-range">Apply</button>
+                    </div>
+                </div>
+
+                 <!-- Timeline Summary Cards -->
+        <div class="row mb-4" id="timeline-summary">
+            <div class="col-md-2">
+                <div class="card bg-primary text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Projects</h6>
+                        <h3 id="total-projects">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-success text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Active</h6>
+                        <h3 id="active-projects">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-warning text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Upcoming</h6>
+                        <h3 id="upcoming-milestones">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-danger text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Delayed</h6>
+                        <h3 id="delayed-milestones">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-info text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Completed</h6>
+                        <h3 id="completed-milestones">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-secondary text-white text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Avg Progress</h6>
+                        <h3 id="avg-progress">0%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                <!-- Timeline Visualization -->
+                <div class="row">
+                    <div class="col-12">
+                        <div id="timeline-container">
+                             <div id="calendar-view" class="timeline-view" style="display: none;">
+                                <!-- Calendar view will be rendered here -->
+                            </div>
+                            <div id="gantt-chart" class="timeline-view">
+                                <!-- Gantt chart will be rendered here -->
+                            </div>
+                            <div id="timeline-view" class="timeline-view" style="display: none;">
+                                <!-- Timeline view will be rendered here -->
+                            </div>
+                           
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Legend -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">Legend</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="d-flex align-items-center">
+                                        <span class="legend-color bg-success me-2" style="width: 20px; height: 20px;"></span>
+                                        <span>Completed</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="legend-color bg-primary me-2" style="width: 20px; height: 20px;"></span>
+                                        <span>In Progress</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="legend-color bg-warning me-2" style="width: 20px; height: 20px;"></span>
+                                        <span>Upcoming</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="legend-color bg-danger me-2" style="width: 20px; height: 20px;"></span>
+                                        <span>Delayed</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="legend-color bg-secondary me-2" style="width: 20px; height: 20px;"></span>
+                                        <span>Not Started</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project/Milestone Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detail-content">
+                <!-- Details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring & Evaluation System.
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- D3.js for timeline visualization -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<!-- FullCalendar for calendar view -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+.timeline-view {
+    min-height: 500px;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: white;
+}
+
+.gantt-bar {
+    height: 30px;
+    margin-bottom: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gantt-progress {
+    height: 100%;
+    background: linear-gradient(45deg, #0ab39c, #405189);
+    transition: width 0.3s ease;
+}
+
+.gantt-milestone {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #f06548;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+.timeline-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #0ab39c;
+    background: #f8f9fa;
+    border-radius: 0.25rem;
+}
+
+.legend-color {
+    border-radius: 3px;
+}
+
+#gantt-chart {
+    overflow-x: auto;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+</style>
+
+<script>
+// CSRF token setup for AJAX requests
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Global variables
+let timelineData = [];
+let calendar = null;
+let currentView = 'gantt';
+
+// Initialize when document is ready
+$(document).ready(function() {
+    // Load initial data
+    loadTimelineData();
+    loadTimelineSummary();
+    
+    // Set up event listeners
+    $('#project-select').on('change', loadTimelineData);
+    $('#view-type').on('change', switchView);
+    $('#timeframe').on('change', handleTimeframeChange);
+    $('#refresh-btn').on('click', function() {
+        loadTimelineData();
+        loadTimelineSummary();
+    });
+    $('#export-timeline-btn').on('click', exportTimeline);
+    $('#apply-date-range').on('click', applyCustomDateRange);
+});
+
+// Function to show SweetAlert notifications
+function showAlert(icon, title, text, confirmButtonText = 'OK') {
+    return Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        confirmButtonText: confirmButtonText
+    });
+}
+
+// Load timeline data
+function loadTimelineData() {
+    const projectId = $('#project-select').val();
+    const timeframe = $('#timeframe').val();
+    
+    let url = '/projects/timeline/data/';
+    let params = {};
+
+    if (projectId) {
+        params.project_id = projectId;
+    }
+
+    if (timeframe === 'custom') {
+        const startDate = $('#start-date').val();
+        const endDate = $('#end-date').val();
+        if (startDate && endDate) {
+            params.start_date = startDate;
+            params.end_date = endDate;
+        }
+    } else if (timeframe !== 'all') {
+        params.timeframe = timeframe;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        data: params,
+        success: function(data) {
+            if (data.success) {
+                timelineData = data.timeline;
+                renderTimelineView();
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading timeline data:', error);
+            showAlert('error', 'Error', 'Failed to load timeline data.');
+        }
+    });
+}
+
+// Load timeline summary statistics
+function loadTimelineSummary() {
+    const projectId = $('#project-select').val();
+    
+    $.ajax({
+        url: '/projects/timeline/summary/',
+        type: 'GET',
+        data: { project_id: projectId },
+        success: function(data) {
+            if (data.success) {
+                $('#total-projects').text(data.summary.total_projects);
+                $('#active-projects').text(data.summary.active_projects);
+                $('#upcoming-milestones').text(data.summary.upcoming_milestones);
+                $('#delayed-milestones').text(data.summary.delayed_milestones);
+                $('#completed-milestones').text(data.summary.completed_milestones);
+                $('#avg-progress').text(data.summary.avg_progress + '%');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading timeline summary:', error);
+        }
+    });
+}
+
+
+
+ // Function to show loading indicator
+            function showLoading() {
+                $('#loading-indicator').show();
+            }
+            
+            // Function to hide loading indicator
+            function hideLoading() {
+                $('#loading-indicator').hide();
+            }
+            
+            // Function to update summary cards
+            function updateSummaryCards(data) {
+                $('#total-projects').text(data.total_projects);
+                $('#active-projects').text(data.active_projects);
+                $('#upcoming-milestones').text(data.upcoming_milestones);
+                $('#delayed-milestones').text(data.delayed_milestones);
+                $('#completed-milestones').text(data.completed_milestones);
+                $('#avg-progress').text(data.avg_progress + '%');
+            }
+            
+            // Function to fetch and update summary data
+            function fetchSummaryData(filters = {}) {
+                showLoading();
+                
+                // Build query string from filters
+                const queryParams = new URLSearchParams();
+                if (filters.projectId) queryParams.append('project_id', filters.projectId);
+                if (filters.timeframe) queryParams.append('timeframe', filters.timeframe);
+                if (filters.startDate) queryParams.append('start_date', filters.startDate);
+                if (filters.endDate) queryParams.append('end_date', filters.endDate);
+                
+                // Make AJAX request to get summary data
+                fetch(`/projects/timeline/summary/?${queryParams.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateSummaryCards(data.summary);
+                    } else {
+                        console.error('Error fetching summary data:', data.error);
+                        alert('Failed to load summary data. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while fetching data.');
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+            }
+
+
+
+
+
+
+
+// Switch between different views
+function switchView() {
+    const viewType = $(this).val();
+    currentView = viewType;
+    
+    // Hide all views
+    $('.timeline-view').hide();
+    
+    // Show selected view
+    switch(viewType) {
+        case 'calendar':
+            $('#calendar-view').show();
+            renderCalendarView();
+            break;
+        case 'gantt':
+            $('#gantt-chart').show();
+            renderGanttChart();
+            break;
+        case 'timeline':
+            $('#timeline-view').show();
+            renderTimelineView();
+            break;
+        default:
+            $('#calendar-view').show();
+            renderCalendarView();
+            break;
+        
+    }
+}
+
+// Handle timeframe change
+function handleTimeframeChange() {
+    const timeframe = $(this).val();
+    
+    if (timeframe === 'custom') {
+        $('#custom-date-range').show();
+    } else {
+        $('#custom-date-range').hide();
+        loadTimelineData();
+    }
+}
+
+// Apply custom date range
+function applyCustomDateRange() {
+    const startDate = $('#start-date').val();
+    const endDate = $('#end-date').val();
+    
+    if (!startDate || !endDate) {
+        showAlert('warning', 'Warning', 'Please select both start and end dates.');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        showAlert('warning', 'Warning', 'Start date cannot be after end date.');
+        return;
+    }
+    
+    loadTimelineData();
+}
+
+// Render Gantt Chart
+function renderGanttChart() {
+    const container = $('#gantt-chart');
+    container.empty();
+
+    if (timelineData.length === 0) {
+        container.html('<div class="text-center text-muted p-5"><i class="fas fa-inbox fa-3x mb-3"></i><p>No timeline data available</p></div>');
+        return;
+    }
+
+    // Calculate date range for scaling
+    const dateRange = calculateDateRange();
+    const dayWidth = 2; // pixels per day
+
+    timelineData.forEach(item => {
+        const projectDiv = $('<div class="mb-4"></div>');
+        
+        // Project header
+        const header = $(`
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">${item.name} (${item.code})</h6>
+                <span class="badge ${getStatusClass(item.status)}">${item.status_display}</span>
+            </div>
+        `);
+
+        // Gantt bar
+        const ganttBar = $(`
+            <div class="gantt-bar">
+                <div class="gantt-progress" style="width: ${item.progress}%"></div>
+            </div>
+        `);
+
+        // Date labels
+        const dateLabels = $(`
+            <div class="d-flex justify-content-between mt-1">
+                <small>${formatDate(item.start)}</small>
+                <small>${formatDate(item.end)}</small>
+            </div>
+        `);
+
+        // Additional info
+        const info = $(`
+            <small class="text-muted">
+                Progress: ${item.progress}% | 
+                Manager: ${item.manager} |
+                ${item.days_remaining} days remaining
+            </small>
+        `);
+
+        projectDiv.append(header, ganttBar, dateLabels, info);
+        container.append(projectDiv);
+
+        // Add milestones
+        if (item.milestones && item.milestones.length > 0) {
+            item.milestones.forEach(milestone => {
+                const milestoneDate = new Date(milestone.due_date);
+                const startDate = new Date(item.start);
+                const daysFromStart = Math.floor((milestoneDate - startDate) / (1000 * 60 * 60 * 24));
+                const position = daysFromStart * dayWidth;
+
+                const milestoneMarker = $(`
+                    <div class="gantt-milestone" style="left: ${position}px;" 
+                         title="${milestone.name} - ${formatDate(milestone.due_date)}"
+                         data-id="${milestone.id}"
+                         data-type="milestone">
+                    </div>
+                `);
+
+                ganttBar.append(milestoneMarker);
+            });
+        }
+    });
+
+    // Add click handlers for milestones
+    $('.gantt-milestone').on('click', function() {
+        const itemId = $(this).data('id');
+        const itemType = $(this).data('type');
+        showItemDetails(itemId, itemType);
+    });
+}
+
+// Render Timeline View
+function renderTimelineView() {
+    const container = $('#timeline-view');
+    container.empty();
+
+    if (timelineData.length === 0) {
+        container.html('<div class="text-center text-muted p-5"><i class="fas fa-inbox fa-3x mb-3"></i><p>No timeline data available</p></div>');
+        return;
+    }
+
+    timelineData.forEach(item => {
+        const timelineItem = $(`
+            <div class="timeline-item" data-id="${item.id}" data-type="project">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${item.name} (${item.code})</h6>
+                        <p class="text-muted mb-1">${formatDate(item.start)} - ${formatDate(item.end)}</p>
+                        <span class="badge ${getStatusClass(item.status)}">${item.status_display}</span>
+                    </div>
+                    <div class="text-end">
+                        <div class="progress" style="width: 100px; height: 20px;">
+                            <div class="progress-bar" role="progressbar" style="width: ${item.progress}%;" 
+                                 aria-valuenow="${item.progress}" aria-valuemin="0" aria-valuemax="100">
+                                ${item.progress}%
+                            </div>
+                        </div>
+                        <small class="text-muted">${item.days_remaining} days remaining</small>
+                    </div>
+                </div>
+                ${item.milestones && item.milestones.length > 0 ? `
+                    <div class="mt-3">
+                        <h6 class="mb-2">Milestones:</h6>
+                        <div class="row">
+                            ${item.milestones.map(milestone => `
+                                <div class="col-md-6 mb-2">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>${milestone.name}</span>
+                                                <span class="badge ${getStatusClass(milestone.status)}">
+                                                    ${formatDate(milestone.due_date)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `);
+
+        container.append(timelineItem);
+    });
+
+    // Add click handlers
+    $('.timeline-item').on('click', function() {
+        const itemId = $(this).data('id');
+        const itemType = $(this).data('type');
+        showItemDetails(itemId, itemType);
+    });
+}
+
+// Render Calendar View
+function renderCalendarView() {
+    const container = $('#calendar-view');
+    container.empty();
+
+    if (calendar) {
+        calendar.destroy();
+    }
+
+    if (timelineData.length === 0) {
+        container.html('<div class="text-center text-muted p-5"><i class="fas fa-inbox fa-3x mb-3"></i><p>No timeline data available</p></div>');
+        return;
+    }
+
+    // Prepare calendar events
+    const events = [];
+    
+    timelineData.forEach(project => {
+        // Project start event
+        events.push({
+            title: `Start: ${project.name}`,
+            start: project.start,
+            end: project.start,
+            color: '#0ab39c',
+            extendedProps: {
+                type: 'project_start',
+                projectId: project.id
+            }
+        });
+
+        // Project end event
+        events.push({
+            title: `End: ${project.name}`,
+            start: project.end,
+            end: project.end,
+            color: '#f06548',
+            extendedProps: {
+                type: 'project_end',
+                projectId: project.id
+            }
+        });
+
+        // Milestones
+        if (project.milestones && project.milestones.length > 0) {
+            project.milestones.forEach(milestone => {
+                events.push({
+                    title: milestone.name,
+                    start: milestone.due_date,
+                    end: milestone.due_date,
+                    color: getMilestoneColor(milestone.status),
+                    extendedProps: {
+                        type: 'milestone',
+                        milestoneId: milestone.id,
+                        projectId: project.id
+                    }
+                });
+            });
+        }
+    });
+
+    // Initialize calendar
+    calendar = new FullCalendar.Calendar(container[0], {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: events,
+        eventClick: function(info) {
+            const event = info.event;
+            const extendedProps = event.extendedProps;
+            
+            if (extendedProps.type === 'milestone') {
+                showItemDetails(extendedProps.milestoneId, 'milestone');
+            } else {
+                showItemDetails(extendedProps.projectId, 'project');
+            }
+        },
+        eventContent: function(arg) {
+            return {
+                html: `<div class="fc-event-title">${arg.event.title}</div>`
+            };
+        }
+    });
+
+    calendar.render();
+}
+
+// Show item details
+function showItemDetails(itemId, itemType) {
+    let url = '';
+    
+    if (itemType === 'project') {
+        url = `/projects/detail/${itemId}/`;
+    } else if (itemType === 'milestone') {
+        url = `/projects/milestones/${itemId}/detail/`;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                renderDetailsModal(data, itemType);
+                $('#detailModal').modal('show');
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading details:', error);
+            showAlert('error', 'Error', 'Failed to load details.');
+        }
+    });
+}
+
+// Render details modal
+function renderDetailsModal(data, type) {
+    const modalContent = $('#detail-content');
+    modalContent.empty();
+
+    if (type === 'project') {
+        const project = data.project;
+        modalContent.html(`
+            <h4>${project.name} (${project.code})</h4>
+            <p class="text-muted">${project.description || 'No description'}</p>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Project Information</h5>
+                    <table class="table table-sm">
+                        <tr><th>Status:</th><td><span class="badge ${getStatusClass(project.status)}">${project.status_display}</span></td></tr>
+                        <tr><th>Start Date:</th><td>${formatDate(project.start_date)}</td></tr>
+                        <tr><th>End Date:</th><td>${formatDate(project.end_date)}</td></tr>
+                        <tr><th>Days Remaining:</th><td>${project.days_remaining}</td></tr>
+                        <tr><th>Progress:</th><td>${project.progress_percent}%</td></tr>
+                        <tr><th>Manager:</th><td>${project.manager}</td></tr>
+                        <tr><th>Budget:</th><td>$${project.total_budget.toLocaleString()}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Progress</h5>
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" style="width: ${project.progress_percent}%;" 
+                             aria-valuenow="${project.progress_percent}" aria-valuemin="0" aria-valuemax="100">
+                            ${project.progress_percent}%
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4">Statistics</h5>
+                    <table class="table table-sm">
+                        <tr><th>Farmers:</th><td>${data.farmers_count}</td></tr>
+                        <tr><th>Total Loans:</th><td>${data.financials.total_loans}</td></tr>
+                        <tr><th>Loan Amount:</th><td>$${data.financials.total_loan_amount.toLocaleString()}</td></tr>
+                        <tr><th>Repayment Rate:</th><td>${data.financials.repayment_rate.toFixed(2)}%</td></tr>
+                    </table>
+                </div>
+            </div>
+        `);
+    } else if (type === 'milestone') {
+        const milestone = data.milestone;
+        modalContent.html(`
+            <h4>${milestone.name}</h4>
+            <p class="text-muted">${milestone.description || 'No description'}</p>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Milestone Information</h5>
+                    <table class="table table-sm">
+                        <tr><th>Status:</th><td><span class="badge ${getStatusClass(milestone.status)}">${milestone.status_display}</span></td></tr>
+                        <tr><th>Due Date:</th><td>${formatDate(milestone.due_date)}</td></tr>
+                        <tr><th>Completion Date:</th><td>${milestone.completion_date ? formatDate(milestone.completion_date) : 'Not completed'}</td></tr>
+                        <tr><th>Weight:</th><td>${milestone.weight}%</td></tr>
+                        <tr><th>Project:</th><td>${milestone.project_name}</td></tr>
+                        <tr><th>Assigned To:</th><td>${milestone.assigned_to || 'Not assigned'}</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Additional Information</h5>
+                    <table class="table table-sm">
+                        <tr><th>Created:</th><td>${formatDate(milestone.created_at)}</td></tr>
+                        <tr><th>Last Updated:</th><td>${formatDate(milestone.updated_at)}</td></tr>
+                    </table>
+                    
+                    ${milestone.notes ? `
+                    <h5 class="mt-3">Notes</h5>
+                    <div class="border p-3 bg-light">
+                        ${milestone.notes}
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `);
+    }
+}
+
+// Export timeline
+function exportTimeline() {
+    const viewType = $('#view-type').val();
+    const projectId = $('#project-select').val();
+    
+    let format = 'pdf';
+    let filename = 'timeline_export';
+    
+    if (projectId) {
+        const project = timelineData.find(p => p.id == projectId);
+        if (project) {
+            filename = `${project.code}_timeline`;
+        }
+    }
+    
+    if (viewType === 'calendar') {
+        // Export calendar as image
+        html2canvas($('#calendar-view')[0]).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${filename}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    } else {
+        // Export as PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.text('Project Timeline Export', 20, 20);
+        doc.save(`${filename}.pdf`);
+    }
+}
+
+// Utility functions
+function getStatusClass(status) {
+    switch(status) {
+        case 'completed': return 'bg-success';
+        case 'active': 
+        case 'in_progress': return 'bg-primary';
+        case 'delayed': return 'bg-danger';
+        case 'pending': return 'bg-warning';
+        case 'cancelled': return 'bg-secondary';
+        default: return 'bg-secondary';
+    }
+}
+
+function getMilestoneColor(status) {
+    switch(status) {
+        case 'completed': return '#28a745';
+        case 'in_progress': return '#007bff';
+        case 'delayed': return '#dc3545';
+        case 'pending': return '#ffc107';
+        default: return '#6c757d';
+    }
+}
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString();
+}
+
+function calculateDateRange() {
+    if (timelineData.length === 0) {
+        return { min: new Date(), max: new Date() };
+    }
+
+    let minDate = new Date(timelineData[0].start);
+    let maxDate = new Date(timelineData[0].end);
+
+    timelineData.forEach(item => {
+        const startDate = new Date(item.start);
+        const endDate = new Date(item.end);
+
+        if (startDate < minDate) minDate = startDate;
+        if (endDate > maxDate) maxDate = endDate;
+    });
+
+    return { min: minDate, max: maxDate };
+}
+
+// Initialize the default view
+$(document).ready(function() {
+    renderGanttChart();
+});
+</script>
+
+{% endblock %}

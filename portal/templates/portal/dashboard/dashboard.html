@@ -1,0 +1,1082 @@
+<!-- templates/monitoring/dashboard.html -->
+{% extends 'web_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load monitoring_filters %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid py-1">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-1">Monitoring & Evaluation Dashboard</h1>
+                    <p class="text-muted mb-0">Track project performance, compliance, and farmer progress</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                        <i class="fas fa-plus me-2"></i>New Project
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#scheduleVisitModal">
+                        <i class="fas fa-calendar me-2"></i>Schedule Visit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Farmers
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_farmers|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Projects
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_projects|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Loan Disbursed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">GHS {{ total_loan_disbursed|floatformat:2|intcomma }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Hectares Under Cultivation
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_hectares|floatformat:2|intcomma }} ha</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-seedling fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Tree Survival Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tree_survival_rate|floatformat:1 }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tree fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Performance & Compliance -->
+    <div class="row">
+        <!-- Project Progress -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Project Progress Overview</h6>
+                    <a href="/monitoring/projects/">View All Projects</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Farmers</th>
+                                    <th>Budget Utilized</th>
+                                    <th>Completion</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects|slice:":5" %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ project.name }}</strong>
+                                        <br><small class="text-muted">{{ project.code }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if project.status == 'active' %}bg-success
+                                            {% elif project.status == 'planning' %}bg-info
+                                            {% elif project.status == 'completed' %}bg-primary
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ project.get_status_display|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar 
+                                                {% if project.progress >= 80 %}bg-success
+                                                {% elif project.progress >= 50 %}bg-info
+                                                {% elif project.progress >= 30 %}bg-warning
+                                                {% else %}bg-danger{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {{ project.progress }}%;" 
+                                                aria-valuenow="{{ project.progress }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                                {{ project.progress }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ project.participating_farmers.count }}</td>
+                                    <td>GHS {{ project.budget_utilized|default:0|floatformat:2|intcomma }}</td>
+                                    <td>{{ project.end_date|timeuntil }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/monitoring/projects/{{ project.id }}/" class="btn btn-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/monitoring/projects/{{ project.id }}/report/" class="btn btn-primary">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">No projects found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Alerts -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4 border-left-warning">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-warning">
+                    <h6 class="m-0 font-weight-bold text-white">Compliance Alerts</h6>
+                    <a href="/monitoring/compliance/" class="text-white">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for check in compliance_checks|filter_overdue|slice:":5" %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <h6 class="mb-0">{{ check.name }}</h6>
+                                <span class="badge bg-danger">{{ check.due_date|timeuntil }} overdue</span>
+                            </div>
+                            <p class="mb-0 small text-muted">
+                                {{ check.project.name }} · {{ check.get_severity_display }}
+                                {% if check.assigned_to %}
+                                · Assigned to: {{ check.assigned_to.user_profile.user.get_full_name }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            No compliance alerts
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Regional Performance -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Regional Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="regionalPerformanceChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loan Performance -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Loan Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="loanPerformanceChart" height="280"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yield Analysis -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Yield Analysis</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="yieldAnalysisChart" height="245"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities & Quick Actions -->
+    <div class="row mb-4">
+        <!-- Recent Activities -->
+        <div class="col-xl-8 col-lg-6 mb-1">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Activities</h6>
+                    <a href="/monitoring/activities/">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for activity in recent_activities|slice:":5" %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ activity.get_action_type_display }} - {{ activity.model_name }}</h6>
+                                <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1 small">
+                                <span class="badge bg-info">{{ activity.user.get_full_name|default:"System" }}</span>
+                                {{ activity.details|truncatewords:10 }}
+                            </p>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            No recent activities
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/projects/" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-project-diagram me-2"></i>Manage Projects
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/farmers/" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-users me-2"></i>View Farmers
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/loans/" class="btn btn-outline-success w-100 mb-2">
+                                <i class="fas fa-hand-holding-usd me-2"></i>Loan Management
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/compliance/" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-clipboard-check me-2"></i>Compliance Checks
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/reports/" class="btn btn-outline-danger w-100 mb-2">
+                                <i class="fas fa-chart-bar me-2"></i>Generate Reports
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/export/" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="fas fa-download me-2"></i>Export Data
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analysis Section -->
+    <div class="container-fluid">
+        <!-- Date Range Filter -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="timeFilter">Time Range</label>
+                    <select class="form-control" id="timeFilter">
+                        <option value="30">Last Month</option>
+                        <option value="60">Last 2 Months</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="180" selected>Last 6 Months</option>
+                        <option value="360">Last 12 Months</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="regionFilter">Region</label>
+                    <select class="form-control" id="regionFilter" multiple>
+                        {% for region in regions %}
+                            <option value="{{ region.id }}" selected>{{ region.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="projectFilter">Project</label>
+                    <select class="form-control" id="projectFilter" multiple>
+                        {% for project in projects %}
+                            <option value="{{ project.id }}" selected>{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <button class="btn btn-primary mr-2" onclick="loadComparisonData()">Apply Filters</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Analysis Chart -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Detailed Performance Analysis</h6>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" 
+                                 aria-labelledby="dropdownMenuLink">
+                                <div class="dropdown-header">Chart Options:</div>
+                                <a class="dropdown-item" href="#" onclick="changeChartType('bar')">Bar Chart</a>
+                                <a class="dropdown-item" href="#" onclick="changeChartType('line')">Line Chart</a>
+                                <a class="dropdown-item" href="#" onclick="changeChartType('stack')">Stacked Bar</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" onclick="toggleAllSeries(true)">Show All</a>
+                                <a class="dropdown-item" href="#" onclick="toggleAllSeries(false)">Hide All</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="performanceChart" style="height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProjectModalLabel">Add New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProjectForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="projectName" class="form-label">Project Name</label>
+                            <input type="text" class="form-control" id="projectName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="projectCode" class="form-label">Project Code</label>
+                            <input type="text" class="form-control" id="projectCode" name="code" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" name="start_date" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" name="end_date" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="totalBudget" class="form-label">Total Budget (GHS)</label>
+                            <input type="number" class="form-control" id="totalBudget" name="total_budget" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="projectManager" class="form-label">Project Manager</label>
+                            <select class="form-select" id="projectManager" name="manager" required>
+                                <option value="">Select Manager</option>
+                                {% for staff in staff_members %}
+                                    <option value="{{ staff.id }}">{{ staff.user_profile.user.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="projectDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitProject">Add Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Visit Modal -->
+<div class="modal fade" id="scheduleVisitModal" tabindex="-1" aria-labelledby="scheduleVisitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scheduleVisitModalLabel">Schedule Farm Visit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleVisitForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="visitFarm" class="form-label">Select Farm</label>
+                            <select class="form-select" id="visitFarm" name="farm" required>
+                                <option value="">Select Farm</option>
+                                {% for farm in farms %}
+                                    <option value="{{ farm.id }}">{{ farm.name }} ({{ farm.farmer.user_profile.user.get_full_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="visitDate" class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" id="visitDate" name="visit_date" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="visitStaff" class="form-label">Assigned Staff</label>
+                            <select class="form-select" id="visitStaff" name="conducted_by" required>
+                                <option value="">Select Staff</option>
+                                {% for staff in staff_members %}
+                                    <option value="{{ staff.id }}">{{ staff.user_profile.user.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="visitPurpose" class="form-label">Purpose</label>
+                            <input type="text" class="form-control" id="visitPurpose" name="purpose" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="visitNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="visitNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitVisit">Schedule Visit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.select2-container--default .select2-selection--multiple {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+    min-height: calc(1.5em + 0.75rem + 2px);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: white;
+}
+
+.progress {
+    background-color: #e9ecef;
+    border-radius: 0.375rem;
+}
+</style>
+
+<!-- JavaScript Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// Global variables
+let performanceChart;
+let currentChartType = 'bar';
+let currentData = null;
+
+// Initialize charts and functionality
+$(document).ready(function() {
+    // Initialize charts
+    initializeCharts();
+    
+    // Initialize performance chart
+    initializePerformanceChart();
+    
+    // Set up event handlers
+    setupEventHandlers();
+});
+
+// Initialize performance chart
+function initializePerformanceChart() {
+    performanceChart = echarts.init(document.getElementById('performanceChart'));
+    
+    // Load initial data
+    loadComparisonData();
+}
+
+// Set up all event handlers
+function setupEventHandlers() {
+    // Handle form submission for adding project
+    $('#submitProject').click(function() {
+        const formData = $('#addProjectForm').serialize();
+        
+        $.ajax({
+            url: "{% url 'create_project' %}",
+            method: "POST",
+            data: formData,
+            success: function(response) {
+                $('#addProjectModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Project added successfully.'
+                });
+                // Reload page to update data
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to add project. Please try again.'
+                });
+            }
+        });
+    });
+    
+    // Handle form submission for scheduling visit
+    $('#submitVisit').click(function() {
+        const formData = $('#scheduleVisitForm').serialize();
+        
+        $.ajax({
+            url: "",
+            method: "POST",
+            data: formData,
+            success: function(response) {
+                $('#scheduleVisitModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Farm visit scheduled successfully.'
+                });
+                // Reload page to update data
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to schedule visit. Please try again.'
+                });
+            }
+        });
+    });
+    
+    // Handle time filter change
+    $('#timeFilter').change(function() {
+        loadComparisonData();
+    });
+    
+    // Initialize multi-select
+    $('#regionFilter, #projectFilter').select2({
+        placeholder: "Select options",
+        allowClear: true,
+        width: '100%'
+    });
+    
+    // Window resize handler
+    $(window).resize(function() {
+        if (performanceChart) {
+            performanceChart.resize();
+        }
+    });
+}
+
+// Initialize charts function
+function initializeCharts() {
+    // Regional Performance Chart
+    const regionalCtx = document.getElementById('regionalPerformanceChart').getContext('2d');
+    const regionalData = {{ regional_data|safe }};
+    
+    new Chart(regionalCtx, {
+        type: 'doughnut',
+        data: {
+            labels: regionalData.map(item => item.region),
+            datasets: [{
+                data: regionalData.map(item => item.farmers),
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+                    '#858796', '#5a5c69', '#6f42c1', '#e83e8c', '#fd7e14'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value} farmers`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Loan Performance Chart
+    const loanCtx = document.getElementById('loanPerformanceChart').getContext('2d');
+    const loanData = {{ loan_data|safe }};
+    
+    new Chart(loanCtx, {
+        type: 'bar',
+        data: {
+            labels: loanData.map(item => item.month),
+            datasets: [
+                {
+                    label: 'Disbursed',
+                    data: loanData.map(item => item.disbursed),
+                    backgroundColor: '#1cc88a',
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                },
+                {
+                    label: 'Repaid',
+                    data: loanData.map(item => item.repaid),
+                    backgroundColor: '#4e73df',
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                },
+                {
+                    label: 'Defaulted',
+                    data: loanData.map(item => item.defaulted),
+                    backgroundColor: '#e74a3b',
+                    borderWidth: 1,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'GHS ' + value.toLocaleString();
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Amount (GHS)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Months'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': GHS ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Yield Analysis Chart
+    const yieldCtx = document.getElementById('yieldAnalysisChart').getContext('2d');
+    const yieldData = {{ yield_data|safe }};
+    
+    new Chart(yieldCtx, {
+        type: 'pie',
+        data: {
+            labels: yieldData.map(item => item.variety),
+            datasets: [{
+                data: yieldData.map(item => item.yield),
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#858796', '#5a5c69', '#6f42c1', '#e83e8c', '#fd7e14'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value} kg/ha`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Load comparison data
+function loadComparisonData() {
+    const timeRange = $('#timeFilter').val();
+    const regions = $('#regionFilter').val() || [];
+    const projects = $('#projectFilter').val() || [];
+    
+    const url = `{% url 'performance_analysis_api' %}?time_range=${timeRange}&regions=${regions.join(',')}&projects=${projects.join(',')}`;
+    
+    showLoading();
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            currentData = data;
+            updatePerformanceChart(data);
+            hideLoading();
+        })
+        .catch(error => {
+            console.error('Error loading performance data:', error);
+            hideLoading();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load performance data. Please try again.'
+            });
+        });
+}
+
+function showLoading() {
+    if (performanceChart) {
+        performanceChart.showLoading('default', {
+            text: 'Loading performance data...',
+            color: '#4e73df',
+            textColor: '#495057',
+            maskColor: 'rgba(255, 255, 255, 0.8)'
+        });
+    }
+}
+
+function hideLoading() {
+    if (performanceChart) {
+        performanceChart.hideLoading();
+    }
+}
+
+// Update performance chart
+function updatePerformanceChart(data) {
+    if (!performanceChart) return;
+    
+    const option = {
+        backgroundColor: '#f8f9fa',
+        title: {
+            text: 'Detailed Performance Analysis',
+            subtext: 'KPIs and Metrics Overview',
+            left: 'center',
+            top: 20,
+            textStyle: {
+                color: '#343a40',
+                fontSize: 18,
+                fontWeight: 'bold'
+            },
+            subtextStyle: {
+                color: '#6c757d',
+                fontSize: 13
+            }
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            },
+            backgroundColor: 'rgba(255,255,255,0.96)',
+            borderColor: '#dee2e6',
+            borderWidth: 1,
+            textStyle: {
+                color: '#495057'
+            }
+        },
+        legend: {
+            data: data.series.map(s => s.name),
+            right: 20,
+            top: 60,
+            type: 'scroll',
+            textStyle: {
+                color: '#495057',
+                fontSize: 11
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '15%',
+            top: '25%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: data.months,
+            axisLine: {
+                lineStyle: {
+                    color: '#adb5bd'
+                }
+            },
+            axisLabel: {
+                color: '#495057',
+                rotate: 30,
+                fontSize: 11,
+                margin: 15
+            }
+        },
+        yAxis: {
+            type: 'value',
+            name: 'Values',
+            position: 'left',
+                 nameTextStyle: {
+                color: '#495057',
+                fontSize: 12,
+                fontWeight: 'bold'
+            },
+            axisLine: {
+                lineStyle: {
+                    color: '#495057'
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    type: 'dashed',
+                    color: '#e9ecef'
+                }
+            },
+            axisLabel: {
+                color: '#495057',
+                fontSize: 11,
+                formatter: function(value) {
+                    return value.toLocaleString();
+                }
+            }
+        },
+        series: data.series.map((series, index) => ({
+            name: series.name,
+            type: currentChartType === 'stack' ? 'bar' : currentChartType,
+            stack: currentChartType === 'stack' ? 'total' : null,
+            data: series.data,
+            itemStyle: {
+                color: series.color
+            },
+            label: {
+                show: currentChartType !== 'line',
+                position: 'top',
+                formatter: function(params) {
+                    return params.value > 0 ? params.value.toLocaleString() : '';
+                },
+                color: series.color,
+                fontSize: 9,
+                fontWeight: 'bold'
+            },
+            emphasis: {
+                focus: 'series'
+            },
+            lineStyle: {
+                width: 3
+            },
+            symbolSize: 6
+        })),
+        toolbox: {
+            feature: {
+                dataZoom: {
+                    yAxisIndex: 'none'
+                },
+                restore: {},
+                saveAsImage: {
+                    title: 'Save Image',
+                    pixelRatio: 2,
+                    backgroundColor: '#f8f9fa'
+                },
+                magicType: {
+                    type: ['line', 'bar', 'stack'],
+                    title: {
+                        line: 'Line Chart',
+                        bar: 'Bar Chart',
+                        stack: 'Stacked Bar'
+                    }
+                }
+            },
+            right: 20,
+            top: 100
+        }
+    };
+    
+    performanceChart.setOption(option, true);
+}
+
+// Chart type toggle function
+function changeChartType(type) {
+    currentChartType = type;
+    if (currentData) {
+        updatePerformanceChart(currentData);
+    }
+}
+
+// Toggle all series
+function toggleAllSeries(show) {
+    if (show) {
+        $('#regionFilter').val({{ regions|map_attr:'id'|join:',' }}).trigger('change');
+        $('#projectFilter').val({{ projects|map_attr:'id'|join:',' }}).trigger('change');
+    } else {
+        $('#regionFilter').val([]).trigger('change');
+        $('#projectFilter').val([]).trigger('change');
+    }
+}
+
+// Reset filters
+function resetFilters() {
+    $('#timeFilter').val('180');
+    $('#regionFilter').val({{ regions|map_attr:'id'|join:',' }}).trigger('change');
+    $('#projectFilter').val({{ projects|map_attr:'id'|join:',' }}).trigger('change');
+    loadComparisonData();
+}
+
+// Auto-refresh data every 5 minutes
+setInterval(function() {
+    loadComparisonData();
+}, 300000);
+
+// Export functionality
+function exportChartData() {
+    if (!currentData) return;
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+        + "Month," + currentData.series.map(s => s.name).join(",") + "\\n"
+        + currentData.months.map((month, i) => 
+            month + "," + currentData.series.map(s => s.data[i]).join(",")
+        ).join("\\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "performance_analysis.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+
+{% endblock %}
+
+                

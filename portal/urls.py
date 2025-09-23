@@ -3,6 +3,8 @@ from portal.auth_views import dashboard_view
 from portal.views.farmer import *
 from portal.views.farms import *
 from portal.views.project import *
+from portal.views.loans import *
+from portal.views.dashboard import *
 from django.contrib.auth import views as auth_views
 
 
@@ -11,6 +13,19 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name="account/login.html"), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
+
+
+    #dashboard
+
+    path('dashboard/overview/', monitoring_dashboard, name='monitoring_dashboard'),
+   
+    path('api/performance-analysis/', performance_analysis_api, name='performance_analysis_api'),
+    path('api/projects/', project_list, name='project_list'),
+    path('api/farmers/', farmer_list, name='farmer_list'),
+    path('api/loans/', loan_management, name='loan_management'),
+    # path('compliance/', compliance_checks, name='compliance_checks'),
+    # path('reports/', generate_reports, name='generate_reports'),
+    # path('export/', export_data, name='export_data'),
 
     # Farmer management main page
     path('farmers/',farmer_management, name='farmer_management'),
@@ -101,8 +116,57 @@ urlpatterns = [
     path('projects/milestones/<int:milestone_id>/detail/', milestone_detail, name='milestone_detail'),
 
    # Timeline URLs
-path('projects/timeline/page/', timeline_page, name='timeline_page'),
-path('projects/timeline/data/', timeline_data, name='timeline_data'),
-path('projects/timeline/summary/', timeline_summary, name='timeline_summary')
+    path('projects/timeline/page/', timeline_page, name='timeline_page'),
+    path('projects/timeline/data/', timeline_data, name='timeline_data'),
+    path('projects/timeline/summary/', timeline_summary, name='timeline_summary'),
 
+
+    ###################################################################################################################
+
+    path('loans/applications/', loan_management, name='loan_applications'),
+    
+    # Loan CRUD operations
+    path('loans/applications/list/', loan_list, name='loan_list'),
+    path('loans/applications/create/', create_loan, name='create_loan'),
+    path('loans/applications/update/<int:loan_id>/', update_loan, name='update_loan'),
+    path('loans/applications/delete/', delete_loan, name='delete_loan'),
+    path('loans/applications/detail/<int:loan_id>/', get_loan_detail, name='get_loan_detail'),
+
+    # Loan approval/rejection
+    path('loans/applications/approve/<int:loan_id>/', approve_loan, name='approve_loan'),
+    path('loans/applications/disburse/<int:loan_id>/', disburse_loan, name='disburse_loan'),
+    path('loans/applications/reject/<int:loan_id>/', reject_loan, name='reject_loan'),
+    
+    # Loan data and utilities
+    path('loans/applications/stats/', get_loan_stats, name='get_loan_stats'),
+    path('loans/applications/export/', loan_export, name='loan_export'),
+    path('loans/applications/available-farmers/', get_available_farmers_for_loan, name='get_available_farmers_for_loan'),
+    path('loans/applications/active-projects/', get_active_projects, name='get_active_projects'),
+
+
+
+    ##################################################################################################################
+
+    # Loan Disbursement URLs
+    path('loans/disbursements/',disbursement_list_page, name='disbursement_list_page'),
+    path('loans/disbursements/data/',disbursement_list, name='disbursement_list'),
+    path('loans/disbursements/detail/<int:disbursement_id>/',disbursement_detail, name='disbursement_detail'),
+    path('loans/disbursements/loan-options/',get_loans_with_disbursements, name='get_loans_with_disbursements'),
+
+
+    ##################################################################################################################
+
+    path('loans/repayments/', repayment_tracking, name='repayment_tracking'),
+    
+    # Repayment CRUD operations
+    path('repayments/list/', repayment_list, name='repayment_list'),
+    path('repayments/create/', create_repayment, name='create_repayment'),
+    path('repayments/update/<int:repayment_id>/', update_repayment, name='update_repayment'),
+    path('repayments/delete/', delete_repayment, name='delete_repayment'),
+    path('repayments/detail/<int:repayment_id>/', get_repayment_detail, name='get_repayment_detail'),
+    
+    # Repayment data and utilities
+    path('repayments/stats/', get_repayment_stats, name='get_repayment_stats'),
+    path('repayments/export/', repayment_export, name='repayment_export'),
+    path('repayments/repayable-loans/', get_repayable_loans, name='get_repayable_loans'),
 ]

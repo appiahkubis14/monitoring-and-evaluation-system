@@ -94,16 +94,16 @@ class Sidebar:
                     "url": "/projects/timeline/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
                 },
-                "Compliance": {
-                    "icon": "fas fa-clipboard-check", 
-                    "url": "/projects/compliance/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
-                "Progress Reports": {
-                    "icon": "fas fa-file-contract", 
-                    "url": "/projects/reports/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
-                },
+                # "Compliance": {
+                #     "icon": "fas fa-clipboard-check", 
+                #     "url": "/projects/compliance/", 
+                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                # },
+                # "Progress Reports": {
+                #     "icon": "fas fa-file-contract", 
+                #     "url": "/projects/reports/", 
+                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
+                # },
             }
         },
         

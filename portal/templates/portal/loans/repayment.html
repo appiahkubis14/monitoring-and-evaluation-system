@@ -1,0 +1,1106 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Repayment Tracking</h4>
+                <p class="text-muted mb-0">Manage and track loan repayments</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Loan System</a></li>
+                    <li class="breadcrumb-item active">Repayment Tracking</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #0871B9 0%, #065a93 100%);
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #065a93 0%, #054a7a 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .repayment-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .repayment-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid #0871B9;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .status-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+    }
+    .progress-bar-container {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+    .repayment-detail-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #0871B9;
+    }
+    .financial-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stats-card {
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+        color: white;
+    }
+    .stats-card-primary {
+        background: linear-gradient(135deg, #0871B9 0%, #065a93 100%);
+    }
+    .stats-card-success {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+    }
+    .stats-card-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+    .stats-card-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card stats-card-primary">
+            <h5 class="mb-1">Total Repayments</h5>
+            <h3 id="total-repayments">0</h3>
+            <p class="mb-0">All Time</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-card-success">
+            <h5 class="mb-1">Total Amount</h5>
+            <h3 id="total-amount">₵0.00</h3>
+            <p class="mb-0">All Time</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-card-info">
+            <h5 class="mb-1">Recent Repayments</h5>
+            <h3 id="recent-repayments">0</h3>
+            <p class="mb-0">Last 30 Days</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-card-warning">
+            <h5 class="mb-1">Avg. Repayment</h5>
+            <h3 id="avg-repayment">₵0.00</h3>
+            <p class="mb-0">All Time</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" id="createRepaymentBtn">
+                        <i class="fas fa-plus me-2"></i>Record Repayment
+                    </button>
+                    <button class="btn btn-gradient-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-gradient-primary" id="refreshBtn">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
+                        <option value="">All Status</option>
+                        <option value="disbursed">Disbursed</option>
+                        <option value="repaying">Repaying</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <input type="date" id="dateFrom" class="form-control form-control-sm" placeholder="From Date">
+                    <input type="date" id="dateTo" class="form-control form-control-sm" placeholder="To Date">
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="repaymentTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Repayment Date</th>
+                                <th>Loan ID</th>
+                                <th>Farmer Name</th>
+                                <th>Amount (GHS)</th>
+                                <th>Transaction Ref</th>
+                                <th>Received By</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Repayment Modal -->
+<div class="modal fade" id="createRepaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Record New Repayment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createRepaymentForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Loan*</label>
+                                <select name="loan_id" class="form-control" required id="loanSelect">
+                                    <option value="">Select Loan</option>
+                                    <!-- Loans will be loaded via AJAX -->
+                                </select>
+                                <div class="form-text">Only disbursed or repaying loans are listed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Amount (GHS)*</label>
+                                <input type="number" name="amount" class="form-control" step="0.01" min="0" required id="repaymentAmount">
+                                <div class="form-text" id="outstandingAmountText">Outstanding: ₵0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Repayment Date*</label>
+                                <input type="date" name="repayment_date" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Received By</label>
+                                <select name="received_by_id" class="form-control" id="staffSelect">
+                                    <option value="">Select Staff (Optional)</option>
+                                    <!-- Staff will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Transaction Reference</label>
+                                <input type="text" name="transaction_reference" class="form-control" placeholder="Enter transaction reference">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Repayment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Repayment Detail Modal -->
+<div class="modal fade" id="repaymentDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Repayment Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="repaymentDetailContent">
+                    <!-- Content will be loaded via AJAX -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="editRepaymentBtn">Edit</button>
+                <button type="button" class="btn btn-danger" id="deleteRepaymentBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Repayment Modal -->
+<div class="modal fade" id="editRepaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Edit Repayment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editRepaymentForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="repayment_id" id="editRepaymentId">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Loan</label>
+                                <input type="text" class="form-control" id="editLoanInfo" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Amount (GHS)*</label>
+                                <input type="number" name="amount" class="form-control" step="0.01" min="0" required id="editRepaymentAmount">
+                                <div class="form-text" id="editOutstandingAmountText">Outstanding: ₵0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Repayment Date*</label>
+                                <input type="date" name="repayment_date" class="form-control" required id="editRepaymentDate">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Received By</label>
+                                <select name="received_by_id" class="form-control" id="editStaffSelect">
+                                    <option value="">Select Staff (Optional)</option>
+                                    <!-- Staff will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Transaction Reference</label>
+                                <input type="text" name="transaction_reference" class="form-control" id="editTransactionReference" placeholder="Enter transaction reference">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="3" id="editNotes" placeholder="Additional notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Repayment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Loan Management System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- DataTables and other scripts -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    let currentRepaymentId = null;
+    
+    // Initialize DataTable
+    var repaymentTable = $('#repaymentTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'repayment_list' %}",
+            type: "GET",
+            data: function(d) {
+                d.status = $('#statusFilter').val();
+                d.date_from = $('#dateFrom').val();
+                d.date_to = $('#dateTo').val();
+                d.search = $('#searchInput').val();
+            }
+        },
+        columns: [
+            { "data": "repayment_date" },
+            { "data": "loan_id" },
+            { 
+                "data": "farmer_name",
+                "render": function(data, type, row) {
+                    return data + ' (' + row.farmer_national_id + ')';
+                }
+            },
+            { 
+                "data": "amount",
+                "render": function(data, type, row) {
+                    return '₵' + parseFloat(data).toLocaleString('en-US', {minimumFractionDigits: 2});
+                }
+            },
+            { "data": "transaction_reference" },
+            { "data": "received_by" },
+            { "data": "created_at" },
+            {
+                "data": "id",
+                "render": function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-info view-btn" data-id="${data}" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning edit-btn" data-id="${data}" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${data}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        order: [[0, 'desc']],
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: "copy",
+                text: '<i class="fas fa-copy"></i> Copy',
+                className: "btn btn-sm btn-outline-secondary",
+            },
+            {
+                extend: "csv",
+                text: '<i class="fas fa-file-csv"></i> CSV',
+                className: "btn btn-sm btn-outline-success",
+            },
+            {
+                extend: "excel",
+                text: '<i class="fas fa-file-excel"></i> Excel',
+                className: "btn btn-sm btn-outline-primary",
+            },
+            {
+                extend: "pdf",
+                text: '<i class="fas fa-file-pdf"></i> PDF',
+                className: "btn btn-sm btn-outline-danger",
+            },
+            {
+                text: '<i class="fas fa-sync-alt"></i> Refresh',
+                className: "btn btn-sm btn-outline-info",
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload();
+                    loadStats();
+                }
+            }
+        ]
+    });
+
+    // Load repayment statistics
+    function loadStats() {
+        $.ajax({
+            url: "{% url 'get_repayment_stats' %}",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#total-repayments').text(response.stats.total_repayments);
+                    $('#total-amount').text('₵' + parseFloat(response.stats.total_repayment_amount).toLocaleString('en-US', {minimumFractionDigits: 2}));
+                    $('#recent-repayments').text(response.stats.recent_repayments);
+                    $('#avg-repayment').text('₵' + parseFloat(response.stats.avg_repayment_amount).toLocaleString('en-US', {minimumFractionDigits: 2}));
+                }
+            }
+        });
+    }
+
+    // Load repayable loans for dropdown
+    function loadRepayableLoans() {
+        $.ajax({
+            url: "{% url 'get_repayable_loans' %}",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const loanSelect = $('#loanSelect');
+                    loanSelect.empty().append('<option value="">Select Loan</option>');
+                    
+                    response.loans.forEach(function(loan) {
+                        loanSelect.append(
+                            $('<option>', {
+                                value: loan.id,
+                                text: `${loan.loan_id} - ${loan.farmer_name} (₵${parseFloat(loan.outstanding_amount).toLocaleString('en-US', {minimumFractionDigits: 2})} outstanding)`,
+                                'data-outstanding': loan.outstanding_amount
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    
+
+    function loadStaffMembers() {
+    $.ajax({
+        url: '/projects/staff/',
+        type: 'GET',
+        success: function(data) {
+            if (data.success) {
+                const managerSelect = $('#staffSelect');
+                const managerFilter = $('#editStaffSelect');
+                
+                managerSelect.empty().append('<option value="">Select a manager</option>');
+                managerFilter.empty().append('<option value="">All Managers</option>');
+                
+                $.each(data.staff, function(index, staff) {
+                    managerSelect.append($('<option>', {
+                        value: staff.id,
+                        text: `${staff.name} (${staff.designation})`
+                    }));
+                    
+                    managerFilter.append($('<option>', {
+                        value: staff.id,
+                        text: staff.name
+                    }));
+                });
+            }
+        },
+        error: function(error) {
+            console.error('Error loading staff members:', error);
+            showAlert('error', 'Error', 'Failed to load staff members.');
+        }
+    });
+}
+
+
+
+    // Update outstanding amount when loan is selected
+    $('#loanSelect').change(function() {
+        const outstandingAmount = $(this).find('option:selected').data('outstanding');
+        $('#outstandingAmount').val(outstandingAmount);
+    });
+    // Filter handlers
+    $('#statusFilter, #dateFrom, #dateTo').change(function() {
+        repaymentTable.ajax.reload();
+    });
+
+    $('#searchInput').on('keyup', function() {
+        repaymentTable.ajax.reload();
+    });
+
+    $('#refreshBtn').click(function() {
+        repaymentTable.ajax.reload();
+        loadStats();
+    });
+
+    // Create repayment button
+    $('#createRepaymentBtn').click(function() {
+        loadRepayableLoans();
+        loadStaffMembers();
+        // Set default repayment date to today
+        $('input[name="repayment_date"]').val(new Date().toISOString().split('T')[0]);
+        $('#createRepaymentModal').modal('show');
+    });
+
+    // Create repayment form submission
+    $('#createRepaymentForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        $('#createRepaymentModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        $.ajax({
+            url: "{% url 'create_repayment' %}",
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#createRepaymentModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    repaymentTable.ajax.reload();
+                    loadStats();
+                    $('#createRepaymentForm')[0].reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while recording the repayment.'
+                });
+            },
+            complete: function() {
+                $('#createRepaymentModal button[type="submit"]').prop('disabled', false).html('Record Repayment');
+            }
+        });
+    });
+
+    // View repayment details
+    $('#repaymentTable').on('click', '.view-btn', function() {
+        const repaymentId = $(this).data('id');
+        currentRepaymentId = repaymentId;
+        
+        $.ajax({
+            url: `/repayments/detail/${repaymentId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#repaymentDetailContent').html(`
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="repayment-detail-card mb-3">
+                                    <h5 class="mb-3">Repayment Information</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Amount:</span> ₵${parseFloat(response.repayment.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Date:</span> ${response.repayment.repayment_date}</p>
+                                            <p><span class="detail-label">Transaction Ref:</span> ${response.repayment.transaction_reference}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Received By:</span> ${response.repayment.received_by}</p>
+                                            <p><span class="detail-label">Created:</span> ${response.repayment.created_at}</p>
+                                            <p><span class="detail-label">Updated:</span> ${response.repayment.updated_at}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <p><span class="detail-label">Notes:</span> ${response.repayment.notes}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="financial-card mb-3">
+                                    <h5 class="mb-3">Loan Information</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Loan ID:</span> ${response.loan.loan_id}</p>
+                                            <p><span class="detail-label">Farmer:</span> ${response.loan.farmer_name}</p>
+                                            <p><span class="detail-label">National ID:</span> ${response.loan.farmer_national_id}</p>
+                                            <p><span class="detail-label">Project:</span> ${response.loan.project_name}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Amount:</span> ₵${parseFloat(response.loan.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Purpose:</span> ${response.loan.purpose}</p>
+                                            <p><span class="detail-label">Status:</span> <span class="badge ">${response.loan.status_display}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="financial-card">
+                                    <h5 class="mb-3">Financial Summary</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Total Disbursed:</span> ₵${parseFloat(response.financials.total_disbursed).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Total Repaid:</span> ₵${parseFloat(response.financials.total_repaid).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Outstanding:</span> ₵${parseFloat(response.financials.outstanding_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Repayment %:</span> ${response.financials.repayment_percentage.toFixed(1)}%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('#repaymentDetailModal').modal('show');
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load repayment details'
+                });
+            }
+        });
+    });
+
+    // Edit repayment button
+    $('#editRepaymentBtn').click(function() {
+        if (!currentRepaymentId) return;
+        
+        $.ajax({
+            url: `/repayments/detail/${currentRepaymentId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#editRepaymentId').val(currentRepaymentId);
+                    $('#editLoanInfo').val(`${response.loan.loan_id} - ${response.loan.farmer_name}`);
+                    $('#editRepaymentAmount').val(response.repayment.amount);
+                    $('#editRepaymentDate').val(response.repayment.repayment_date);
+                    $('#editTransactionReference').val(response.repayment.transaction_reference);
+                    $('#editNotes').val(response.repayment.notes);
+                    
+                    // Set outstanding amount
+                    $('#editOutstandingAmountText').text(`Outstanding: ₵${parseFloat(response.financials.outstanding_amount + response.repayment.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`);
+                    $('#editRepaymentAmount').attr('max', response.financials.outstanding_amount + response.repayment.amount);
+                    
+                    // Set received by if exists
+                    if (response.repayment.received_by_id) {
+                        $('#editStaffSelect').val(response.repayment.received_by_id);
+                    }
+                    
+                    $('#repaymentDetailModal').modal('hide');
+                    $('#editRepaymentModal').modal('show');
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load repayment details for editing'
+                });
+            }
+        });
+    });
+
+    // Edit repayment form submission
+    $('#editRepaymentForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        $('#editRepaymentModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+        $.ajax({
+            url: `/repayments/update/${currentRepaymentId}/`,
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#editRepaymentModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    repaymentTable.ajax.reload();
+                    loadStats();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while updating the repayment.'
+                });
+            },
+            complete: function() {
+                $('#editRepaymentModal button[type="submit"]').prop('disabled', false).html('Update Repayment');
+            }
+        });
+    });
+
+    // Delete repayment button
+    $('#deleteRepaymentBtn').click(function() {
+        if (!currentRepaymentId) return;
+        
+        Swal.fire({
+            title: 'Delete Repayment',
+            text: 'Are you sure you want to delete this repayment record? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete It!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{% url 'delete_repayment' %}",
+                    type: "POST",
+                    data: JSON.stringify({ id: currentRepaymentId }),
+                    contentType: "application/json",
+                    headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#repaymentDetailModal').modal('hide');
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            repaymentTable.ajax.reload();
+                            loadStats();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.error
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: xhr.responseJSON?.error || 'An error occurred while deleting the repayment.'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // Direct delete from table
+    $('#repaymentTable').on('click', '.delete-btn', function() {
+        const repaymentId = $(this).data('id');
+        
+        Swal.fire({
+            title: 'Delete Repayment',
+            text: 'Are you sure you want to delete this repayment record? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete It!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{% url 'delete_repayment' %}",
+                    type: "POST",
+                    data: JSON.stringify({ id: repaymentId }),
+                    contentType: "application/json",
+                    headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            repaymentTable.ajax.reload();
+                            loadStats();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.error
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: xhr.responseJSON?.error || 'An error occurred while deleting the repayment.'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // Direct edit from table
+    $('#repaymentTable').on('click', '.edit-btn', function() {
+        const repaymentId = $(this).data('id');
+        currentRepaymentId = repaymentId;
+        
+        $.ajax({
+            url: `/repayments/detail/${repaymentId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#editRepaymentId').val(repaymentId);
+                    $('#editLoanInfo').val(`${response.loan.loan_id} - ${response.loan.farmer_name}`);
+                    $('#editRepaymentAmount').val(response.repayment.amount);
+                    $('#editRepaymentDate').val(response.repayment.repayment_date);
+                    $('#editTransactionReference').val(response.repayment.transaction_reference);
+                    $('#editNotes').val(response.repayment.notes);
+                    
+                    // Set outstanding amount
+                    $('#editOutstandingAmountText').text(`Outstanding: ₵${parseFloat(response.financials.outstanding_amount + response.repayment.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}`);
+
+        // Set outstanding amount
+        $('#editOutstandingAmountText').text(`Outstanding: ₵${ parseFloat(response.financials.outstanding_amount + response.repayment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#editRepaymentAmount').attr('max', response.financials.outstanding_amount + response.repayment.amount);
+
+        // Set received by if exists
+        if (response.repayment.received_by_id) {
+            $('#editStaffSelect').val(response.repayment.received_by_id);
+        }
+
+        $('#editRepaymentModal').modal('show');
+        } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load repayment details for editing'
+        });
+        }
+        },
+        error: function() {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load repayment details for editing'
+        });
+        }
+        });
+        });
+
+        // Export button
+        $('#exportBtn').click(function() {
+        Swal.fire({
+            title: 'Export Repayments',
+            text: 'Choose export format',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'CSV',
+            cancelButtonText: 'JSON',
+            showDenyButton: true,
+            denyButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const format = 'csv';
+                exportRepayments(format);
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                const format = 'json';
+                exportRepayments(format);
+            }
+        });
+        });
+
+        function exportRepayments(format) {
+        let url = `/ repayments /export/?format=${format}`;
+            const dateFrom = $('#dateFrom').val();
+            const dateTo = $('#dateTo').val();
+            const status = $('#statusFilter').val();
+
+            if (dateFrom) url += `&date_from=${dateFrom}`;
+            if (dateTo) url += `&date_to=${dateTo}`;
+            if (status) url += `&status=${status}`;
+
+            window.location.href = url;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Export Started',
+                text: `Your ${format.toUpperCase()} export will download shortly`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+            // Initialize modals
+            $('#createRepaymentModal').on('show.bs.modal', function () {
+                loadRepayableLoans();
+                loadStaffMembers();
+                // Set default repayment date to today
+                $('input[name="repayment_date"]').val(new Date().toISOString().split('T')[0]);
+            });
+
+            $('#editRepaymentModal').on('show.bs.modal', function () {
+                loadStaffMembers();
+            });
+
+            // Initialize page
+            repaymentTable.ajax.reload();
+            loadStats();
+
+            // Add real-time validation for repayment amount
+            $('#repaymentAmount, #editRepaymentAmount').on('input', function () {
+                const maxAmount = parseFloat($(this).attr('max')) || 0;
+                const currentAmount = parseFloat($(this).val()) || 0;
+
+                if (currentAmount > maxAmount) {
+                    $(this).addClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                    $(this).after('<div class="invalid-feedback">Amount cannot exceed outstanding balance</div>');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                }
+            });
+
+            // Add form validation
+            $('#createRepaymentForm, #editRepaymentForm').on('submit', function (e) {
+                const form = $(this)[0];
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                    return false;
+                }
+            });
+
+            // Add date validation
+            $('input[type="date"]').on('change', function () {
+                const selectedDate = new Date($(this).val());
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (selectedDate > today) {
+                    $(this).addClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                    $(this).after('<div class="invalid-feedback">Repayment date cannot be in the future</div>');
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                }
+            });
+
+            // Keyboard shortcuts
+            $(document).keydown(function (e) {
+                // Ctrl + N for new repayment
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    $('#createRepaymentBtn').click();
+                }
+                // F5 to refresh
+                if (e.key === 'F5') {
+                    e.preventDefault();
+                    $('#refreshBtn').click();
+                }
+            });
+
+            // Responsive table adjustments
+            $(window).resize(function () {
+                repaymentTable.columns.adjust();
+            });
+
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Auto-refresh every 5 minutes
+            setInterval(function () {
+                repaymentTable.ajax.reload();
+                loadStats();
+            }, 300000);
+
+            // Show welcome message on first load
+            if (!localStorage.getItem('repaymentWelcomeShown')) {
+                Swal.fire({
+                    title: 'Welcome to Repayment Tracking',
+                    html: `
+                <p>Manage and track all loan repayments in one place.</p>
+                <ul class="text-start">
+                    <li>Record new repayments</li>
+                    <li>View detailed repayment history</li>
+                    <li>Export data for reporting</li>
+                    <li>Track repayment statistics</li>
+                </ul>
+            `,
+                    icon: 'info',
+                    confirmButtonText: 'Get Started'
+                });
+                localStorage.setItem('repaymentWelcomeShown', 'true');
+            }
+        });
+    </script>
+{% endblock %}

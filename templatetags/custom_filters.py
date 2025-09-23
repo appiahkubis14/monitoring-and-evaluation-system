@@ -3,11 +3,28 @@ from django import template
 register = template.Library()
 
 @register.filter
-def getcrumbs(path):
-    """Split a URL path into segments, excluding leading/trailing slashes."""
-    if not path:
+def getcrumbs(value, arg=None):
+    """
+    Custom filter logic here
+    Example: Convert a URL path to breadcrumbs
+    """
+    if not value:
         return []
-    return path.strip('/').split('/')
+    
+    # Example breadcrumb generation from a URL path
+    if isinstance(value, str):
+        crumbs = []
+        parts = value.strip('/').split('/')
+        url = ''
+        
+        for part in parts:
+            if part:
+                url += '/' + part
+                crumbs.append({'name': part.replace('-', ' ').title(), 'url': url})
+        
+        return crumbs
+    
+    return value
 
 @register.filter
 def modulo(value, arg):

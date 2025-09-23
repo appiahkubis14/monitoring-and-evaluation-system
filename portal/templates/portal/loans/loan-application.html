@@ -1,0 +1,1011 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+{% load monitoring_filters %}
+{% load humanize %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Loan Applications Management</h4>
+                <p class="text-muted mb-0">Manage loan applications for farmers</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Loan System</a></li>
+                    <li class="breadcrumb-item active">Loan Applications</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #0871B9 0%, #065a93 100%);
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #065a93 0%, #054a7a 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .loan-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .loan-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid #0871B9;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .status-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+    }
+    .progress-bar-container {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+    .loan-detail-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #0871B9;
+    }
+    .financial-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#createLoanModal">
+                        <i class="fas fa-plus me-2"></i>New Loan Application
+                    </button>
+                    <button class="btn btn-gradient-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-gradient-primary" id="refreshBtn">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
+                        <option value="">All Status</option>
+                        <option value="applied">Applied</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="disbursed">Disbursed</option>
+                        <option value="repaying">Repaying</option>
+                        <option value="completed">Completed</option>
+                        <option value="defaulted">Defaulted</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="loanTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Loan ID</th>
+                                <th>Farmer Name</th>
+                                <th>National ID</th>
+                                <th>Project</th>
+                                <th>Amount (GHS)</th>
+                                <th>Application Date</th>
+                                <th>Status</th>
+                                <th>Disbursed</th>
+                                <th>Repaid</th>
+                                <th>Outstanding</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Loan Modal -->
+<div class="modal fade" id="createLoanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Create New Loan Application</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createLoanForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farmer*</label>
+                                <select name="farmer_id" class="form-control" required id="farmerSelect">
+                                    <option value="">Select Farmer</option>
+                                    <!-- Farmers will be loaded via AJAX -->
+                                </select>
+                                <div class="form-text">Only active farmers are listed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Project</label>
+                                <select name="project_id" class="form-control" id="projectSelect">
+                                    <option value="">Select Project (Optional)</option>
+                                    <!-- Projects will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Loan Amount (GHS)*</label>
+                                <input type="number" name="amount" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Purpose*</label>
+                                <input type="text" name="purpose" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Interest Rate (%)*</label>
+                                <input type="number" name="interest_rate" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Term (Months)*</label>
+                                <input type="number" name="term_months" class="form-control" min="1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Application Date*</label>
+                                <input type="date" name="application_date" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Collateral Details</label>
+                                <textarea name="collateral_details" class="form-control" rows="3" placeholder="Describe any collateral provided for the loan"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Loan Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Detail Modal -->
+<div class="modal fade" id="loanDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Loan Application Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="loanDetailContent">
+                    <!-- Content will be loaded via AJAX -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve/Reject Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" id="actionModalHeader">
+                <h5 class="modal-title" id="actionModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="actionModalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this loan application? This action cannot be undone.</p>
+                <p class="text-danger"><strong>Note:</strong> Only applied loans can be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Loan Management System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- DataTables and other scripts -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    var loanTable = $('#loanTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'loan_list' %}",
+            type: "GET",
+            data: function(d) {
+                d.status = $('#statusFilter').val();
+                d.search = $('#searchInput').val();
+            }
+        },
+        columns: [
+            { "data": "loan_id" },
+            { "data": "farmer_name" },
+            { "data": "farmer_national_id" },
+            { 
+                "data": "project_name",
+                "render": function(data, type, row) {
+                    return data + (row.project_code ? ` (${row.project_code})` : '');
+                }
+            },
+            { 
+                "data": "amount",
+                "render": function(data, type, row) {
+                    return '₵' + parseFloat(data).toLocaleString('en-US', {minimumFractionDigits: 2});
+                }
+            },
+            { "data": "application_date" },
+            {
+                "data": "status_display",
+                "render": function(data, type, row) {
+                    let badgeClass = 'bg-secondary';
+                    switch(row.status) {
+                        case 'applied': badgeClass = 'bg-info'; break;
+                        case 'approved': badgeClass = ''; break;
+                        case 'rejected': badgeClass = 'bg-danger'; break;
+                        case 'disbursed': badgeClass = 'bg-warning'; break;
+                        case 'repaying': badgeClass = 'bg-success'; break;
+                        case 'completed': badgeClass = 'bg-success'; break;
+                        case 'defaulted': badgeClass = 'bg-danger'; break;
+                    }
+                    return `<span class="badge ${badgeClass} status-badge">${data}</span>`;
+                }
+            },
+            {
+                "data": "disbursed_amount",
+                "render": function(data, type, row) {
+                    return '₵' + parseFloat(data).toLocaleString('en-US', {minimumFractionDigits: 2});
+                }
+            },
+            {
+                "data": "repaid_amount",
+                "render": function(data, type, row) {
+                    return '₵' + parseFloat(data).toLocaleString('en-US', {minimumFractionDigits: 2});
+                }
+            },
+            {
+                "data": "outstanding_amount",
+                "render": function(data, type, row) {
+                    return '₵' + parseFloat(data).toLocaleString('en-US', {minimumFractionDigits: 2});
+                }
+            },
+            {
+                "data": null,
+                "render": function(data, type, row) {
+                    const progress = row.disbursed_amount > 0 ? (row.repaid_amount / row.disbursed_amount) * 100 : 0;
+                    const progressColor = progress >= 100 ? 'bg-success' : progress >= 75 ? '' : progress >= 50 ? 'bg-info' : 'bg-warning';
+                    
+                    return `
+                        <div class="d-flex align-items-center">
+                            <div class="progress-bar-container flex-grow-1 me-2">
+                                <div class="progress-bar-fill ${progressColor}" style="width: ${Math.min(progress, 100)}%"></div>
+                            </div>
+                            <small>${Math.round(progress)}%</small>
+                        </div>
+                    `;
+                }
+            },
+            {
+                "data": "id",
+                "render": function(data, type, row) {
+                    let actions = `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-info view-btn" data-id="${data}" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+
+                            <button class="btn btn-sm btn-warning edit-btn" data-id="${data}" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                    `;
+                    
+                    if (row.status === 'applied') {
+                        actions += `
+                            
+                            <button class="btn btn-sm btn-success approve-btn" data-id="${data}" title="Approve">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger reject-btn" data-id="${data}" title="Reject">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${data}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                    } else if (row.status === 'approved') {
+                        actions += `
+                            <button class="btn btn-sm btn-primary disburse-btn" data-id="${data}" title="Disburse Funds">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </button>
+                        `;
+                    }
+                    
+                    actions += `</div>`;
+                    return actions;
+                }
+            }
+        ],
+        order: [[5, 'desc']],
+        dom: 'Bfrtip',
+        buttons: [
+        {
+            extend: "copy",
+            text: '<i class="fas fa-copy"></i> Copy',
+            className: "btn btn-sm btn-outline-secondary",
+        },
+        {
+            extend: "csv",
+            text: '<i class="fas fa-file-csv"></i> CSV',
+            className: "btn btn-sm btn-outline-success",
+        },
+        {
+            extend: "excel",
+            text: '<i class="fas fa-file-excel"></i> Excel',
+            className: "btn btn-sm btn-outline-primary",
+        },
+        {
+            extend: "pdf",
+            text: '<i class="fas fa-file-pdf"></i> PDF',
+            className: "btn btn-sm btn-outline-danger",
+        },
+        {
+            text: '<i class="fas fa-sync-alt"></i> Refresh',
+            className: "btn btn-sm btn-outline-info",
+            action: function (e, dt, node, config) {
+                dt.ajax.reload();
+            }
+        }
+    ]
+    });
+
+    // Load farmers for dropdown
+    function loadFarmers() {
+        $.ajax({
+            url: "{% url 'get_available_farmers_for_loan' %}",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const farmerSelect = $('#farmerSelect');
+                    farmerSelect.empty().append('<option value="">Select Farmer</option>');
+                    
+                    response.farmers.forEach(function(farmer) {
+                        farmerSelect.append(
+                            $('<option>', {
+                                value: farmer.id,
+                                text: `${farmer.name} (${farmer.national_id}) - ${farmer.district}`
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    // Load projects for dropdown
+    function loadProjects() {
+        $.ajax({
+            url: "{% url 'get_active_projects' %}",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const projectSelect = $('#projectSelect');
+                    projectSelect.empty().append('<option value="">Select Project (Optional)</option>');
+                    
+                    response.projects.forEach(function(project) {
+                        projectSelect.append(
+                            $('<option>', {
+                                value: project.id,
+                                text: `${project.name} (${project.code})`
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    // Filter handlers
+    $('#statusFilter').change(function() {
+        loanTable.ajax.reload();
+    });
+
+    $('#searchInput').on('keyup', function() {
+        loanTable.ajax.reload();
+    });
+
+    $('#refreshBtn').click(function() {
+        loanTable.ajax.reload();
+    });
+
+    // Create loan form submission
+    $('#createLoanForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        $('#createLoanModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+        $.ajax({
+            url: "{% url 'create_loan' %}",
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#createLoanModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    loanTable.ajax.reload();
+                    $('#createLoanForm')[0].reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while creating the loan.'
+                });
+            },
+            complete: function() {
+                $('#createLoanModal button[type="submit"]').prop('disabled', false).html('Create Loan Application');
+            }
+        });
+    });
+
+    // View loan details
+    $('#loanTable').on('click', '.view-btn', function() {
+        const loanId = $(this).data('id');
+        
+        $.ajax({
+            url: `/loans/applications/detail/${loanId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    $('#loanDetailContent').html(`
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="loan-detail-card mb-3">
+                                    <h5 class="mb-3">Loan Information</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Loan ID:</span> ${response.loan.loan_id}</p>
+                                            <p><span class="detail-label">Amount:</span> ₵${parseFloat(response.loan.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Purpose:</span> ${response.loan.purpose}</p>
+                                            <p><span class="detail-label">Interest Rate:</span> ${response.loan.interest_rate}%</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Term:</span> ${response.loan.term_months} months</p>
+                                            <p><span class="detail-label">Application Date:</span> ${response.loan.application_date}</p>
+                                            <p><span class="detail-label">Status:</span> <span class="badge ">${response.loan.status_display}</span></p>
+                                            <p><span class="detail-label">Collateral:</span> ${response.loan.collateral_details}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="financial-card mb-3">
+                                    <h5 class="mb-3">Financial Summary</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Total Disbursed:</span> ₵${parseFloat(response.financials.total_disbursed).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Total Repaid:</span> ₵${parseFloat(response.financials.total_repaid).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Outstanding:</span> ₵${parseFloat(response.financials.outstanding_amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                                            <p><span class="detail-label">Repayment Rate:</span> ${response.financials.repayment_rate.toFixed(1)}%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Farmer Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><span class="detail-label">Name:</span> ${response.loan.farmer_name}</p>
+                                        <p><span class="detail-label">National ID:</span> ${response.loan.farmer_national_id}</p>
+                                        <p><span class="detail-label">Project:</span> ${response.loan.project_name} (${response.loan.project_code})</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">Disbursements (${response.disbursements_count})</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        ${response.disbursements.length > 0 ? response.disbursements.map(disbursement => `
+                                            <div class="border-bottom pb-2 mb-2">
+                                                <p class="mb-1">₵${parseFloat(disbursement.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} on ${disbursement.disbursement_date}</p>
+                                                <small class="text-muted">By: ${disbursement.disbursed_by} | Stage: ${disbursement.stage}</small>
+                                            </div>
+                                        `).join('') : '<p class="text-muted">No disbursements yet</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">Repayments (${response.repayments_count})</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        ${response.repayments.length > 0 ? response.repayments.map(repayment => `
+                                            <div class="border-bottom pb-2 mb-2">
+                                                <p class="mb-1">₵${parseFloat(repayment.amount).toLocaleString('en-US', {minimumFractionDigits: 2})} on ${repayment.repayment_date}</p>
+                                                <small class="text-muted">Received by: ${repayment.received_by}</small>
+                                            </div>
+                                        `).join('') : '<p class="text-muted">No repayments yet</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('#loanDetailModal').modal('show');
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load loan details'
+                });
+            }
+        });
+    });
+
+   // Approve loan
+$('#loanTable').on('click', '.approve-btn', function() {
+    const loanId = $(this).data('id');
+    
+    Swal.fire({
+        title: 'Approve Loan Application',
+        text: 'Are you sure you want to approve this loan application?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Approve!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            approveLoan(loanId);
+        }
+    });
+});
+
+// Disburse loan
+$('#loanTable').on('click', '.disburse-btn', function() {
+    const loanId = $(this).data('id');
+    
+    // Show form for disbursement details
+    Swal.fire({
+        title: 'Disburse Loan',
+        html: `
+            <form id="disburseForm">
+                <div class="mb-3">
+                    <label for="stage" class="form-label">Disbursement Stage</label>
+                    <input type="text" class="form-control" id="stage" value="Initial Disbursement" required>
+                </div>
+                <div class="mb-3">
+                    <label for="transactionReference" class="form-label">Transaction Reference</label>
+                    <input type="text" class="form-control" id="transactionReference" placeholder="Enter transaction reference">
+                </div>
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" rows="3" placeholder="Additional notes"></textarea>
+                </div>
+            </form>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Confirm Disbursement',
+        cancelButtonText: 'Cancel',
+        preConfirm: () => {
+            return {
+                stage: document.getElementById('stage').value,
+                transaction_reference: document.getElementById('transactionReference').value,
+                notes: document.getElementById('notes').value
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            disburseLoan(loanId, result.value);
+        }
+    });
+});
+
+// Reject loan
+$('#loanTable').on('click', '.reject-btn', function() {
+    const loanId = $(this).data('id');
+    
+    // Show form for rejection reason
+    Swal.fire({
+        title: 'Reject Loan Application',
+        html: `
+            <form id="rejectForm">
+                <div class="mb-3">
+                    <label for="rejectionReason" class="form-label">Reason for Rejection</label>
+                    <textarea class="form-control" id="rejectionReason" rows="3" placeholder="Please provide the reason for rejection" required></textarea>
+                </div>
+            </form>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Confirm Rejection',
+        cancelButtonText: 'Cancel',
+        preConfirm: () => {
+            return {
+                rejection_reason: document.getElementById('rejectionReason').value
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            rejectLoan(loanId, result.value);
+        }
+    });
+});
+
+// AJAX functions for loan actions
+function approveLoan(loanId) {
+    $.ajax({
+        url: `/loans/applications/approve/${loanId}/`,
+        type: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        data: JSON.stringify({}),
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                loanTable.ajax.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'An error occurred while approving the loan.';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                errorMsg = response.error || errorMsg;
+            } catch (e) {
+                // Use default error message
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: errorMsg
+            });
+        }
+    });
+}
+
+function disburseLoan(loanId, disbursementData) {
+    $.ajax({
+        url: `/loans/applications/disburse/${loanId}/`,
+        type: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        data: JSON.stringify(disbursementData),
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                loanTable.ajax.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'An error occurred while disbursing the loan.';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                errorMsg = response.error || errorMsg;
+            } catch (e) {
+                // Use default error message
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: errorMsg
+            });
+        }
+    });
+}
+
+function rejectLoan(loanId, rejectionData) {
+    $.ajax({
+        url: `/loans/applications/reject/${loanId}/`,
+        type: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        data: JSON.stringify(rejectionData),
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                loanTable.ajax.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'An error occurred while rejecting the loan.';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                errorMsg = response.error || errorMsg;
+            } catch (e) {
+                // Use default error message
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: errorMsg
+            });
+        }
+    });
+}
+
+    // Edit loan
+    $('#loanTable').on('click', '.edit-btn', function() {
+       const loanId = $(this).data('id');
+
+       $.ajax({
+           url: `/loans/applications/detail/${loanId}/`,
+           type: "GET",
+           success: function(response) {
+               if (response.success) {
+                   $('#editLoanModal').data('loanId', loanId);
+                   $('#editLoanModal').data('loanData', response.data);
+                   $('#editLoanModal').modal('show');
+               } else {
+                   Swal.fire({
+                       icon: 'error',
+                       title: 'Error!',
+                       text: response.error
+                   });
+               }
+           },
+           error: function() {
+               Swal.fire({
+                   icon: 'error',
+                   title: 'Error',
+                   text: 'Failed to load loan details'
+               });
+           }
+       })
+    });
+
+    // Delete loan
+    $('#loanTable').on('click', '.delete-btn', function() {
+        const loanId = $(this).data('id');
+        $('#deleteModal').data('loanId', loanId);
+        $('#deleteModal').modal('show');
+    });
+
+    $('#confirmDeleteBtn').click(function() {
+        const loanId = $('#deleteModal').data('loanId');
+        
+        $.ajax({
+            url: "{% url 'delete_loan' %}",
+            type: "POST",
+            data: JSON.stringify({ id: loanId }),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    loanTable.ajax.reload();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while deleting the loan.'
+                });
+            }
+        });
+    });
+
+    // Export button
+    $('#exportBtn').click(function() {
+        const format = 'csv'; // You can add options for different formats
+        window.location.href = `/loans/applications/export/?format=${format}&status=${$('#statusFilter').val()}`;
+    });
+
+    // Initialize modals
+    $('#createLoanModal').on('show.bs.modal', function() {
+        loadFarmers();
+        loadProjects();
+        // Set default application date to today
+        $('input[name="application_date"]').val(new Date().toISOString().split('T')[0]);
+    });
+
+    // Initialize page
+    loanTable.ajax.reload();
+});
+</script>
+{% endblock %}

@@ -269,6 +269,7 @@ class Loan(TimeStampModel):
     purpose = models.TextField()
     application_date = models.DateField(default=timezone.now)
     approval_date = models.DateField(blank=True, null=True)
+    disbursement_date = models.DateField(blank=True, null=True)
     interest_rate = models.FloatField(validators=[MinValueValidator(0)])
     term_months = models.IntegerField(validators=[MinValueValidator(1)])
     status = models.CharField(max_length=20, choices=LOAN_STATUS, default='applied')

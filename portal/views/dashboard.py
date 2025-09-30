@@ -295,3 +295,8 @@ def get_farm_health_stats():
         'trees_dead': dead_trees,
         'tree_health_rate': (healthy_trees / total_trees * 100) if total_trees > 0 else 0
     }
+
+
+
+def landing_page(request):
+    return render(request, 'portal/dashboard/landing.html')

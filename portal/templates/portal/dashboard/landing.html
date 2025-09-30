@@ -1,0 +1,1218 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eximbank Ghana - Advanced M&E System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a4da2;
+            --secondary: #f9a825;
+            --accent: #00b894;
+            --dark: #1a237e;
+            --light: #f5f7fa;
+            --text: #333333;
+            --text-light: #6c757d;
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.15);
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, #ff8a00 100%);
+            --gradient-light: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-color: var(--light);
+        }
+        
+        h1, h2, h3, h4, h5 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        section {
+            padding: 100px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(10, 77, 162, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(10, 77, 162, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--gradient-secondary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(249, 168, 37, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(249, 168, 37, 0.4);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+        
+        /* Header Styles */
+        header {
+            background: var(--white);
+            box-shadow: var(--shadow);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        header.scrolled {
+            padding: 5px 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            height: 50px;
+            margin-right: 10px;
+        }
+        
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            color: var(--primary);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        
+        .logo-text span {
+            color: var(--secondary);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 30px;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+            font-size: 1.05rem;
+        }
+        
+        nav ul li a:hover {
+            color: var(--primary);
+        }
+        
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+        
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-menu {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: var(--gradient);
+            color: var(--white);
+            padding: 180px 0 120px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTIwMCA4MDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTIwMCAwdjgwMEgwdjB6IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9Ii4wMiIvPjxwYXRoIGQ9Ik0xMjAwIDB2ODAwSDBWMHoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==');
+            opacity: 0.1;
+        }
+        
+        .hero-content {
+            max-width: 650px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 3.8rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            animation: fadeInUp 1s ease;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+        
+        .hero-image {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Features Section */
+        .features {
+            background: var(--white);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.8rem;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 5px;
+            background: var(--secondary);
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 5px;
+        }
+        
+        .section-title p {
+            max-width: 700px;
+            margin: 25px auto 0;
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 40px 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .feature-icon {
+            width: 90px;
+            height: 90px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            color: var(--white);
+            font-size: 2.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1);
+            background: var(--gradient-secondary);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .feature-card p {
+            color: var(--text-light);
+            font-size: 1.05rem;
+        }
+        
+        /* Dashboard Preview */
+        .dashboard-preview {
+            background: var(--gradient-light);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dashboard-container {
+            position: relative;
+            max-width: 1100px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transform: perspective(1000px) rotateX(5deg);
+            transition: transform 0.5s ease;
+        }
+        
+        .dashboard-container:hover {
+            transform: perspective(1000px) rotateX(0deg);
+        }
+        
+        .dashboard-image {
+            width: 100%;
+            display: block;
+            border-radius: 20px;
+            transition: transform 0.5s ease;
+        }
+        
+        .dashboard-container:hover .dashboard-image {
+            transform: scale(1.02);
+        }
+        
+        /* Stats Section */
+        .stats {
+            background: var(--gradient);
+            color: var(--white);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTIwMCA4MDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTIwMCAwdjgwMEgwdjB6IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9Ii4wMyIvPjxwYXRoIGQ9Ik0xMjAwIDB2ODAwSDBWMHoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==');
+            opacity: 0.1;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-item {
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        /* Testimonials */
+        .testimonials {
+            background: var(--white);
+        }
+        
+        .testimonial-slider {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .testimonial-item {
+            background: var(--light);
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+        
+        .testimonial-text {
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 30px;
+            position: relative;
+            line-height: 1.8;
+        }
+        
+        .testimonial-text::before, .testimonial-text::after {
+            content: '"';
+            font-size: 4rem;
+            color: var(--secondary);
+            opacity: 0.3;
+            position: absolute;
+            font-family: serif;
+        }
+        
+        .testimonial-text::before {
+            top: -20px;
+            left: -10px;
+        }
+        
+        .testimonial-text::after {
+            bottom: -40px;
+            right: -10px;
+        }
+        
+        .testimonial-author {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        
+        .testimonial-role {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+        
+        .testimonial-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+        
+        /* CTA Section */
+        .cta {
+            background: var(--gradient);
+            color: var(--white);
+            text-align: center;
+            padding: 120px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTIwMCA4MDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTIwMCAwdjgwMEgwdjB6IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9Ii4wMyIvPjxwYXRoIGQ9Ik0xMjAwIDB2ODAwSDBWMHoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ii8+PC9nPjwvc3ZnPg==');
+            opacity: 0.1;
+        }
+        
+        .cta-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .cta h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .cta p {
+            font-size: 1.3rem;
+            margin: 0 auto 40px;
+            opacity: 0.9;
+            max-width: 700px;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: var(--white);
+            padding: 80px 0 30px;
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+        
+        .footer-column h3 {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .footer-column h3::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 3px;
+            background: var(--secondary);
+            bottom: 0;
+            left: 0;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .footer-links i {
+            margin-right: 10px;
+            color: var(--secondary);
+            width: 20px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-links a:hover {
+            color: var(--white);
+            padding-left: 5px;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.95rem;
+            opacity: 0.7;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: var(--white);
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(-50%) translateX(0);
+            }
+            50% {
+                transform: translateY(-50%) translateX(-10px);
+            }
+            100% {
+                transform: translateY(-50%) translateX(0);
+            }
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .hero h1 {
+                font-size: 3.2rem;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+            
+            .hero-image {
+                width: 45%;
+            }
+            
+            .section-title h2 {
+                font-size: 2.4rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: block;
+            }
+            
+            nav ul {
+                position: fixed;
+                top: 80px;
+                left: -100%;
+                width: 100%;
+                height: calc(100vh - 80px);
+                background: var(--white);
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                padding-top: 50px;
+                transition: left 0.3s ease;
+                box-shadow: var(--shadow);
+            }
+            
+            nav ul.active {
+                left: 0;
+            }
+            
+            nav ul li {
+                margin: 20px 0;
+            }
+            
+            .hero {
+                padding: 150px 0 80px;
+                text-align: center;
+            }
+            
+            .hero-content {
+                max-width: 100%;
+            }
+            
+            .hero-image {
+                position: relative;
+                width: 100%;
+                transform: none;
+                margin-top: 50px;
+                animation: none;
+            }
+            
+            .hero-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .section-title h2 {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta h2 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                margin-bottom: 15px;
+            }
+            
+            .feature-card {
+                padding: 30px 20px;
+            }
+            
+            .testimonial-item {
+                padding: 30px 20px;
+            }
+            
+            .testimonial-text {
+                font-size: 1.1rem;
+            }
+            
+            .cta {
+                padding: 80px 0;
+            }
+            
+            .cta h2 {
+                font-size: 1.8rem;
+            }
+            
+            .cta p {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header">
+        <div class="container header-container">
+            <div class="logo">
+                <span class="logo-sm" style="display: none;">
+                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-sm-dark" style="width: 70px;" height="70">
+                    </span>
+                    <span class="logo-lg">
+                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-dark" style="width: 70px;"  height="70">
+                    </span>
+            </div>
+            <div class="mobile-menu">
+                <i class="fas fa-bars"></i>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href=>Dashboard</a></li>
+                    <!-- <li><a href="#benefits">Benefits</a></li> -->
+                    <!-- <li><a href="#testimonials">Testimonials</a></li> -->
+                    <!-- <li><a href="#contact" class="btn btn-primary">Sign In</a></li> -->
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Eximbank Ghana M&E System</h1>
+                <p>Transform your project tracking with our powerful, data-driven M&E platform designed specifically for financial institutions and development projects.</p>
+                <div class="hero-buttons">
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary">Dashboard</a>
+                    <a href="#features" class="btn btn-secondary">Explore Features</a>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#0a4da2" />
+                        <stop offset="100%" stop-color="#00b894" />
+                    </linearGradient>
+                </defs>
+                <rect x="50" y="100" width="500" height="250" rx="10" fill="url(#grad1)" opacity="0.8"/>
+                <rect x="70" y="130" width="460" height="40" rx="5" fill="#fff" opacity="0.9"/>
+                <rect x="70" y="190" width="200" height="140" rx="5" fill="#fff" opacity="0.7"/>
+                <rect x="290" y="190" width="240" height="60" rx="5" fill="#fff" opacity="0.7"/>
+                <rect x="290" y="270" width="240" height="60" rx="5" fill="#fff" opacity="0.7"/>
+                <circle cx="550" cy="140" r="10" fill="#f9a825"/>
+                <circle cx="520" cy="140" r="10" fill="#00b894"/>
+                <circle cx="490" cy="140" r="10" fill="#1a237e"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>Powerful Features</h2>
+                <p>Our M&E system offers comprehensive tools for effective project monitoring</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Real-time Analytics</h3>
+                    <p>Monitor project performance with live dashboards and interactive reports that update in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Project Tracking</h3>
+                    <p>Track milestones, deliverables, and outcomes across all your projects from a single platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3>Impact Assessment</h3>
+                    <p>Measure and visualize the impact of your projects with advanced assessment tools.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h3>Financial Monitoring</h3>
+                    <p>Track budgets, expenditures, and financial performance against project goals.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <h3>Stakeholder Engagement</h3>
+                    <p>Manage stakeholder interactions and feedback with built-in communication tools.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Accessibility</h3>
+                    <p>Access your M&E data anywhere, anytime with our responsive mobile interface.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Dashboard Preview -->
+    <!-- <section class="dashboard-preview" id="dashboard">
+        <div class="container">
+            <div class="section-title">
+                <h2>Interactive Dashboard</h2>
+                <p>Experience our intuitive and powerful dashboard for comprehensive project insights and data visualization</p>
+            </div>
+            <div class="dashboard-container">
+                <svg class="dashboard-image" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="dashGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#f5f7fa" />
+                            <stop offset="100%" stop-color="#e4e9f2" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="1000" height="600" fill="url(#dashGrad)" rx="15"/>
+                    
+                    
+                    <rect x="30" y="30" width="940" height="60" rx="5" fill="#0a4da2"/>
+                    <rect x="50" y="50" width="120" height="20" rx="3" fill="#fff"/>
+                    <rect x="800" y="45" width="40" height="30" rx="5" fill="#f9a825"/>
+                    <rect x="850" y="45" width="40" height="30" rx="5" fill="#00b894"/>
+                    <rect x="900" y="45" width="40" height="30" rx="5" fill="#1a237e"/>
+                    
+                   
+                    <rect x="30" y="110" width="200" height="460" rx="5" fill="#1a237e"/>
+                    <rect x="50" y="140" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                    <rect x="50" y="170" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                    <rect x="50" y="200" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                    <rect x="50" y="230" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                    <rect x="50" y="260" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                    
+                   
+                    <rect x="250" y="110" width="720" height="200" rx="5" fill="#fff"/>
+                    <rect x="270" y="140" width="300" height="150" rx="3" fill="#e4e9f2"/>
+                    <rect x="590" y="140" width="350" height="150" rx="3" fill="#e4e9f2"/>
+                    
+                 
+                    <circle cx="320" cy="200" r="40" fill="#0a4da2" opacity="0.7"/>
+                    <circle cx="320" cy="200" r="30" fill="#f9a825" opacity="0.7"/>
+                    <circle cx="320" cy="200" r="20" fill="#00b894" opacity="0.7"/>
+                    
+                  
+                    <rect x="620" y="180" width="40" height="80" fill="#0a4da2"/>
+                    <rect x="680" y="160" width="40" height="100" fill="#f9a825"/>
+                    <rect x="740" y="200" width="40" height="60" fill="#00b894"/>
+                    <rect x="800" y="140" width="40" height="120" fill="#1a237e"/>
+                    <rect x="860" y="220" width="40" height="40" fill="#0a4da2" opacity="0.7"/>
+                    
+                   
+                    <rect x="250" y="330" width="220" height="120" rx="5" fill="#fff"/>
+                    <rect x="270" y="350" width="40" height="40" rx="5" fill="#0a4da2"/>
+                    <rect x="320" y="350" width="130" height="15" rx="2" fill="#e4e9f2"/>
+                    <rect x="320" y="375" width="100" height="15" rx="2" fill="#e4e9f2"/>
+                    
+                    <rect x="490" y="330" width="220" height="120" rx="5" fill="#fff"/>
+                    <rect x="510" y="350" width="40" height="40" rx="5" fill="#f9a825"/>
+                    <rect x="560" y="350" width="130" height="15" rx="2" fill="#e4e9f2"/>
+                    <rect x="560" y="375" width="100" height="15" rx="2" fill="#e4e9f2"/>
+                    
+                    <rect x="730" y="330" width="240" height="120" rx="5" fill="#fff"/>
+                    <rect x="750" y="350" width="40" height="40" rx="5" fill="#00b894"/>
+                    <rect x="800" y="350" width="150" height="15" rx="2" fill="#e4e9f2"/>
+                    <rect x="800" y="375" width="120" height="15" rx="2" fill="#e4e9f2"/>
+                    
+                   
+                    <rect x="270" y="470" width="500" height="10" rx="5" fill="#e4e9f2"/>
+                    <rect x="270" y="470" width="350" height="10" rx="5" fill="#0a4da2"/>
+                    <rect x="270" y="500" width="500" height="10" rx="5" fill="#e4e9f2"/>
+                <rect x="270" y="500" width="400" height="10" rx="5" fill="#f9a825"/>
+            </svg>
+        </div>
+    </div>
+</section> -->
+
+<!-- Stats Section -->
+<!-- <section class="stats" id="benefits">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-number" data-count="95">0</span>
+                <div class="stat-label">Project Success Rate</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" data-count="150">0</span>
+                <div class="stat-label">Projects Monitored</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" data-count="500">0</span>
+                <div class="stat-label">Stakeholders Engaged</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" data-count="75">0</span>
+                <div class="stat-label">Time Savings (%)</div>
+            </div>
+        </div>
+    </div>
+</section> -->
+
+<!-- Testimonials -->
+<!-- <section class="testimonials" id="testimonials">
+    <div class="container">
+        <div class="section-title">
+            <h2>What Our Clients Say</h2>
+            <p>Hear from organizations that have transformed their M&E processes with our advanced system</p>
+        </div>
+        <div class="testimonial-slider">
+            <div class="testimonial-item">
+                <div class="testimonial-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="testimonial-text">
+                    The Eximbank M&E system has revolutionized how we track our development projects. The real-time analytics and intuitive dashboard have significantly improved our decision-making process and reduced reporting time by over 60%. This platform is a game-changer for development finance in Ghana.
+                </div>
+                <div class="testimonial-author">Dr. Kwame Mensah</div>
+                <div class="testimonial-role">Project Director, Ministry of Finance</div>
+            </div>
+        </div>
+    </div>
+</section> -->
+
+<!-- CTA Section -->
+<!-- <section class="cta" id="contact">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Transform Your M&E Processes?</h2>
+            <p>Join leading organizations in Ghana that are already using our advanced Monitoring & Evaluation system to drive project success, improve accountability, and demonstrate impact to stakeholders and donors.</p>
+            <a href="#contact" class="btn btn-secondary">Request a Demo</a>
+        </div>
+    </div>
+</section> -->
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-column">
+                <h3>Eximbank M&E</h3>
+                <p>Advanced Monitoring & Evaluation solutions for financial institutions and development projects in Ghana. Our system empowers organizations to track, evaluate, and optimize their projects for maximum impact.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <!-- <li><a href="#benefits">Benefits</a></li> -->
+                    <!-- <li><a href="#testimonials">Testimonials</a></li> -->
+                    <!-- <li><a href="#contact">Contact Us</a></li> -->
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Our Services</h3>
+                <ul class="footer-links">
+                    <li><a href="#">M&E System Implementation</a></li>
+                    <li><a href="#">Custom Dashboard Development</a></li>
+                    <li><a href="#">Training & Capacity Building</a></li>
+                    <li><a href="#">Data Analytics Consulting</a></li>
+                    <li><a href="#">Impact Assessment Services</a></li>
+                    <li><a href="#">Ongoing Support & Maintenance</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <ul class="footer-links">
+                    <li><i class="fas fa-map-marker-alt"></i> Eximbank Ghana Head Office, Accra, Ghana</li>
+                    <li><i class="fas fa-phone"></i> +233 24 123 4567</li>
+                    <li><i class="fas fa-envelope"></i> info@eximbankme.gov.gh</li>
+                    <li><i class="fas fa-clock"></i> Mon - Fri: 8:00AM - 5:00PM</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 Eximbank Ghana M&E System. All rights reserved. | Designed for Excellence in Project Monitoring</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Mobile Menu Toggle
+    document.querySelector('.mobile-menu').addEventListener('click', function() {
+        document.querySelector('nav ul').classList.toggle('active');
+    });
+
+    // Header Scroll Effect
+    window.addEventListener('scroll', function() {
+        const header = document.getElementById('header');
+        if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    });
+
+    // Animate Stats Counter
+    function animateCounter() {
+        const counters = document.querySelectorAll('.stat-number');
+        const speed = 200;
+        
+        counters.forEach(counter => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-count');
+                const count = +counter.innerText;
+                const increment = target / speed;
+                
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + increment);
+                    setTimeout(updateCount, 20);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            
+            updateCount();
+        });
+    }
+
+    // Initialize counter animation when stats section is in view
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    observer.observe(document.querySelector('.stats'));
+
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 100,
+                    behavior: 'smooth'
+                });
+                
+                // Close mobile menu if open
+                document.querySelector('nav ul').classList.remove('active');
+            }
+        });
+    });
+
+    // Add animation to feature cards on scroll
+    const featureObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = `fadeInUp 0.8s ease forwards`;
+                entry.target.style.animationDelay = `${entry.target.dataset.delay || '0s'}`;
+                featureObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.dataset.delay = `${index * 0.1}s`;
+        featureObserver.observe(card);
+    });
+
+    // Add animation to testimonial on scroll
+    const testimonialObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animation = `fadeInUp 1s ease forwards`;
+                testimonialObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.2 });
+
+    const testimonialItem = document.querySelector('.testimonial-item');
+    testimonialItem.style.opacity = '0';
+    testimonialObserver.observe(testimonialItem);
+
+    // Parallax effect for hero section
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const hero = document.querySelector('.hero');
+        if (hero) {
+            hero.style.backgroundPositionY = -(scrolled * 0.5) + 'px';
+        }
+    });
+
+    // Add hover effect to stats items
+    document.querySelectorAll('.stat-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-10px) scale(1.05)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+</script>
+</body> </html>

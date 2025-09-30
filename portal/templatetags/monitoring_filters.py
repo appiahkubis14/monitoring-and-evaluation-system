@@ -3,7 +3,13 @@ from django import template
 from django.utils import timezone
 from datetime import datetime, timedelta
 
+# monitoring/templatetags/monitoring_filters.py
+from django import template
+from django.utils import timezone
+from datetime import datetime, timedelta
+
 register = template.Library()
+
 
 @register.filter
 def filter_overdue(compliance_checks):
@@ -18,16 +24,6 @@ def filter_active(projects):
 def map_attr(items, attr_name):
     return [getattr(item, attr_name) for item in items]
 
-
-
-
-
-# monitoring/templatetags/monitoring_filters.py
-from django import template
-from django.utils import timezone
-from datetime import datetime, timedelta
-
-register = template.Library()
 
 @register.filter
 def filter_overdue(compliance_checks):

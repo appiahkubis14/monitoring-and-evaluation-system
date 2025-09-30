@@ -5,11 +5,14 @@ from portal.views.farms import *
 from portal.views.project import *
 from portal.views.loans import *
 from portal.views.dashboard import *
+from portal.views.monitoring import *
+from portal.views.map import *
 from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
-    path('', dashboard_view, name='dashboard'),
+    path('', landing_page, name='dashboard'),
+    path('dashboard/', dashboard_view, name='dashboard'),
     path('login/', auth_views.LoginView.as_view(template_name="account/login.html"), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
@@ -41,8 +44,6 @@ urlpatterns = [
     # Utilities
     path('farmers/districts/',get_districts, name='get_districts'),
     path('farmers/export/',farmer_export, name='farmer_export'),
-
-
 
      # Farm management main page
     path('farmers/farms/', farm_management, name='farm_management'),
@@ -169,4 +170,28 @@ urlpatterns = [
     path('repayments/stats/', get_repayment_stats, name='get_repayment_stats'),
     path('repayments/export/', repayment_export, name='repayment_export'),
     path('repayments/repayable-loans/', get_repayable_loans, name='get_repayable_loans'),
+
+    ##################################################################################################################
+    path('monitoring/', render_monitoring_page, name='render_monitoring_page'),
+    path('visits/', monitoring_visit_list, name='monitoring_visit_list'),
+    path('visits/create/', create_monitoring_visit, name='create_monitoring_visit'),
+    path('visits/detail/<int:visit_id>/', monitoring_visit_detail, name='monitoring_visit_detail'),
+    path('visits/update/<int:visit_id>/', update_monitoring_visit, name='update_monitoring_visit'),
+    path('visits/delete/<int:visit_id>/', delete_monitoring_visit, name='delete_monitoring_visit'),
+    path('visits/export/', export_monitoring_visits, name='export_monitoring_visits'),
+    
+    # AJAX URLs
+    path('ajax/get-farms/', get_available_farms, name='get_available_farms'),
+    path('ajax/get-officers/', get_available_officers, name='get_available_officers'),
+    
+    # Follow-up Actions URLs
+    path('visits/<int:visit_id>/follow-up/', create_follow_up_action, name='create_follow_up_action'),
+    path('follow-up/<int:action_id>/update/', update_follow_up_action, name='update_follow_up_action'),
+
+    ################################################################################################################
+
+    path('map/', interactive_map, name='interactive_map'),
+    path('map/data/', get_farm_data, name='get_farm_data'),
+    path('map/farm/<int:farm_id>/update-boundary/', update_farm_boundary, name='update_farm_boundary'),
+    # path('map/search/', search_farms, name='search_farms'),
 ]

@@ -1,0 +1,1349 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+{% load monitoring_filters %}
+{% load humanize %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block greeting %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="fs-16 fw-semibold mb-1 mb-md-2">Monitoring Visits Management</h4>
+                <p class="text-muted mb-0">Manage farm monitoring visits and follow-up actions</p>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Monitoring System</a></li>
+                    <li class="breadcrumb-item active">Monitoring Visits</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock greeting %}
+
+{% block main_content %}
+<style>
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #0871B9 0%, #065a93 100%);
+        color: white;
+        border: none;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient-primary:hover {
+        background: linear-gradient(135deg, #065a93 0%, #054a7a 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .monitoring-card {
+        border: 1px solid #e9ecef;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .monitoring-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-bottom: 3px solid #0871B9;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .status-badge {
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 600;
+    }
+    .visit-detail-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #0871B9;
+    }
+    .info-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .polygon-badge {
+        font-size: 0.7em;
+        padding: 0.3em 0.6em;
+    }
+    .distance-info {
+        background: #e8f4fd;
+        border-left: 4px solid #0871B9;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="action-buttons">
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#createVisitModal">
+                        <i class="fas fa-plus me-2"></i>New Monitoring Visit
+                    </button>
+                    <button class="btn btn-gradient-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-gradient-primary" id="refreshBtn">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search..." style="width: 200px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="monitoringTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Visit ID</th>
+                                <th>Date of Visit</th>
+                                <th>Officer</th>
+                                <th>Farm</th>
+                                <th>Boundary Polygon</th>
+                                <th>Land Use</th>
+                                <th>Distance to Road (km)</th>
+                                <th>Distance to Market (km)</th>
+                                <th>Processing Facility (km)</th>
+                                <th>Follow-up Status</th>
+                                <th>Issues Identified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Monitoring Visit Modal -->
+<div class="modal fade" id="createVisitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Create New Monitoring Visit</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createVisitForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm*</label>
+                                <select name="farm_id" class="form-control" required id="farmSelect">
+                                    <option value="">Select Farm</option>
+                                    <!-- Farms will be loaded via AJAX -->
+                                </select>
+                                <div class="form-text">Only active farms are listed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Officer*</label>
+                                <select name="officer_id" class="form-control" required id="officerSelect">
+                                    <option value="">Select Officer</option>
+                                    <!-- Officers will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Date of Visit*</label>
+                                <input type="date" name="date_of_visit" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Boundary Polygon*</label>
+                                <select name="farm_boundary_polygon" class="form-control" required>
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Land Use Classification*</label>
+                                <input type="text" name="land_use_classification" class="form-control" required placeholder="e.g., Agricultural, Residential, Commercial">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Service Provider</label>
+                                <input type="text" name="service_provider" class="form-control" placeholder="Primary service provider for the farm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Distance to Road (km)*</label>
+                                <input type="number" name="distance_to_road" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Distance to Market (km)*</label>
+                                <input type="number" name="distance_to_market" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Processing Facility (km)*</label>
+                                <input type="number" name="proximity_to_processing_facility" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Main Buyers</label>
+                                <textarea name="main_buyers" class="form-control" rows="2" placeholder="List of main buyers for the farm products"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Cooperatives or Farmer Groups Affiliated</label>
+                                <textarea name="cooperatives_affiliated" class="form-control" rows="2" placeholder="List of cooperatives or farmer groups the farm is affiliated with"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Value Chain Linkages</label>
+                                <textarea name="value_chain_linkages" class="form-control" rows="2" placeholder="Description of value chain linkages"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Observations*</label>
+                                <textarea name="observations" class="form-control" rows="3" required placeholder="Detailed observations from the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Issues Identified</label>
+                                <textarea name="issues_identified" class="form-control" rows="3" placeholder="Any issues identified during the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Infrastructure Identified</label>
+                                <textarea name="infrastructure_identified" class="form-control" rows="3" placeholder="Infrastructure identified during the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Recommended Actions</label>
+                                <textarea name="recommended_actions" class="form-control" rows="3" placeholder="Recommended actions based on the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Follow-up Status*</label>
+                                <select name="follow_up_status" class="form-control" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Monitoring Visit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Edit Monitoring Visit Modal -->
+<div class="modal fade" id="editVisitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white bg-warning">
+                <h5 class="modal-title">Edit Monitoring Visit</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editVisitForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" id="editVisitId" name="visit_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm*</label>
+                                <select name="farm_id" class="form-control" required id="editFarmSelect">
+                                    <option value="">Select Farm</option>
+                                    <!-- Farms will be loaded via AJAX -->
+                                </select>
+                                <div class="form-text">Only active farms are listed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Officer*</label>
+                                <select name="officer_id" class="form-control" required id="editOfficerSelect">
+                                    <option value="">Select Officer</option>
+                                    <!-- Officers will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Date of Visit*</label>
+                                <input type="date" name="date_of_visit" class="form-control" required id="editDateOfVisit">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Farm Boundary Polygon*</label>
+                                <select name="farm_boundary_polygon" class="form-control" required id="editFarmBoundary">
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Land Use Classification*</label>
+                                <input type="text" name="land_use_classification" class="form-control" required id="editLandUse" placeholder="e.g., Agricultural, Residential, Commercial">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Service Provider</label>
+                                <input type="text" name="service_provider" class="form-control" id="editServiceProvider" placeholder="Primary service provider for the farm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Distance to Road (km)*</label>
+                                <input type="number" name="distance_to_road" class="form-control" step="0.01" min="0" required id="editDistanceToRoad">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Distance to Market (km)*</label>
+                                <input type="number" name="distance_to_market" class="form-control" step="0.01" min="0" required id="editDistanceToMarket">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Processing Facility (km)*</label>
+                                <input type="number" name="proximity_to_processing_facility" class="form-control" step="0.01" min="0" required id="editProcessingFacility">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Main Buyers</label>
+                                <textarea name="main_buyers" class="form-control" rows="2" id="editMainBuyers" placeholder="List of main buyers for the farm products"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Cooperatives or Farmer Groups Affiliated</label>
+                                <textarea name="cooperatives_affiliated" class="form-control" rows="2" id="editCooperatives" placeholder="List of cooperatives or farmer groups the farm is affiliated with"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Value Chain Linkages</label>
+                                <textarea name="value_chain_linkages" class="form-control" rows="2" id="editValueChain" placeholder="Description of value chain linkages"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Observations*</label>
+                                <textarea name="observations" class="form-control" rows="3" required id="editObservations" placeholder="Detailed observations from the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Issues Identified</label>
+                                <textarea name="issues_identified" class="form-control" rows="3" id="editIssuesIdentified" placeholder="Any issues identified during the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Infrastructure Identified</label>
+                                <textarea name="infrastructure_identified" class="form-control" rows="3" id="editInfrastructure" placeholder="Infrastructure identified during the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Recommended Actions</label>
+                                <textarea name="recommended_actions" class="form-control" rows="3" id="editRecommendedActions" placeholder="Recommended actions based on the visit"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Follow-up Status*</label>
+                                <select name="follow_up_status" class="form-control" required id="editFollowUpStatus">
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Monitoring Visit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+<!-- Monitoring Visit Detail Modal -->
+<div class="modal fade" id="visitDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title">Monitoring Visit Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="visitDetailContent">
+                    <!-- Content will be loaded via AJAX -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Follow-up Action Modal -->
+<div class="modal fade" id="followUpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white ">
+                <h5 class="modal-title" id="followUpModalTitle">Add Follow-up Action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="followUpForm" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" id="followUpVisitId" name="visit_id">
+                <input type="hidden" id="followUpActionId" name="action_id">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Action Description*</label>
+                                <textarea name="action_description" class="form-control" rows="3" required placeholder="Describe the follow-up action required"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Responsible Person*</label>
+                                <input type="text" name="responsible_person" class="form-control" required placeholder="Person responsible for the action">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Deadline*</label>
+                                <input type="date" name="deadline" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Status*</label>
+                                <select name="status" class="form-control" required>
+                                    <option value="pending">Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="followUpSubmitBtn">Add Action</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this monitoring visit? This action cannot be undone.</p>
+                <p class="text-danger"><strong>Note:</strong> All associated follow-up actions will also be deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © Monitoring Management System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- DataTables and other scripts -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    var monitoringTable = $('#monitoringTable').DataTable({
+        
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'monitoring_visit_list' %}",
+            type: "GET",
+            data: function(d) {
+                d.status = $('#statusFilter').val();
+                d.search = $('#searchInput').val();
+            }
+            
+        },
+        columns: [
+            { "data": "visit_id" },
+            { "data": "date_of_visit" },
+            { "data": "officer_name" },
+            { "data": "farm_name" },
+            {
+                "data": "farm_boundary_polygon",
+                "render": function(data, type, row) {
+                    const badgeClass = data ? 'bg-success' : 'bg-danger';
+                    const text = data ? 'Yes' : 'No';
+                    return `<span class="badge ${badgeClass} polygon-badge">${text}</span>`;
+                }
+            },
+            { "data": "land_use_classification" },
+            {
+                "data": "distance_to_road",
+                "render": function(data, type, row) {
+                    return parseFloat(data).toFixed(2) + ' km';
+                }
+            },
+            {
+                "data": "distance_to_market",
+                "render": function(data, type, row) {
+                    return parseFloat(data).toFixed(2) + ' km';
+                }
+            },
+            {
+                "data": "proximity_to_processing_facility",
+                "render": function(data, type, row) {
+                    return parseFloat(data).toFixed(2) + ' km';
+                }
+            },
+            {
+                "data": "follow_up_status_display",
+                "render": function(data, type, row) {
+                    let badgeClass = 'bg-secondary';
+                    switch(row.follow_up_status) {
+                        case 'pending': badgeClass = 'bg-info'; break;
+                        case 'in_progress': badgeClass = 'bg-warning'; break;
+                        case 'completed': badgeClass = 'bg-success'; break;
+                        case 'cancelled': badgeClass = 'bg-danger'; break;
+                    }
+                    return `<span class="badge ${badgeClass} status-badge">${data}</span>`;
+                }
+            },
+            {
+                "data": "issues_identified",
+                "render": function(data, type, row) {
+                    return data ? (data.length > 50 ? data.substring(0, 50) + '...' : data) : 'None';
+                }
+            },
+            {
+                "data": "id",
+                "render": function(data, type, row) {
+                    return `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-info view-btn" data-id="${data}" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning edit-btn" data-id="${data}" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary follow-up-btn" data-id="${data}" title="Add Follow-up">
+                                <i class="fas fa-tasks"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="${data}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        ],
+        order: [[1, 'desc']], // Sort by date of visit descending
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: "copy",
+                text: '<i class="fas fa-copy"></i> Copy',
+                className: "btn btn-sm btn-outline-secondary",
+            },
+            {
+                extend: "csv",
+                text: '<i class="fas fa-file-csv"></i> CSV',
+                className: "btn btn-sm btn-outline-success",
+            },
+            {
+                extend: "excel",
+                text: '<i class="fas fa-file-excel"></i> Excel',
+                className: "btn btn-sm btn-outline-primary",
+            },
+            {
+                extend: "pdf",
+                text: '<i class="fas fa-file-pdf"></i> PDF',
+                className: "btn btn-sm btn-outline-danger",
+            },
+            {
+                text: '<i class="fas fa-sync-alt"></i> Refresh',
+                className: "btn btn-sm btn-outline-info",
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload();
+                }
+            }
+        ]
+        
+    });
+
+    // Load farms for dropdown
+    function loadFarms() {
+        $.ajax({
+            url: "{% url 'get_available_farms' %}",
+            type: "GET",
+            success: function(response) {
+                console.log(response);
+                if (response.success) {
+                    const farmSelect = $('#farmSelect');
+                    farmSelect.empty().append('<option value="">Select Farm</option>');
+                    
+                    response.farms.forEach(function(farm) {
+                        farmSelect.append(
+                            $('<option>', {
+                                value: farm.id,
+                                text: `${farm.name} - ${farm.location} (${farm.farmer_name})`
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    // Load officers for dropdown
+    function loadOfficers() {
+        $.ajax({
+            url: "{% url 'get_available_officers' %}",
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const officerSelect = $('#officerSelect');
+                    officerSelect.empty().append('<option value="">Select Officer</option>');
+                    
+                    response.officers.forEach(function(officer) {
+                        officerSelect.append(
+                            $('<option>', {
+                                value: officer.id,
+                                text: `${officer.name} (${officer.employee_id}) - ${officer.role}`
+                            })
+                        );
+                    });
+                }
+            }
+        });
+    }
+    
+    // Filter handlers
+    $('#statusFilter').change(function() {
+        monitoringTable.ajax.reload();
+    });
+
+    $('#searchInput').on('keyup', function() {
+        monitoringTable.ajax.reload();
+    });
+
+    $('#refreshBtn').click(function() {
+        monitoringTable.ajax.reload();
+    });
+
+    // Create monitoring visit form submission
+    $('#createVisitForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            // Convert boolean values
+            if (field.name === 'farm_boundary_polygon') {
+                data[field.name] = field.value === 'true';
+            } else {
+                data[field.name] = field.value;
+            }
+        });
+        
+        $('#createVisitModal button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+        $.ajax({
+            url: "{% url 'create_monitoring_visit' %}",
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#createVisitModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    monitoringTable.ajax.reload();
+                    $('#createVisitForm')[0].reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while creating the monitoring visit.'
+                });
+            },
+            complete: function() {
+                $('#createVisitModal button[type="submit"]').prop('disabled', false).html('Create Monitoring Visit');
+            }
+        });
+    });
+
+    // View monitoring visit details
+    $('#monitoringTable').on('click', '.view-btn', function() {
+        const visitId = $(this).data('id');
+        
+        $.ajax({
+            url: `/visits/detail/${visitId}/`,
+            type: "GET",
+            success: function(response) {
+                if (response.success) {
+                    const visit = response.visit;
+                    $('#visitDetailContent').html(`
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="visit-detail-card mb-3">
+                                    <h5 class="mb-3">Visit Information</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Visit ID:</span> ${visit.visit_id}</p>
+                                            <p><span class="detail-label">Date of Visit:</span> ${visit.date_of_visit}</p>
+                                            <p><span class="detail-label">Farm Boundary:</span> 
+                                                <span class="badge ${visit.farm_boundary_polygon ? 'bg-success' : 'bg-danger'}">
+                                                    ${visit.farm_boundary_polygon ? 'Yes' : 'No'}
+                                                </span>
+                                            </p>
+                                            <p><span class="detail-label">Land Use:</span> ${visit.land_use_classification}</p>
+                                        </div>
+                                        <div class="col-6">
+                                            <p><span class="detail-label">Status:</span> <span class="badge bg-primary">${visit.follow_up_status_display}</span></p>
+                                            <p><span class="detail-label">Service Provider:</span> ${visit.service_provider || 'N/A'}</p>
+                                            <p><span class="detail-label">Created:</span> ${visit.created_at}</p>
+                                            <p><span class="detail-label">Updated:</span> ${visit.updated_at}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-card mb-3">
+                                    <h5 class="mb-3">Accessibility Information</h5>
+                                    <div class="distance-info mb-2">
+                                        <strong>Distance to Road:</strong> ${visit.distance_to_road} km
+                                    </div>
+                                    <div class="distance-info mb-2">
+                                        <strong>Distance to Market:</strong> ${visit.distance_to_market} km
+                                    </div>
+                                    <div class="distance-info">
+                                        <strong>Processing Facility:</strong> ${visit.proximity_to_processing_facility} km
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Farm & Officer Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><span class="detail-label">Farm:</span> ${visit.farm.name}</p>
+                                        <p><span class="detail-label">Location:</span> ${visit.farm.location}</p>
+                                        <p><span class="detail-label">Farmer:</span> ${visit.farm.farmer_name}</p>
+                                        <p><span class="detail-label">Officer:</span> ${visit.officer.name}</p>
+                                        <p><span class="detail-label">Officer Contact:</span> ${visit.officer.phone || 'N/A'} | ${visit.officer.email}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">Business Relationships</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><strong>Main Buyers:</strong><br>${visit.main_buyers || 'None specified'}</p>
+                                        <p><strong>Cooperatives:</strong><br>${visit.cooperatives_affiliated || 'None specified'}</p>
+                                        <p><strong>Value Chain:</strong><br>${visit.value_chain_linkages || 'None specified'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Observations & Recommendations</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Observations:</strong><br>${visit.observations}</p>
+                                                <p><strong>Issues Identified:</strong><br>${visit.issues_identified || 'None'}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Infrastructure Identified:</strong><br>${visit.infrastructure_identified || 'None'}</p>
+                                                <p><strong>Recommended Actions:</strong><br>${visit.recommended_actions || 'None'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0">Follow-up Actions (${visit.follow_up_actions_count})</h6>
+                                        <button class="btn btn-sm btn-primary" onclick="openFollowUpModal(${visit.id})">
+                                            <i class="fas fa-plus me-1"></i>Add Action
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        ${visit.follow_up_actions.length > 0 ? visit.follow_up_actions.map(action => `
+                                            <div class="border-bottom pb-2 mb-2">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <p class="mb-1"><strong>${action.action_description}</strong></p>
+                                                        <small class="text-muted">Responsible: ${action.responsible_person} | Deadline: ${action.deadline}</small>
+                                                        <p class="mb-1 mt-1">${action.notes || ''}</p>
+                                                    </div>
+                                                    <span class="badge ${getStatusBadgeClass(action.status)}">${action.status_display}</span>
+                                                </div>
+                                            </div>
+                                        `).join('') : '<p class="text-muted">No follow-up actions yet</p>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('#visitDetailModal').modal('show');
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load monitoring visit details'
+                });
+            }
+        });
+    });
+
+    // Helper function for status badge classes
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'pending': return 'bg-info';
+            case 'in_progress': return 'bg-warning';
+            case 'completed': return 'bg-success';
+            case 'cancelled': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
+    }
+
+    // Open follow-up action modal
+    window.openFollowUpModal = function(visitId) {
+        $('#followUpVisitId').val(visitId);
+        $('#followUpActionId').val('');
+        $('#followUpModalTitle').text('Add Follow-up Action');
+        $('#followUpSubmitBtn').text('Add Action');
+        $('#followUpForm')[0].reset();
+        $('#visitDetailModal').modal('hide');
+        $('#followUpModal').modal('show');
+    };
+
+    // Follow-up form submission
+    $('#followUpForm').submit(function(e) {
+        e.preventDefault();
+        
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(field => {
+            data[field.name] = field.value;
+        });
+        
+        const visitId = $('#followUpVisitId').val();
+        const actionId = $('#followUpActionId').val();
+        
+        $('#followUpSubmitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        const url = actionId ? `/follow-up/${actionId}/update/` : `/visits/${visitId}/follow-up/`;
+        const method = actionId ? 'POST' : 'POST';
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(data),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#followUpModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    monitoringTable.ajax.reload();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while saving the follow-up action.'
+                });
+            },
+            complete: function() {
+                $('#followUpSubmitBtn').prop('disabled', false).html(actionId ? 'Update Action' : 'Add Action');
+            }
+        });
+    });
+
+    // Add follow-up action from table
+    $('#monitoringTable').on('click', '.follow-up-btn', function() {
+        const visitId = $(this).data('id');
+        openFollowUpModal(visitId);
+    });
+
+    // Edit monitoring visit
+    // $('#monitoringTable').on('click', '.edit-btn', function() {
+    //     const visitId = $(this).data('id');
+    //     // Implement edit functionality here
+    //     Swal.fire({
+    //         icon: 'info',
+    //         title: 'Edit Feature',
+    //         text: 'Edit functionality will be implemented in the next phase.'
+    //     });
+    // });
+
+
+
+
+    // Edit monitoring visit
+$('#monitoringTable').on('click', '.edit-btn', function() {
+    const visitId = $(this).data('id');
+    loadVisitDataForEdit(visitId);
+});
+
+// Load visit data for editing
+function loadVisitDataForEdit(visitId) {
+    $.ajax({
+        url: `/visits/detail/${visitId}/`,
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const visit = response.visit;
+                populateEditForm(visit);
+                $('#editVisitModal').modal('show');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to load visit data for editing'
+                });
+            }
+        },
+        error: function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load monitoring visit details for editing'
+            });
+        }
+    });
+}
+
+// Populate edit form with visit data
+function populateEditForm(visit) {
+    $('#editVisitId').val(visit.id);
+    $('#editDateOfVisit').val(visit.date_of_visit);
+    $('#editFarmBoundary').val(visit.farm_boundary_polygon.toString());
+    $('#editLandUse').val(visit.land_use_classification);
+    $('#editServiceProvider').val(visit.service_provider || '');
+    $('#editDistanceToRoad').val(parseFloat(visit.distance_to_road).toFixed(2));
+    $('#editDistanceToMarket').val(parseFloat(visit.distance_to_market).toFixed(2));
+    $('#editProcessingFacility').val(parseFloat(visit.proximity_to_processing_facility).toFixed(2));
+    $('#editMainBuyers').val(visit.main_buyers || '');
+    $('#editCooperatives').val(visit.cooperatives_affiliated || '');
+    $('#editValueChain').val(visit.value_chain_linkages || '');
+    $('#editObservations').val(visit.observations);
+    $('#editIssuesIdentified').val(visit.issues_identified || '');
+    $('#editInfrastructure').val(visit.infrastructure_identified || '');
+    $('#editRecommendedActions').val(visit.recommended_actions || '');
+    $('#editFollowUpStatus').val(visit.follow_up_status);
+
+    // Load farms and officers, then set the selected values
+    loadFarmsForEdit(visit.farm.id);
+    loadOfficersForEdit(visit.officer.id);
+}
+
+// Load farms for edit dropdown
+function loadFarmsForEdit(selectedFarmId) {
+    $.ajax({
+        url: "{% url 'get_available_farms' %}",
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const farmSelect = $('#editFarmSelect');
+                farmSelect.empty().append('<option value="">Select Farm</option>');
+                
+                response.farms.forEach(function(farm) {
+                    farmSelect.append(
+                        $('<option>', {
+                            value: farm.id,
+                            text: `${farm.name} - ${farm.location} (${farm.farmer_name})`,
+                            selected: farm.id === selectedFarmId
+                        })
+                    );
+                });
+            }
+        }
+    });
+}
+
+// Load officers for edit dropdown
+function loadOfficersForEdit(selectedOfficerId) {
+    $.ajax({
+        url: "{% url 'get_available_officers' %}",
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const officerSelect = $('#editOfficerSelect');
+                officerSelect.empty().append('<option value="">Select Officer</option>');
+                
+                response.officers.forEach(function(officer) {
+                    officerSelect.append(
+                        $('<option>', {
+                            value: officer.id,
+                            text: `${officer.name} (${officer.employee_id}) - ${officer.role}`,
+                            selected: officer.id === selectedOfficerId
+                        })
+                    );
+                });
+            }
+        }
+    });
+}
+
+// Edit form submission
+$('#editVisitForm').submit(function(e) {
+    e.preventDefault();
+    
+    const formData = $(this).serializeArray();
+    const data = {};
+    formData.forEach(field => {
+        // Convert boolean values
+        if (field.name === 'farm_boundary_polygon') {
+            data[field.name] = field.value === 'true';
+        } else if (field.name === 'visit_id') {
+            // Skip the visit_id field for the update
+            return;
+        } else {
+            data[field.name] = field.value;
+        }
+    });
+    
+    const visitId = $('#editVisitId').val();
+    
+    $('#editVisitForm button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+    $.ajax({
+        url: `/visits/update/${visitId}/`,
+        type: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+        success: function(response) {
+            if (response.success) {
+                $('#editVisitModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: response.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                monitoringTable.ajax.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: response.error
+                });
+            }
+        },
+        error: function(xhr) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: xhr.responseJSON?.error || 'An error occurred while updating the monitoring visit.'
+            });
+        },
+        complete: function() {
+            $('#editVisitForm button[type="submit"]').prop('disabled', false).html('Update Monitoring Visit');
+        }
+    });
+});
+
+
+
+
+    // Delete monitoring visit
+    $('#monitoringTable').on('click', '.delete-btn', function() {
+        const visitId = $(this).data('id');
+        $('#deleteModal').data('visitId', visitId);
+        $('#deleteModal').modal('show');
+    });
+
+    $('#confirmDeleteBtn').click(function() {
+        const visitId = $('#deleteModal').data('visitId');
+        
+        $.ajax({
+            url: `/visits/delete/${visitId}/`,
+            type: "POST",
+            data: JSON.stringify({}),
+            contentType: "application/json",
+            headers: { "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val() },
+            success: function(response) {
+                if (response.success) {
+                    $('#deleteModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    monitoringTable.ajax.reload();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.error
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: xhr.responseJSON?.error || 'An error occurred while deleting the monitoring visit.'
+                });
+            }
+        });
+    });
+
+    // Export button
+    $('#exportBtn').click(function() {
+        const status = $('#statusFilter').val();
+        const search = $('#searchInput').val();
+        window.location.href = `/monitoring/visits/export/?status=${status}&search=${search}`;
+    });
+
+    // Initialize modals
+    $('#createVisitModal').on('show.bs.modal', function() {
+        loadFarms();
+        loadOfficers();
+        // Set default visit date to today
+        $('input[name="date_of_visit"]').val(new Date().toISOString().split('T')[0]);
+    });
+
+    // Initialize page
+    // monitoringTable.ajax.reload();
+});
+</script>
+{% endblock %}

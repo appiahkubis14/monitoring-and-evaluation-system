@@ -64,6 +64,7 @@ class TimeStampModel(models.Model):
 class Region(TimeStampModel):
     name = models.CharField(max_length=250, unique=True)
     code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    geom = GeometryField(blank=True, null=True, srid=4326)
     
     def __str__(self):
         return self.name
@@ -76,6 +77,7 @@ class District(TimeStampModel):
     region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='districts')
     name = models.CharField(max_length=250)
     code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    geom = GeometryField(blank=True, null=True, srid=4326)
     
     def __str__(self):
         return f"{self.name} ({self.region.name})"
@@ -175,11 +177,11 @@ class Farm(TimeStampModel):
     )
     
     farmer = models.ForeignKey(Farmer, on_delete=models.CASCADE, related_name='farms')
-    name = models.CharField(max_length=200)
-    farm_code = models.CharField(max_length=50, unique=True)
-    location = gis_models.PointField(geography=True, srid=4326)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    farm_code = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    location = gis_models.PointField(geography=True, srid=4326, blank=True, null=True)
     boundary = gis_models.PolygonField(geography=True, srid=4326, blank=True, null=True)
-    area_hectares = models.FloatField(validators=[MinValueValidator(0.1)])
+    area_hectares = models.FloatField(validators=[MinValueValidator(0.1)], blank=True, null=True)
     soil_type = models.CharField(max_length=100, blank=True, null=True)
     irrigation_type = models.CharField(max_length=100, blank=True, null=True)
     irrigation_coverage = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0)
@@ -208,6 +210,153 @@ class Farm(TimeStampModel):
             farmer_code = self.farmer.national_id[-4:] if self.farmer.national_id else "0000"
             self.farm_code = f"{farmer_code}F{count:02d}"
         super().save(*args, **kwargs)
+        
+
+
+class MonitoringVisit(models.Model):
+    # Basic Visit Information
+    visit_id = models.CharField(max_length=50, unique=True, verbose_name="Visit ID / Reference Number")
+    date_of_visit = models.DateField(verbose_name="Date of Visit")
+    officer = models.ForeignKey(UserProfile, on_delete=models.PROTECT, verbose_name="Officer Name & ID")
+    farm = models.ForeignKey(Farm, on_delete=models.CASCADE, verbose_name="Farm Name & ID")
+    
+    # Farm Information
+    farm_boundary_polygon = models.BooleanField(
+        choices=[(True, 'Yes'), (False, 'No')], 
+        verbose_name="Farm Boundary Polygon (Yes/No)"
+    )
+    land_use_classification = models.CharField(
+        max_length=100, 
+        verbose_name="Land Use Classification",
+        help_text="Classification of land use (e.g., agricultural, residential, commercial)"
+    )
+    
+    # Accessibility Information
+    distance_to_road = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Distance to Road (km)",
+        help_text="Distance in kilometers"
+    )
+    distance_to_market = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Distance to Market (km)",
+        help_text="Distance in kilometers"
+    )
+    proximity_to_processing_facility = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0)],
+        verbose_name="Proximity to Processing Facility (km)",
+        help_text="Distance in kilometers"
+    )
+    
+    # Business Relationships
+    main_buyers = models.TextField(
+        verbose_name="Main Buyers",
+        help_text="List of main buyers for the farm products"
+    )
+    service_provider = models.CharField(
+        max_length=200, 
+        verbose_name="Service Provider",
+        help_text="Primary service provider for the farm"
+    )
+    cooperatives_affiliated = models.TextField(
+        verbose_name="Cooperatives or Farmer Groups Affiliated",
+        help_text="List of cooperatives or farmer groups the farm is affiliated with"
+    )
+    value_chain_linkages = models.TextField(
+        verbose_name="Value Chain Linkages",
+        help_text="Description of value chain linkages"
+    )
+    
+    # Observations and Assessment
+    observations = models.TextField(verbose_name="Observations")
+    issues_identified = models.TextField(verbose_name="Issues Identified")
+    infrastructure_identified = models.TextField(verbose_name="Infrastructure Identified")
+    
+    # Recommendations and Follow-up
+    recommended_actions = models.TextField(verbose_name="Recommended Actions")
+    
+    FOLLOW_UP_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    follow_up_status = models.CharField(
+        max_length=20,
+        choices=FOLLOW_UP_STATUS_CHOICES,
+        default='pending',
+        verbose_name="Follow-Up Status"
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Monitoring Visit"
+        verbose_name_plural = "Monitoring Visits"
+        ordering = ['-date_of_visit', 'visit_id']
+    
+    def __str__(self):
+        return f"{self.visit_id} - {self.date_of_visit}"
+
+class FollowUpAction(models.Model):
+    """Optional model for tracking detailed follow-up actions"""
+    monitoring_visit = models.ForeignKey(MonitoringVisit, on_delete=models.CASCADE, related_name='follow_up_actions')
+    action_description = models.TextField(verbose_name="Action Description")
+    responsible_person = models.CharField(max_length=100, verbose_name="Responsible Person")
+    deadline = models.DateField(verbose_name="Deadline")
+    status = models.CharField(
+        max_length=20,
+        choices=MonitoringVisit.FOLLOW_UP_STATUS_CHOICES,
+        default='pending'
+    )
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Follow-Up Action"
+        verbose_name_plural = "Follow-Up Actions"
+        ordering = ['deadline']
+    
+    def __str__(self):
+        return f"Action for {self.monitoring_visit.visit_id} - {self.responsible_person}"
+
+class Infrastructure(models.Model):
+    """Optional model for detailed infrastructure tracking"""
+    monitoring_visit = models.ForeignKey(MonitoringVisit, on_delete=models.CASCADE, related_name='infrastructure_details')
+    infrastructure_type = models.CharField(max_length=100, verbose_name="Infrastructure Type")
+    description = models.TextField(verbose_name="Description")
+    condition = models.CharField(
+        max_length=20,
+        choices=[
+            ('excellent', 'Excellent'),
+            ('good', 'Good'),
+            ('fair', 'Fair'),
+            ('poor', 'Poor'),
+            ('non_functional', 'Non-Functional'),
+        ],
+        verbose_name="Condition"
+    )
+    
+    class Meta:
+        verbose_name = "Infrastructure Detail"
+        verbose_name_plural = "Infrastructure Details"
+    
+    def __str__(self):
+        return f"{self.infrastructure_type} - {self.condition}"
+
+
+
+
 
 # Project and Loan Management Models
 class Project(TimeStampModel):

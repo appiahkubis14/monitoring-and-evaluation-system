@@ -209,6 +209,16 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Indicator -->
+<div id="loading-indicator" class="text-center" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading timeline data...</p>
+</div>
+
+
 {% endblock %}
 
 {% block footer %}
@@ -287,6 +297,105 @@
 }
 </style>
 
+<style>
+.timeline-view {
+    min-height: 500px;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: white;
+}
+
+.gantt-bar {
+    height: 30px;
+    margin-bottom: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gantt-progress {
+    height: 100%;
+    background: linear-gradient(45deg, #0ab39c, #405189);
+    transition: width 0.3s ease;
+}
+
+.gantt-milestone {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #f06548;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+.timeline-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #0ab39c;
+    background: #f8f9fa;
+    border-radius: 0.25rem;
+}
+
+.legend-color {
+    border-radius: 3px;
+}
+
+#gantt-chart {
+    overflow-x: auto;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+/* Add these new styles for better Gantt chart display */
+.gantt-container {
+    min-width: 800px;
+}
+
+.gantt-project {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+}
+
+.gantt-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.gantt-track {
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.gantt-duration {
+    height: 100%;
+    background: linear-gradient(45deg, #0ab39c, #405189);
+    border-radius: 4px;
+    position: absolute;
+}
+
+.gantt-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+</style>
+
 <script>
 // CSRF token setup for AJAX requests
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -297,22 +406,91 @@ let calendar = null;
 let currentView = 'gantt';
 
 // Initialize when document is ready
+// Initialize when document is ready
 $(document).ready(function() {
+    
     // Load initial data
     loadTimelineData();
     loadTimelineSummary();
     
     // Set up event listeners
-    $('#project-select').on('change', loadTimelineData);
+    $('#project-select').on('change', function() {
+        loadTimelineData();
+        loadTimelineSummary();
+    });
+    
     $('#view-type').on('change', switchView);
     $('#timeframe').on('change', handleTimeframeChange);
+    
     $('#refresh-btn').on('click', function() {
         loadTimelineData();
         loadTimelineSummary();
     });
+    
     $('#export-timeline-btn').on('click', exportTimeline);
     $('#apply-date-range').on('click', applyCustomDateRange);
+    
+    // Initialize with Gantt chart view
+    setTimeout(() => {
+        if (timelineData.length > 0) {
+            renderGanttChart();
+        }
+    }, 100);
 });
+
+// Fix the loadTimelineData success callback
+function loadTimelineData() {
+    showLoading();
+    const projectId = $('#project-select').val();
+    const timeframe = $('#timeframe').val();
+    
+    let url = '/projects/timeline/data/';
+    let params = {};
+
+    if (projectId) {
+        params.project_id = projectId;
+    }
+
+    if (timeframe === 'custom') {
+        const startDate = $('#start-date').val();
+        const endDate = $('#end-date').val();
+        if (startDate && endDate) {
+            params.start_date = startDate;
+            params.end_date = endDate;
+        }
+    } else if (timeframe !== 'all') {
+        params.timeframe = timeframe;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        data: params,
+        success: function(data) {
+            if (data.success) {
+                timelineData = data.timeline;
+                // Render the current view based on selection
+                if (currentView === 'gantt') {
+                    renderGanttChart();
+                } else if (currentView === 'timeline') {
+                    renderTimelineView();
+                } else if (currentView === 'calendar') {
+                    renderCalendarView();
+                }
+            } else {
+                showAlert('error', 'Error', data.error);
+            }
+
+            hideLoading();
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading timeline data:', error);
+            showAlert('error', 'Error', 'Failed to load timeline data.');
+             hideLoading();
+        }
+        
+    });
+}
 
 // Function to show SweetAlert notifications
 function showAlert(icon, title, text, confirmButtonText = 'OK') {
@@ -516,6 +694,7 @@ function applyCustomDateRange() {
 }
 
 // Render Gantt Chart
+// Render Gantt Chart - FIXED VERSION
 function renderGanttChart() {
     const container = $('#gantt-chart');
     container.empty();
@@ -525,68 +704,84 @@ function renderGanttChart() {
         return;
     }
 
-    // Calculate date range for scaling
+    // Create a container with horizontal scrolling
+    const ganttContainer = $('<div class="gantt-container"></div>');
+    container.append(ganttContainer);
+
+    // Calculate overall date range for scaling
     const dateRange = calculateDateRange();
-    const dayWidth = 2; // pixels per day
+    const totalDays = Math.ceil((dateRange.max - dateRange.min) / (1000 * 60 * 60 * 24));
+    const containerWidth = Math.max(800, totalDays * 3); // Minimum 800px width
 
     timelineData.forEach(item => {
-        const projectDiv = $('<div class="mb-4"></div>');
+        const projectDiv = $('<div class="gantt-project"></div>');
         
         // Project header
         const header = $(`
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">${item.name} (${item.code})</h6>
+            <div class="gantt-header">
+                <div>
+                    <h6 class="mb-1">${item.name} (${item.code})</h6>
+                    <small class="text-muted">Progress: ${item.progress}% | ${item.days_remaining} days remaining</small>
+                </div>
                 <span class="badge ${getStatusClass(item.status)}">${item.status_display}</span>
             </div>
         `);
 
-        // Gantt bar
-        const ganttBar = $(`
-            <div class="gantt-bar">
+        // Gantt track
+        const ganttTrack = $('<div class="gantt-track"></div>');
+        
+        // Calculate position and width for the duration bar
+        const startDate = new Date(item.start);
+        const endDate = new Date(item.end);
+        const daysFromStart = Math.ceil((startDate - dateRange.min) / (1000 * 60 * 60 * 24));
+        const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        
+        const leftPosition = (daysFromStart / totalDays) * 100;
+        const width = (durationDays / totalDays) * 100;
+
+        const durationBar = $(`
+            <div class="gantt-duration" style="left: ${leftPosition}%; width: ${width}%;">
                 <div class="gantt-progress" style="width: ${item.progress}%"></div>
             </div>
         `);
 
+        ganttTrack.append(durationBar);
+
         // Date labels
         const dateLabels = $(`
-            <div class="d-flex justify-content-between mt-1">
-                <small>${formatDate(item.start)}</small>
-                <small>${formatDate(item.end)}</small>
+            <div class="gantt-labels">
+                <span>${formatDate(item.start)}</span>
+                <span>${formatDate(item.end)}</span>
             </div>
         `);
 
-        // Additional info
-        const info = $(`
-            <small class="text-muted">
-                Progress: ${item.progress}% | 
-                Manager: ${item.manager} |
-                ${item.days_remaining} days remaining
-            </small>
-        `);
-
-        projectDiv.append(header, ganttBar, dateLabels, info);
-        container.append(projectDiv);
+        projectDiv.append(header, ganttTrack, dateLabels);
+        ganttContainer.append(projectDiv);
 
         // Add milestones
         if (item.milestones && item.milestones.length > 0) {
+            const milestonesContainer = $('<div class="mt-2"></div>');
+            
             item.milestones.forEach(milestone => {
                 const milestoneDate = new Date(milestone.due_date);
-                const startDate = new Date(item.start);
-                const daysFromStart = Math.floor((milestoneDate - startDate) / (1000 * 60 * 60 * 24));
-                const position = daysFromStart * dayWidth;
+                const milestoneDaysFromStart = Math.ceil((milestoneDate - dateRange.min) / (1000 * 60 * 60 * 24));
+                const milestonePosition = (milestoneDaysFromStart / totalDays) * 100;
 
                 const milestoneMarker = $(`
-                    <div class="gantt-milestone" style="left: ${position}px;" 
+                    <div class="gantt-milestone" style="left: ${milestonePosition}%;" 
                          title="${milestone.name} - ${formatDate(milestone.due_date)}"
                          data-id="${milestone.id}"
                          data-type="milestone">
                     </div>
                 `);
 
-                ganttBar.append(milestoneMarker);
+                ganttTrack.append(milestoneMarker);
             });
         }
     });
+
+    // Set container width for horizontal scrolling
+    ganttContainer.width(containerWidth);
 
     // Add click handlers for milestones
     $('.gantt-milestone').on('click', function() {
@@ -594,8 +789,76 @@ function renderGanttChart() {
         const itemType = $(this).data('type');
         showItemDetails(itemId, itemType);
     });
+
+    // Add click handlers for project bars
+    $('.gantt-duration').on('click', function() {
+        const projectDiv = $(this).closest('.gantt-project');
+        // You might want to add project ID data attribute to handle this
+        console.log('Project bar clicked');
+    });
 }
 
+// Enhanced calculateDateRange function
+function calculateDateRange() {
+    if (timelineData.length === 0) {
+        const today = new Date();
+        return { 
+            min: new Date(today.getFullYear(), today.getMonth(), 1),
+            max: new Date(today.getFullYear(), today.getMonth() + 3, 0)
+        };
+    }
+
+    let minDate = new Date(timelineData[0].start);
+    let maxDate = new Date(timelineData[0].end);
+
+    timelineData.forEach(item => {
+        const startDate = new Date(item.start);
+        const endDate = new Date(item.end);
+
+        if (startDate < minDate) minDate = startDate;
+        if (endDate > maxDate) maxDate = endDate;
+
+        // Also consider milestones
+        if (item.milestones && item.milestones.length > 0) {
+            item.milestones.forEach(milestone => {
+                const milestoneDate = new Date(milestone.due_date);
+                if (milestoneDate < minDate) minDate = milestoneDate;
+                if (milestoneDate > maxDate) maxDate = milestoneDate;
+            });
+        }
+    });
+
+    // Add some padding to the date range
+    minDate.setDate(minDate.getDate() - 7);
+    maxDate.setDate(maxDate.getDate() + 7);
+
+    return { min: minDate, max: maxDate };
+}
+
+// Enhanced formatDate function
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+
+// Function to show loading indicator
+function showLoading() {
+    $('#loading-indicator').show();
+    $('#timeline-container').hide();
+}
+
+// Function to hide loading indicator
+function hideLoading() {
+    $('#loading-indicator').hide();
+    $('#timeline-container').show();
+}
 // Render Timeline View
 function renderTimelineView() {
     const container = $('#timeline-view');

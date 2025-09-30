@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 # from .models import SidebarMenu
+from portal.models import MonitoringVisit
 from utils import sidebar
 
 
@@ -68,4 +69,12 @@ def sidebar_context(request):
         "sidebar_items": filtered_sidebar_items,
         "path": request.path,
         "current_user": request.user
+    }
+
+
+
+def monitoring_context(request):
+    """Add monitoring-related context to all templates"""
+    return {
+        'FOLLOW_UP_STATUS_CHOICES': MonitoringVisit.FOLLOW_UP_STATUS_CHOICES,
     }

@@ -47,7 +47,11 @@ class Sidebar:
                     "url": "/farmers/farms/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value]
                 },
-               
+               "Monitoring": {
+                    "icon": "fas fa-eye", 
+                    "url": "/monitoring/", 
+                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value]
+                },
                
             },
         },
@@ -94,16 +98,7 @@ class Sidebar:
                     "url": "/projects/timeline/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
                 },
-                # "Compliance": {
-                #     "icon": "fas fa-clipboard-check", 
-                #     "url": "/projects/compliance/", 
-                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                # },
-                # "Progress Reports": {
-                #     "icon": "fas fa-file-contract", 
-                #     "url": "/projects/reports/", 
-                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
-                # },
+              
             }
         },
         
@@ -113,56 +108,37 @@ class Sidebar:
             "sub_items": {
                 "Interactive Map": {
                     "icon": "fas fa-map", 
-                    "url": "/gis/map/", 
+                    "url": "/map/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value, UserRole.STAKEHOLDER.value]
                 },
-                "Base Layers": {
-                    "icon": "fas fa-layer-group", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
-                    "sub_items": {
-                        "Satellite": {
-                            "icon": "fas fa-satellite", 
-                            "url": "/gis/layers/satellite/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                        "Terrain": {
-                            "icon": "fas fa-mountain", 
-                            "url": "/gis/layers/terrain/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                        "Street Map": {
-                            "icon": "fas fa-road", 
-                            "url": "/gis/layers/street/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                    }
-                },
-                "Data Layers": {
-                    "icon": "fas fa-database", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
-                    "sub_items": {
-                        "Farm Boundaries": {
-                            "icon": "fas fa-draw-polygon", 
-                            "url": "/gis/layers/boundaries/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                        "Irrigation Sources": {
-                            "icon": "fas fa-tint", 
-                            "url": "/gis/layers/irrigation/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                        "Crop Health": {
-                            "icon": "fas fa-leaf", 
-                            "url": "/gis/layers/crop-health/", 
-                            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                        },
-                    }
-                },
-                "Spatial Analysis": {
-                    "icon": "fas fa-ruler-combined", 
-                    "url": "/gis/analysis/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
+               
+            
+                # "Data Layers": {
+                #     "icon": "fas fa-database", 
+                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
+                #     "sub_items": {
+                #         "Farm Boundaries": {
+                #             "icon": "fas fa-draw-polygon", 
+                #             "url": "/gis/layers/boundaries/", 
+                #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                #         },
+                #         "Irrigation Sources": {
+                #             "icon": "fas fa-tint", 
+                #             "url": "/gis/layers/irrigation/", 
+                #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                #         },
+                #         "Crop Health": {
+                #             "icon": "fas fa-leaf", 
+                #             "url": "/gis/layers/crop-health/", 
+                #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                #         },
+                #     }
+                # },
+                # "Spatial Analysis": {
+                #     "icon": "fas fa-ruler-combined", 
+                #     "url": "/gis/analysis/", 
+                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                # },
             }
         },
         

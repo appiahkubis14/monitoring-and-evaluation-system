@@ -24,7 +24,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("",include("portal.urls")),
     path("accounts/", include("allauth.urls")),
-    # path('api/', include('api.urls')),
+    path('api/', include('api.urls')),
     path('502/', TemplateView.as_view(template_name='pages-500.html'), name='502'),
     path('403/', TemplateView.as_view(template_name='pages-403.html'), name='403'),
     path('404/', TemplateView.as_view(template_name='pages-404.html'), name='404'),

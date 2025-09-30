@@ -3,28 +3,11 @@ from django import template
 register = template.Library()
 
 @register.filter
-def getcrumbs(value, arg=None):
-    """
-    Custom filter logic here
-    Example: Convert a URL path to breadcrumbs
-    """
-    if not value:
+def getcrumbs(path):
+    """Split a URL path into segments, excluding leading/trailing slashes."""
+    if not path:
         return []
-    
-    # Example breadcrumb generation from a URL path
-    if isinstance(value, str):
-        crumbs = []
-        parts = value.strip('/').split('/')
-        url = ''
-        
-        for part in parts:
-            if part:
-                url += '/' + part
-                crumbs.append({'name': part.replace('-', ' ').title(), 'url': url})
-        
-        return crumbs
-    
-    return value
+    return path.strip('/').split('/')
 
 @register.filter
 def modulo(value, arg):
@@ -33,7 +16,6 @@ def modulo(value, arg):
         return int(value) % int(arg)
     except (ValueError, TypeError):
         return ''
-    
 
 @register.filter
 def split(value, arg):
@@ -50,6 +32,7 @@ def mul(value, arg):
 
 
 import os
+
 
 @register.filter
 def basename(value):

@@ -1,0 +1,208 @@
+{% extends 'web_base.html' %}
+{% load i18n static %}
+{% load custom_filters %}
+{% load monitoring_filters %}
+{% load humanize %}
+
+{% block header %}
+    {% include 'partials/header.html' %}
+{% endblock %}
+
+{% block main_content %}
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<!-- Full Screen Container -->
+<div id="fullscreen-container">
+    <div class="row fullscreen-content">
+        <div class="col-12">
+            <!-- Map Container -->
+            <div class="search-top-container">
+                <div class="search-top-card">
+                    <div class="search-top-header">
+                        <i class="fas fa-search me-2"></i>
+                        <span>Search Farms</span>
+                    </div>
+                    <div class="search-top-body">
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search by farm code, name, or farmer...">
+                            <button class="btn btn-outline-secondary" id="clearSearchBtn" type="button" title="Clear search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="searchResults" class="search-results mt-1" style="display: none;"></div>
+                        
+                        <div id="searchStats" class="search-stats mt-2" style="display: none;">
+                            <small class="text-muted" id="matchesCount">0 matches</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card fullscreen-card">
+                <div class="card-body p-0 position-relative">
+                    <div id="map" style="height: 90vh; width: 100%;"></div>
+                    
+                    <!-- Floating Controls Panel -->
+                    <div class="map-controls-panel">
+                        <div class="panel-header">
+                            <h6>Map Controls</h6>
+                            <button id="togglePanel" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="panel-content">
+                            
+                            <!-- Layers Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="layers-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span>Layers</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="layers-section">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="satelliteLayer" checked>
+                                        <label class="form-check-label" for="satelliteLayer">Satellite</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="streetLayer" checked>
+                                        <label class="form-check-label" for="streetLayer">Streets</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="farmLayer" checked>
+                                        <label class="form-check-label" for="farmLayer">Farms</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opacity Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="opacity-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-adjust"></i>
+                                    <span>Opacity</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="opacity-section">
+                                    <input type="range" class="form-range" id="opacitySlider" min="0" max="100" value="50">
+                                    <small class="text-muted" id="opacityValue">50%</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Legend Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="legend-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-map"></i>
+                                    <span>Legend</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="legend-section">
+                                    <div class="legend-item d-flex align-items-center mb-1">
+                                        <div class="legend-color" style="background-color: #28a745;"></div>
+                                        <small>Active</small>
+                                    </div>
+                                    <div class="legend-item d-flex align-items-center mb-1">
+                                        <div class="legend-color" style="background-color: #ffc107;"></div>
+                                        <small>Delayed</small>
+                                    </div>
+                                    <div class="legend-item d-flex align-items-center mb-1">
+                                        <div class="legend-color" style="background-color: #dc3545;"></div>
+                                        <small>Critical</small>
+                                    </div>
+                                    <div class="legend-item d-flex align-items-center mb-1">
+                                        <div class="legend-color" style="background-color: #17a2b8;"></div>
+                                        <small>Completed</small>
+                                    </div>
+                                    <div class="legend-item d-flex align-items-center">
+                                        <div class="legend-color" style="background-color: #6c757d;"></div>
+                                        <small>Abandoned</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tools Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="tools-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-tools"></i>
+                                    <span>Tools</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="tools-section">
+                                    <button id="refreshMap" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                    <button id="saveBoundaryBtn" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                                        <i class="fas fa-sync-alt"></i> Save Changes
+                                    </button>
+                                    
+                                    <button id="fitToBounds" class="btn btn-outline-secondary btn-sm w-100 mb-1">
+                                        <i class="fas fa-expand"></i> Fit All
+                                    </button>
+                                    <button id="clearSelection" class="btn btn-outline-danger btn-sm w-100">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                    <button id="fullScreenBtn" class="btn btn-outline-info btn-sm w-100 mt-1">
+                                        <i class="fas fa-expand-arrows-alt"></i> Full Screen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Farm Details Modal -->
+            <div class="modal fade" id="farmModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Farm Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="farmDetails">
+                            <!-- Farm details will be loaded here -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-warning" id="editBoundaryBtn">
+                                <i class="fas fa-edit"></i> Edit Boundary
+                            </button>
+                            <button type="button" class="btn btn-success" id="saveBoundaryBtn" style="display: none;">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-danger" id="cancelEditBtn" style="display: none;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <script>document.write(new Date().getFullYear())</script> © EXIM M&E System.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<link rel="stylesheet" href="{% static 'css/map.css' %}">
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="{% static 'js/map.js' %}"></script>
+
+{% endblock %}

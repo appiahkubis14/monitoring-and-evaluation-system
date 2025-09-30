@@ -37,7 +37,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.humanize',
-    'django.contrib.admin',
+    'django.contrib.admin',  # Uncomment this - Django needs the admin app
     'django.contrib.auth',
     'django.contrib.gis',
     'django.contrib.contenttypes',
@@ -48,11 +48,12 @@ INSTALLED_APPS = [
     'portal',
     'api',
 
+    'drf_yasg',
     "rest_framework",
     'import_export',
     'django_user_agents',
-     'widget_tweaks',
-     'leaflet',
+    'widget_tweaks',
+    'leaflet',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -83,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'portal.context_processors.sidebar_context',
+                'portal.context_processors.monitoring_context',
             ],
         },
     },

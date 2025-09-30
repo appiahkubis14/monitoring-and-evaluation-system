@@ -5,6 +5,10 @@ from import_export.admin import ImportExportModelAdmin, ImportExportActionModelA
 from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 from .models import *
 
+from django.contrib import admin
+from django.contrib.gis import admin as gis_admin
+from leaflet.admin import LeafletGeoAdmin
+
 
 class GeoAdmin(gis_admin.GISModelAdmin):
     default_lon = -1  # Default longitude
@@ -289,13 +293,67 @@ class FarmerAdmin(ImportExportModelAdmin):
     list_filter = ('primary_crop', 'extension_services', 'years_of_experience')
     search_fields = ('national_id', 'user_profile__user__username', 'primary_crop')
 
+# @admin.register(Farm)
+# class FarmAdmin(GeoAdmin, ImportExportModelAdmin):
+#     resource_class = FarmResource
+#     list_display = ('name', 'farm_code', 'farmer', 'area_hectares', 'status', 'registration_date')
+#     list_filter = ('status', 'soil_type', 'irrigation_type', 'registration_date')
+#     search_fields = ('name', 'farm_code', 'farmer__national_id')
+#     readonly_fields = ('farm_code',)
+
+
+# In your admin.py
+from django.contrib.gis import admin
+from leaflet.admin import LeafletGeoAdmin
+from .models import Farm, Farmer, FarmCrop
+
 @admin.register(Farm)
-class FarmAdmin(GeoAdmin, ImportExportModelAdmin):
-    resource_class = FarmResource
-    list_display = ('name', 'farm_code', 'farmer', 'area_hectares', 'status', 'registration_date')
-    list_filter = ('status', 'soil_type', 'irrigation_type', 'registration_date')
-    search_fields = ('name', 'farm_code', 'farmer__national_id')
-    readonly_fields = ('farm_code',)
+class FarmAdmin(LeafletGeoAdmin):
+    list_display = ('farm_code', 'name', 'farmer', 'status', 'area_hectares', 'validation_status', 'boundary_preview')
+    list_filter = ('status', 'validation_status', 'soil_type', 'irrigation_type', 'registration_date')
+    search_fields = ('farm_code', 'name', 'farmer__first_name', 'farmer__last_name', 'farmer__national_id')
+    readonly_fields = ('farm_code', 'registration_date')
+    date_hierarchy = 'registration_date'
+    
+    # Leaflet map settings
+    settings_overrides = {
+        'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
+        'DEFAULT_ZOOM': 7,
+        'MIN_ZOOM': 5,
+        'MAX_ZOOM': 18,
+        'SPATIAL_EXTENT': (-3.5, 4.5, 1.5, 11.5),  # Ghana bounds
+    }
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': (
+                'farm_code', 'farmer', 'name', 'status', 
+                'registration_date', 'last_visit_date', 'validation_status'
+            )
+        }),
+        ('Location Details', {
+            'fields': (
+                'location', 'boundary', 'geom',
+                'area_hectares', 'soil_type'
+            ),
+            'description': 'Click on the map to set location or draw boundary polygon'
+        }),
+        ('Irrigation & Environment', {
+            'fields': (
+                'irrigation_type', 'irrigation_coverage',
+                'altitude', 'slope'
+            )
+        }),
+    )
+    
+    def boundary_preview(self, obj):
+        if obj.boundary:
+            return f"✅ {obj.boundary.num_points} points"
+        return "❌ No boundary"
+    boundary_preview.short_description = "Boundary"
+
+
+
 
 @admin.register(Project)
 class ProjectAdmin(ImportExportModelAdmin):
@@ -455,3 +513,47 @@ class DataExportAdmin(ImportExportModelAdmin):
     list_filter = ('export_format', 'status', 'requested_at')
     search_fields = ('requested_by__username', 'model_name')
     readonly_fields = ('requested_by', 'requested_at', 'completed_at', 'status')
+
+
+from django.contrib import admin
+from .models import MonitoringVisit, FollowUpAction, Infrastructure
+
+
+class FollowUpActionInline(admin.TabularInline):
+    model = FollowUpAction
+    extra = 1
+    fields = ("action_description", "responsible_person", "deadline", "status", "notes")
+    show_change_link = True
+
+
+class InfrastructureInline(admin.TabularInline):
+    model = Infrastructure
+    extra = 1
+    fields = ("infrastructure_type", "description", "condition")
+    show_change_link = True
+
+
+@admin.register(MonitoringVisit)
+class MonitoringVisitAdmin(admin.ModelAdmin):
+    list_display = ("visit_id", "date_of_visit", "officer", "farm", "follow_up_status", "created_at")
+    list_filter = ("follow_up_status", "date_of_visit", "officer")
+    search_fields = ("visit_id", "officer__user__username", "officer__user__first_name", "officer__user__last_name", "farm__name")
+    inlines = [FollowUpActionInline, InfrastructureInline]
+    ordering = ("-date_of_visit", "visit_id")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(FollowUpAction)
+class FollowUpActionAdmin(admin.ModelAdmin):
+    list_display = ("monitoring_visit", "responsible_person", "deadline", "status", "created_at")
+    list_filter = ("status", "deadline")
+    search_fields = ("monitoring_visit__visit_id", "responsible_person")
+    ordering = ("deadline",)
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(Infrastructure)
+class InfrastructureAdmin(admin.ModelAdmin):
+    list_display = ("monitoring_visit", "infrastructure_type", "condition")
+    list_filter = ("condition", "infrastructure_type")
+    search_fields = ("monitoring_visit__visit_id", "infrastructure_type")

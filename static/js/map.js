@@ -116,6 +116,8 @@ function initializeMap() {
 
     // Initialize panel sections
     initializePanelSections();
+
+    initializeOpacityControls();
 }
 
 // Load additional layers data
@@ -1829,6 +1831,19 @@ function setupEventListeners() {
             }, 100);
         }
     });
+
+
+     
+    
+    // Base map radio buttons (mutually exclusive)
+    document.querySelectorAll('input[name="baseMap"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                switchBaseMap(this.id);
+            }
+        });
+    });
+
 }
 
 

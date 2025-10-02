@@ -12,7 +12,7 @@
         background: white; 
         border-radius: 8px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        width: 280px;
+        width: 380px;
         max-height: 90vh;
         overflow: hidden;
         transition: all 0.3s ease;
@@ -667,8 +667,8 @@
 
 #fullscreen-container.fullscreen-active .search-top-container {
     position: fixed !important;
-    top: 20px !important;
-    left: 900px !important;
+    /* top: 20px !important;
+    left: 900px !important; */
     z-index: 10000 !important;
     background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(10px) !important;
@@ -737,4 +737,150 @@ body.fullscreen-mode footer {
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
     border-radius: 12px !important;
+}
+
+
+
+
+/* Measurement controls */
+.measure-control {
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 5px;
+}
+
+.measure-control .btn-group-vertical .btn {
+    margin-bottom: 2px;
+    border-radius: 3px !important;
+}
+
+.measure-control .btn:last-child {
+    margin-bottom: 0;
+}
+
+.measure-results {
+    margin-top: 60px;
+}
+
+.measurement-info .card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    min-width: 200px;
+}
+
+.measure-result {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+/* Measurement layer styles */
+.measurement-line {
+    stroke: #ff7800;
+    stroke-width: 3;
+    stroke-dasharray: 5, 10;
+}
+
+.measurement-polygon {
+    stroke: #3388ff;
+    stroke-width: 2;
+    fill: #3388ff;
+    fill-opacity: 0.2;
+}
+
+/* Cursor styles for measurement */
+.leaflet-container.measuring {
+    cursor: crosshair !important;
+}
+
+
+/* Measurement tool styles */
+.measure-tooltip {
+    font-weight: bold;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.distance-tooltip {
+    background: rgba(51, 136, 255, 0.9);
+    color: white;
+    border: 2px solid #3388ff;
+}
+
+.area-tooltip {
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+    border: 2px solid #28a745;
+}
+
+/* Clear measurement icon */
+.clear-measurement {
+    background: rgba(220, 53, 69, 0.9);
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.clear-icon {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: center;
+    width: 20px;
+    height: 20px;
+}
+
+.clear-measurement:hover {
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
+/* Tools group styling */
+.tools-group {
+    border-left: 3px solid #6c757d;
+    padding-left: 10px;
+    margin-bottom: 15px;
+}
+
+.tools-group-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.measurement-instructions {
+    font-size: 0.75rem;
+}
+
+/* Button group styling */
+.btn-group .btn {
+    border-radius: 0.25rem !important;
+}
+
+.btn-group .btn:first-child {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.btn-group .btn:last-child {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Active measurement state */
+.measuring-active {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }

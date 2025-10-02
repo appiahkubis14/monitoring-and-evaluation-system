@@ -161,3 +161,41 @@ def update_farm_boundary(request, farm_id):
         print(f"Error updating boundary: {e}")
         print(traceback.format_exc())
         return JsonResponse({'success': False, 'error': str(e)})
+    
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def validate_farm_boundary(request, farm_id):
+    """
+    Validate farm boundary - set validation_status to True
+    """
+    try:
+        # Get the farm instance
+        farm = Farm.objects.get(id=farm_id)
+        
+        # Update validation status to True
+        farm.validation_status = True
+        farm.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Farm boundary validated successfully',
+            'validation_status': farm.validation_status
+        })
+        
+    except Farm.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Farm not found'
+        }, status=404)
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

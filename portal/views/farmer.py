@@ -194,6 +194,7 @@ def farmer_get_farm_geojson(request, farmer_id):
     except Farmer.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
 
+
 @require_http_methods(["POST"])
 @login_required
 @transaction.atomic
@@ -264,6 +265,149 @@ def create_farmer(request):
     except Exception as e:
         print(e)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@require_http_methods(["POST"])
+@csrf_exempt  # Add this line
+# @login_required
+@transaction.atomic
+def create_farmers(request):
+    """Create multiple farmers with user profiles in bulk"""
+    try:
+        data = json.loads(request.body)
+        print("Received data:", data)
+        
+        # Check if data is a list
+        if not isinstance(data, list):
+            return JsonResponse({'success': False, 'error': 'Expected a list of farmers'}, status=400)
+        
+        if not data:
+            return JsonResponse({'success': False, 'error': 'No farmer data provided'}, status=400)
+        
+        created_farmers = []
+        errors = []
+        
+        for index, farmer_data in enumerate(data):
+            try:
+                # Required fields for each farmer
+                required_fields = ['first_name', 'last_name', 'national_id', 'district_id', 'farm_size']
+                missing_fields = [field for field in required_fields if not farmer_data.get(field)]
+                
+                if missing_fields:
+                    errors.append({
+                        'index': index,
+                        'national_id': farmer_data.get('national_id', 'Unknown'),
+                        'error': f'Missing required fields: {", ".join(missing_fields)}'
+                    })
+                    continue
+                
+                # Check if national ID already exists
+                if Farmer.objects.filter(national_id=farmer_data['national_id']).exists():
+                    errors.append({
+                        'index': index,
+                        'national_id': farmer_data['national_id'],
+                        'error': 'National ID already exists'
+                    })
+                    continue
+                
+                # Create user first
+                from django.contrib.auth.models import User
+                username = f"farmer_{farmer_data['national_id']}"
+                email = farmer_data.get('email', f"{username}@example.com")
+                
+                # Check if username already exists
+                if User.objects.filter(username=username).exists():
+                    username = f"{username}_{User.objects.count() + 1}"
+                
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password='default_password',  # Should be changed on first login
+                    first_name=farmer_data['first_name'],
+                    last_name=farmer_data['last_name']
+                )
+                
+                # Create user profile
+                district = District.objects.get(id=farmer_data['district_id'])
+                
+                user_profile = UserProfile.objects.create(
+                    user=user,
+                    role='farmer',
+                    phone_number=farmer_data.get('phone_number', ''),
+                    district=district,
+                    address=farmer_data.get('address', ''),
+                    date_of_birth=farmer_data.get('date_of_birth'),
+                    gender=farmer_data.get('gender'),
+                    bank_account_number=farmer_data.get('bank_account_number', ''),
+                    bank_name=farmer_data.get('bank_name', '')
+                )
+                
+                # Handle extension_services conversion
+                extension_services = False
+                if farmer_data.get('extension_services'):
+                    if isinstance(farmer_data['extension_services'], str):
+                        extension_services = farmer_data['extension_services'].lower() in ['true', 'on', 'yes', '1']
+                    else:
+                        extension_services = bool(farmer_data['extension_services'])
+                
+                # Create farmer
+                farmer = Farmer.objects.create(
+                    user_profile=user_profile,
+                    national_id=farmer_data['national_id'],
+                    farm_size=farmer_data['farm_size'],
+                    years_of_experience=farmer_data.get('years_of_experience', 0),
+                    primary_crop=farmer_data.get('primary_crop', 'Mango'),
+                    secondary_crops=farmer_data.get('secondary_crops', []),
+                    cooperative_membership=farmer_data.get('cooperative_membership', ''),
+                    extension_services=extension_services
+                )
+                
+                created_farmers.append({
+                    'id': farmer.id,
+                    'national_id': farmer.national_id,
+                    'name': f"{farmer_data['first_name']} {farmer_data['last_name']}",
+                    'username': username
+                })
+                
+            except District.DoesNotExist:
+                errors.append({
+                    'index': index,
+                    'national_id': farmer_data.get('national_id', 'Unknown'),
+                    'error': 'District not found'
+                })
+                continue
+            except Exception as e:
+                errors.append({
+                    'index': index,
+                    'national_id': farmer_data.get('national_id', 'Unknown'),
+                    'error': str(e)
+                })
+                continue
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'message': f'Successfully created {len(created_farmers)} farmers',
+            'created_farmers': created_farmers,
+            'total_processed': len(data)
+        }
+        
+        # Add errors if any
+        if errors:
+            response_data['errors'] = errors
+            response_data['message'] += f', {len(errors)} failed'
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print("Unexpected error:", e)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+
 
 @require_http_methods(["POST"])
 @login_required

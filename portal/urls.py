@@ -36,6 +36,7 @@ urlpatterns = [
     # Farmer CRUD operations
     path('farmers/list/',farmer_list, name='farmer_list'),
     path('farmers/create/',create_farmer, name='create_farmer'),
+    path('farmer/create/', create_farmers, name='create_farmers'),
     path('farmers/update/<int:farmer_id>/',update_farmer, name='update_farmer'),
     path('farmers/delete/',delete_farmer, name='delete_farmer'),
     path('farmers/detail/<int:farmer_id>/',get_farmer_detail, name='get_farmer_detail'),
@@ -51,6 +52,7 @@ urlpatterns = [
     # Farm CRUD operations
     path('farmers/farms/list/', farm_list, name='farm_list'),
     path('farmers/farms/create/', create_farm, name='create_farm'),
+    path('farmers/farm/create/', create_farms, name='create_farms'),
     path('farmers/farms/update/<int:farm_id>/', update_farm, name='update_farm'),
     path('farmers/farms/delete/', delete_farm, name='delete_farm'),
     path('farmers/farms/detail/<int:farm_id>/', get_farm_detail, name='get_farm_detail'),
@@ -193,5 +195,6 @@ urlpatterns = [
     path('map/', interactive_map, name='interactive_map'),
     path('map/data/', get_farm_data, name='get_farm_data'),
     path('map/farm/<int:farm_id>/update-boundary/', update_farm_boundary, name='update_farm_boundary'),
+    path('map/farm/<int:farm_id>/validate-boundary/', validate_farm_boundary, name='validate_farm_boundary'),
     # path('map/search/', search_farms, name='search_farms'),
 ]

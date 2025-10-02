@@ -111,7 +111,7 @@ class Sidebar:
                     "url": "/map/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value, UserRole.STAKEHOLDER.value]
                 },
-               
+                
             
                 # "Data Layers": {
                 #     "icon": "fas fa-database", 
@@ -142,27 +142,27 @@ class Sidebar:
             }
         },
         
-        "Data Collection": {
-            "icon": "fas fa-mobile-alt",
-            "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value],
-            "sub_items": {
-                "Field Forms": {
-                    "icon": "fas fa-clipboard-list", 
-                    "url": "/data/forms/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
-                },
-                "Media Upload": {
-                    "icon": "fas fa-camera", 
-                    "url": "/data/media/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
-                },
-                "Mobile Sync": {
-                    "icon": "fas fa-sync", 
-                    "url": "/data/sync/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
-                },
-            }
-        },
+        # "Data Collection": {
+        #     "icon": "fas fa-mobile-alt",
+        #     "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value],
+        #     "sub_items": {
+        #         "Field Forms": {
+        #             "icon": "fas fa-clipboard-list", 
+        #             "url": "/data/forms/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
+        #         },
+        #         "Media Upload": {
+        #             "icon": "fas fa-camera", 
+        #             "url": "/data/media/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
+        #         },
+        #         "Mobile Sync": {
+        #             "icon": "fas fa-sync", 
+        #             "url": "/data/sync/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.FIELD_OFFICER.value]
+        #         },
+        #     }
+        # },
         
         "Reports & Analytics": {
             "icon": "fas fa-chart-bar",

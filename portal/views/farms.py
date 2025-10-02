@@ -270,6 +270,9 @@ def get_all_farms_geojson(request):
     
     return JsonResponse(geojson)
 
+
+
+
 @require_http_methods(["POST"])
 @login_required
 @transaction.atomic
@@ -319,6 +322,171 @@ def create_farm(request):
         return JsonResponse({'success': False, 'error': 'Invalid numeric value'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+from django.views.decorators.csrf import csrf_exempt
+
+@require_http_methods(["POST"])
+@csrf_exempt
+# @login_required
+@transaction.atomic
+def create_farms(request):
+    """Create multiple farms in bulk"""
+    try:
+        data = json.loads(request.body)
+        print("Received farm data:", data)
+        
+        # Check if data is a list
+        if not isinstance(data, list):
+            return JsonResponse({'success': False, 'error': 'Expected a list of farms'}, status=400)
+        
+        if not data:
+            return JsonResponse({'success': False, 'error': 'No farm data provided'}, status=400)
+        
+        created_farms = []
+        errors = []
+        
+        for index, farm_data in enumerate(data):
+            try:
+                # Required fields for each farm
+                required_fields = ['farmer_id', 'name', 'area_hectares']
+                missing_fields = [field for field in required_fields if not farm_data.get(field)]
+                
+                if missing_fields:
+                    errors.append({
+                        'index': index,
+                        'name': farm_data.get('name', 'Unknown'),
+                        'error': f'Missing required fields: {", ".join(missing_fields)}'
+                    })
+                    continue
+                
+                # Check if farmer exists
+                try:
+                    farmer = Farmer.objects.get(id=farm_data['farmer_id'])
+                except Farmer.DoesNotExist:
+                    errors.append({
+                        'index': index,
+                        'name': farm_data.get('name', 'Unknown'),
+                        'error': f"Farmer with ID {farm_data['farmer_id']} not found"
+                    })
+                    continue
+                
+                # Create location from coordinates
+                from django.contrib.gis.geos import Point
+                location = None
+                
+                # Handle different coordinate formats
+                if farm_data.get('location') and farm_data['location'].get('coordinates'):
+                    coords = farm_data['location']['coordinates']
+                    if len(coords) >= 2:
+                        # Handle [lng, lat] format
+                        location = Point(float(coords[0]), float(coords[1]))
+                elif farm_data.get('latitude') and farm_data.get('longitude'):
+                    # Handle separate lat/long fields
+                    location = Point(float(farm_data['longitude']), float(farm_data['latitude']))
+                else:
+                    errors.append({
+                        'index': index,
+                        'name': farm_data.get('name', 'Unknown'),
+                        'error': 'Location coordinates required (either location object or latitude/longitude)'
+                    })
+                    continue
+                
+                # Create boundary if provided
+                boundary = None
+                if farm_data.get('boundary') and farm_data['boundary'].get('coordinates'):
+                    from django.contrib.gis.geos import Polygon
+                    try:
+                        coords = farm_data['boundary']['coordinates'][0]  # Get first ring
+                        # Convert to tuple of tuples for Polygon
+                        polygon_coords = tuple((float(coord[0]), float(coord[1])) for coord in coords)
+                        boundary = Polygon(polygon_coords)
+                    except Exception as e:
+                        errors.append({
+                            'index': index,
+                            'name': farm_data.get('name', 'Unknown'),
+                            'error': f'Invalid boundary coordinates: {str(e)}'
+                        })
+                        continue
+                
+                # Handle dates
+                registration_date = farm_data.get('registration_date')
+                last_visit_date = farm_data.get('last_visit_date')
+                
+                if registration_date:
+                    from django.utils.dateparse import parse_date
+                    registration_date = parse_date(registration_date)
+                
+                if last_visit_date:
+                    from django.utils.dateparse import parse_date
+                    last_visit_date = parse_date(last_visit_date)
+                
+                # Create farm
+                farm = Farm.objects.create(
+                    farmer=farmer,
+                    name=farm_data['name'],
+                    location=location,
+                    boundary=boundary,
+                    area_hectares=float(farm_data['area_hectares']),
+                    soil_type=farm_data.get('soil_type'),
+                    irrigation_type=farm_data.get('irrigation_type'),
+                    irrigation_coverage=float(farm_data.get('irrigation_coverage', 0)),
+                    status=farm_data.get('status', 'active'),
+                    registration_date=registration_date,
+                    last_visit_date=last_visit_date,
+                    boundary_coord=farm_data.get('boundary_coord'),
+                    validation_status=farm_data.get('validation_status', False),
+                    altitude=farm_data.get('altitude'),
+                    slope=farm_data.get('slope')
+                )
+                
+                created_farms.append({
+                    'id': farm.id,
+                    'farm_code': farm.farm_code,
+                    'name': farm.name,
+                    'farmer_id': farmer.id
+                })
+                
+            except ValueError as e:
+                errors.append({
+                    'index': index,
+                    'name': farm_data.get('name', 'Unknown'),
+                    'error': f'Invalid numeric value: {str(e)}'
+                })
+                continue
+            except Exception as e:
+                errors.append({
+                    'index': index,
+                    'name': farm_data.get('name', 'Unknown'),
+                    'error': str(e)
+                })
+                continue
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'message': f'Successfully created {len(created_farms)} farms',
+            'created_farms': created_farms,
+            'total_processed': len(data)
+        }
+        
+        # Add errors if any
+        if errors:
+            response_data['errors'] = errors
+            response_data['message'] += f', {len(errors)} failed'
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print("Unexpected error:", e)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+
+
 
 @require_http_methods(["POST"])
 @login_required

@@ -8,6 +8,9 @@ from datetime import date
 import uuid
 from django.contrib.gis.db.models import GeometryField
 
+
+
+
 # Custom managers for soft delete functionality
 class TimeStampManager(models.Manager):
     def __init__(self, *args, **kwargs):
@@ -59,6 +62,12 @@ class TimeStampModel(models.Model):
     
     def hard_delete(self, *args, **kwargs):
         super(TimeStampModel, self).delete(*args, **kwargs)
+
+
+
+class versionTbl(TimeStampModel):
+ version = models.IntegerField(blank=True, null=True)
+
 
 # Region and District Models
 class Region(TimeStampModel):

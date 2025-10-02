@@ -59,45 +59,208 @@
                             
                             <!-- Layers Section -->
                             <div class="control-section">
-                                <div class="section-header" data-toggle="layers-section" style="display: flex;gap: 8px;">
-                                    <i class="fas fa-layer-group"></i>
-                                    <span>Layers</span>
+                               
+                            </div>
+
+                             <!-- Base Maps Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="base-maps-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-map"></i>
+                                    <span>Base Maps</span>
                                     <i class="fas fa-chevron-down toggle-icon"></i>
                                 </div>
-                                <div class="section-content" id="layers-section">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="satelliteLayer" checked>
-                                        <label class="form-check-label" for="satelliteLayer">Satellite</label>
+                                <div class="section-content" id="base-maps-section">
+                                    <div class="layer-control-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="baseMap" id="hybridLayer" checked>
+                                            <label class="form-check-label" for="hybridLayer">
+                                                <i class="fas fa-map me-1"></i>Hybrid
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="baseMap" id="streetLayer">
+                                            <label class="form-check-label" for="streetLayer">
+                                                <i class="fas fa-road me-1"></i>Streets
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="baseMap" id="satelliteLayer">
+                                            <label class="form-check-label" for="satelliteLayer">
+                                                <i class="fas fa-satellite me-1"></i>Satellite
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="baseMap" id="terrainLayer">
+                                            <label class="form-check-label" for="terrainLayer">
+                                                <i class="fas fa-mountain me-1"></i>Terrain
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="streetLayer" checked>
-                                        <label class="form-check-label" for="streetLayer">Streets</label>
+                                    
+                                    <!-- Base Map Opacity -->
+                                    <div class="opacity-control mt-3">
+                                        <h6 class="opacity-title">
+                                            <i class="fas fa-adjust me-1"></i>Base Map Opacity
+                                        </h6>
+                                        <input type="range" class="form-range base-opacity-slider" id="baseOpacitySlider" min="0" max="100" value="100">
+                                        <small class="text-muted" id="baseOpacityValue">100%</small>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="farmLayer" checked>
-                                        <label class="form-check-label" for="farmLayer">Farms</label>
+                                </div>
+                            </div>
+
+                            <!-- Farm Data Layers Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="farm-data-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-tractor"></i>
+                                    <span>Farm Data Layers</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="farm-data-section">
+                                    <div class="layer-control-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="farmLayer" checked>
+                                            <label class="form-check-label" for="farmLayer">
+                                                <i class="fas fa-tractor me-1"></i>Farm Boundaries
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="treeDensityLayer">
+                                            <label class="form-check-label" for="treeDensityLayer">
+                                                <i class="fas fa-tree me-1"></i>Tree Density
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="cropHealthLayer">
+                                            <label class="form-check-label" for="cropHealthLayer">
+                                                <i class="fas fa-leaf me-1"></i>Crop Health (NDVI)
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="irrigationLayer">
+                                            <label class="form-check-label" for="irrigationLayer">
+                                                <i class="fas fa-tint me-1"></i>Irrigation Coverage
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Farm Layers Opacity -->
+                                    <div class="opacity-control mt-3">
+                                        <h6 class="opacity-title">
+                                            <i class="fas fa-adjust me-1"></i>Farm Layers Opacity
+                                        </h6>
+                                        <input type="range" class="form-range farm-opacity-slider" id="farmOpacitySlider" min="0" max="100" value="70">
+                                        <small class="text-muted" id="farmOpacityValue">70%</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                             <!-- Environmental Layers Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="environmental-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-seedling"></i>
+                                    <span>Environmental Layers</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="environmental-section">
+                                    <div class="layer-control-group">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="soilTypeLayer">
+                                            <label class="form-check-label" for="soilTypeLayer">
+                                                <i class="fas fa-seedling me-1"></i>Soil Types
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="climateZoneLayer">
+                                            <label class="form-check-label" for="climateZoneLayer">
+                                                <i class="fas fa-cloud-sun me-1"></i>Climate Zones
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="roadsLayer">
+                                            <label class="form-check-label" for="roadsLayer">
+                                                <i class="fas fa-road me-1"></i>Road Network
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Environmental Layers Opacity -->
+                                    <div class="opacity-control mt-3">
+                                        <h6 class="opacity-title">
+                                            <i class="fas fa-adjust me-1"></i>Environmental Layers Opacity
+                                        </h6>
+                                        <input type="range" class="form-range env-opacity-slider" id="envOpacitySlider" min="0" max="100" value="60">
+                                        <small class="text-muted" id="envOpacityValue">60%</small>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Opacity Section -->
+                            <!-- Spatial Analysis Section -->
                             <div class="control-section">
+                                <div class="section-header" data-toggle="analysis-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-chart-bar"></i>
+                                    <span>Spatial Analysis</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="analysis-section">
+                                    <div class="tools-group mb-3">
+                                        <h6 class="tools-group-title">
+                                            <i class="fas fa-buffer me-1"></i>Buffer Analysis
+                                        </h6>
+                                        <div class="input-group input-group-sm mb-2">
+                                            <input type="number" id="bufferDistance" class="form-control" placeholder="Distance" value="1000" min="100" max="10000">
+                                            <span class="input-group-text">meters</span>
+                                        </div>
+                                        <div class="btn-group w-100 mb-2" role="group">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" id="bufferIrrigationBtn" title="Buffer around irrigation sources">
+                                                <i class="fas fa-tint"></i> Irrigation
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success btn-sm" id="bufferRoadsBtn" title="Buffer along roads">
+                                                <i class="fas fa-road"></i> Roads
+                                            </button>
+                                        </div>
+                                        <div class="btn-group w-100 mb-2" role="group">
+                                            <button type="button" class="btn btn-outline-info btn-sm" id="bufferFarmsBtn" title="Buffer around farms">
+                                                <i class="fas fa-tractor"></i> Farms
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning btn-sm" id="bufferGradientBtn" title="Multiple distance buffers">
+                                                <i class="fas fa-layer-group"></i> Gradient
+                                            </button>
+                                        </div>
+                                        <div class="btn-group w-100" role="group">
+                                            <button type="button" class="btn btn-outline-danger btn-sm" id="clearBufferBtn">
+                                                <i class="fas fa-trash"></i> Clear All
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="tools-group">
+                                        <h6 class="tools-group-title">
+                                            <i class="fas fa-info-circle me-1"></i>Active Buffers
+                                        </h6>
+                                        <div id="active-buffers-list" class="active-buffers-list">
+                                            <small class="text-muted">No active buffers</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Opacity Section -->
+                            <!-- <div class="control-section">
                                 <div class="section-header" data-toggle="opacity-section" style="display: flex;gap: 8px;">
                                     <i class="fas fa-adjust"></i>
-                                    <span>Opacity</span>
+                                    <span>Polygon Opacity</span>
                                     <i class="fas fa-chevron-down toggle-icon"></i>
                                 </div>
                                 <div class="section-content" id="opacity-section">
                                     <input type="range" class="form-range" id="opacitySlider" min="0" max="100" value="50">
                                     <small class="text-muted" id="opacityValue">50%</small>
                                 </div>
-                            </div>
+                            </div> -->
                             
                             <!-- Legend Section -->
                             <div class="control-section">
                                 <div class="section-header" data-toggle="legend-section" style="display: flex;gap: 8px;">
                                     <i class="fas fa-map"></i>
-                                    <span>Legend</span>
+                                    <span>Polygon Legend</span>
                                     <i class="fas fa-chevron-down toggle-icon"></i>
                                 </div>
                                 <div class="section-content" id="legend-section">
@@ -132,22 +295,52 @@
                                     <i class="fas fa-chevron-down toggle-icon"></i>
                                 </div>
                                 <div class="section-content" id="tools-section">
-                                    <button id="refreshMap" class="btn btn-outline-primary btn-sm w-100 mb-1">
-                                        <i class="fas fa-sync-alt"></i> Refresh
-                                    </button>
-                                    <button id="saveBoundaryBtn" class="btn btn-outline-primary btn-sm w-100 mb-1">
-                                        <i class="fas fa-sync-alt"></i> Save Changes
-                                    </button>
-                                    
-                                    <button id="fitToBounds" class="btn btn-outline-secondary btn-sm w-100 mb-1">
-                                        <i class="fas fa-expand"></i> Fit All
-                                    </button>
-                                    <button id="clearSelection" class="btn btn-outline-danger btn-sm w-100">
-                                        <i class="fas fa-times"></i> Clear
-                                    </button>
-                                    <button id="fullScreenBtn" class="btn btn-outline-info btn-sm w-100 mt-1">
-                                        <i class="fas fa-expand-arrows-alt"></i> Full Screen
-                                    </button>
+                                    <!-- Measurement Tools -->
+                                    <div class="tools-group mb-3">
+                                        <h6 class="tools-group-title">
+                                            <i class="fas fa-ruler-combined me-1"></i>Measurement Tools
+                                        </h6>
+                                        <div class="btn-group w-100 mb-2" role="group">
+                                            <button type="button" class="btn btn-outline-success btn-sm" id="measureDistanceTool" title="Measure Distance">
+                                                <i class="fas fa-ruler"></i> Distance
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info btn-sm" id="measureAreaTool" title="Measure Area">
+                                                <i class="fas fa-draw-polygon"></i> Area
+                                            </button>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100" id="clearMeasureTool" title="Clear All Measurements">
+                                            <i class="fas fa-trash"></i> Clear Measurements
+                                        </button>
+                                    </div>
+
+                                    <!-- Map Tools -->
+                                    <div class="tools-group mb-3">
+                                        <h6 class="tools-group-title">
+                                            <i class="fas fa-map me-1"></i>Map Tools
+                                        </h6>
+                                        <button id="refreshMap" class="btn btn-outline-primary btn-sm w-100 mb-1">
+                                            <i class="fas fa-sync-alt"></i> Refresh Map
+                                        </button>
+                                        <button id="fitToBounds" class="btn btn-outline-secondary btn-sm w-100 mb-1">
+                                            <i class="fas fa-expand"></i> Fit to Farms
+                                        </button>
+                                        <button id="clearSelection" class="btn btn-outline-warning btn-sm w-100 mb-1">
+                                            <i class="fas fa-times"></i> Clear Selection
+                                        </button>
+                                        <button id="fullScreenBtn" class="btn btn-outline-info btn-sm w-100">
+                                            <i class="fas fa-expand-arrows-alt"></i> Full Screen
+                                        </button>
+                                    </div>
+
+                                    <!-- Farm Tools -->
+                                    <div class="tools-group">
+                                        <h6 class="tools-group-title">
+                                            <i class="fas fa-tractor me-1"></i>Farm Tools
+                                        </h6>
+                                        <button id="saveBoundaryBtn" class="btn btn-outline-success btn-sm w-100">
+                                            <i class="fas fa-save"></i> Save Boundary
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -166,13 +359,16 @@
                         <div class="modal-body" id="farmDetails">
                             <!-- Farm details will be loaded here -->
                         </div>
-                        <div class="modal-footer">
+                        <div class="modal-footer" style="display: flex;justify-content: center;">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             <button type="button" class="btn btn-warning" id="editBoundaryBtn">
                                 <i class="fas fa-edit"></i> Edit Boundary
                             </button>
+                             <button type="button" class="btn btn-success" id="validateBoundaryBtn">
+                                <i class="fas fa-check"></i> Validate Boundary
+                            </button>
                             <button type="button" class="btn btn-success" id="saveBoundaryBtn" style="display: none;">
-                                <i class="fas fa-save"></i> Save Changes
+                                <i class="fas fa-save"></i> Save
                             </button>
                             <button type="button" class="btn btn-danger" id="cancelEditBtn" style="display: none;">
                                 <i class="fas fa-times"></i> Cancel
@@ -203,6 +399,8 @@
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<!-- Add this to your HTML head -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <script src="{% static 'js/map.js' %}"></script>
 
 {% endblock %}

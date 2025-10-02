@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,7 +6,7 @@ from django.contrib.auth import authenticate
 from django.db.models import Q
 from portal.models import (
     UserProfile, Staff, Farmer, Farm, MonitoringVisit, 
-    Project, District, FarmVisit
+    Project, District, FarmVisit, versionTbl
 )
 from .serializers import (
     StaffLoginSerializer, StaffSerializer, FarmerSerializer, 
@@ -18,6 +19,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+import json
 
 def staff_exists_required(func):
     """
@@ -34,73 +36,34 @@ def staff_exists_required(func):
         return func(self, request, *args, **kwargs)
     return wrapper
 
-# class StaffLoginAPIView(APIView):
-#     authentication_classes = []
-#     permission_classes = []
-    
-#     @swagger_auto_schema(
-#         operation_description="Staff login with telephone and password",
-#         request_body=StaffLoginSerializer,
-#         responses={200: "Login successful", 400: "Invalid credentials", 500: "Internal Server Error"}
-#     )
-#     def post(self, request):
-#         """
-#         Staff login using telephone and password
-        
-#         Args:
-#             telephone (str): staff telephone number
-#             password (str): staff password
+
+@method_decorator(csrf_exempt, name='dispatch')
+class versionTblView(APIView):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            status ={}
+            status["status"] =False
+
+            if data["version"] :
+                if versionTbl.objects.filter(version=data["version"]).exists():
+                    status["status"] =  1
+                    status["msg"] =  "sucessful"
+                else:
+                    status["status"] =  0
+                    status["msg"] =  "not sucessful"
+                    
+            else:
+                status["status"] =  0
+                status["msg"] =  "not sucessful"
+
+        except Exception as e:
             
-#         Returns:
-#             Response: staff data or error message
-#         """
-#         try:
-#             serializer = StaffLoginSerializer(data=request.data)
-#             if serializer.is_valid():
-#                 telephone = serializer.validated_data['telephone']
-#                 password = serializer.validated_data['password']
-                
-#                 # Find staff by telephone
-#                 staff_profile = UserProfile.objects.filter(
-#                     phone_number=telephone, 
-#                     role__in=['admin', 'project_manager', 'field_officer']
-#                 ).first()
-                
-#                 if staff_profile:
-#                     staff = Staff.objects.filter(user_profile=staff_profile, is_active=True).first()
-#                     if staff:
-#                         # Authenticate user
-#                         user = authenticate(
-#                             username=staff_profile.user.username, 
-#                             password=password
-#                         )
-                        
-#                         if user is not None:
-#                             staff_serializer = StaffSerializer(staff)
-#                             return Response({
-#                                 'msg': 'Login successful',
-#                                 'data': staff_serializer.data,
-#                                 'status': 1
-#                             }, status=status.HTTP_200_OK)
-                
-#                 return Response({
-#                     'msg': 'Invalid telephone or password',
-#                     'data': [],
-#                     'status': 0
-#                 }, status=status.HTTP_400_BAD_REQUEST)
-            
-#             return Response({
-#                 'msg': serializer.errors,
-#                 'data': [],
-#                 'status': 0
-#             }, status=status.HTTP_400_BAD_REQUEST)
-            
-#         except Exception as e:
-#             return Response({
-#                 'msg': str(e),
-#                 'data': [],
-#                 'status': 0
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            status["status"] =  0
+            status["msg"] =  "Error Occured!"
+            status["data"] =str(e),
+            raise e
+        return JsonResponse(status, safe=False)
 
 
 

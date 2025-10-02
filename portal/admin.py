@@ -19,7 +19,7 @@ class RegionResource(resources.ModelResource):
     class Meta:
         model = Region
         import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'code', 'geom','created_at', 'updated_at')
 
 # District Resource
 class DistrictResource(resources.ModelResource):
@@ -32,7 +32,7 @@ class DistrictResource(resources.ModelResource):
     class Meta:
         model = District
         import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'region', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'code', 'region', 'geom', 'created_at', 'updated_at')
 
 # UserProfile Resource
 class UserProfileResource(resources.ModelResource):
@@ -319,7 +319,7 @@ class FarmAdmin(LeafletGeoAdmin):
     settings_overrides = {
         'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
         'DEFAULT_ZOOM': 7,
-        'MIN_ZOOM': 5,
+        'MIN_ZOOM': 10,
         'MAX_ZOOM': 18,
         'SPATIAL_EXTENT': (-3.5, 4.5, 1.5, 11.5),  # Ghana bounds
     }

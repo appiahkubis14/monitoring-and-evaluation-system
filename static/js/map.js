@@ -581,63 +581,6 @@ function createBufferAroundIrrigation() {
     }
 }
 
-// function createBufferAroundRoads() {
-//     const bufferDistance = parseInt(document.getElementById('bufferDistance').value) || 1000;
-    
-//     // Remove existing roads buffer if it exists
-//     if (activeBuffers.has('roads')) {
-//         removeBuffer('roads');
-//     }
-    
-//     const roadBuffers = L.featureGroup();
-//     let bufferCount = 0;
-    
-//     // Create buffer around roads with gradient effect
-//     roadsLayer.eachLayer((layer, index) => {
-//         if (layer instanceof L.Polyline) {
-//             const latlngs = layer.getLatLngs();
-            
-//             // Create multiple buffers along the road for gradient effect
-//             const step = Math.max(1, Math.floor(latlngs.length / 10)); // Sample points for performance
-//             for (let i = 0; i < latlngs.length; i += step) {
-//                 const buffer = L.circle(latlngs[i], {
-//                     radius: bufferDistance,
-//                     color: '#FF6B35',
-//                     fillColor: '#FF6B35',
-//                     fillOpacity: 0.2,
-//                     weight: 2,
-//                     className: 'buffer-layer road-buffer'
-//                 }).bindPopup(`
-//                     <div class="buffer-popup">
-//                         <strong>🛣️ Road Buffer</strong><br>
-//                         <strong>Distance:</strong> ${bufferDistance}m<br>
-//                         <strong>Road Type:</strong> ${layer.getPopup() ? layer.getPopup().getContent().match(/Road Type:.*?(?=<br>)/)?.[0]?.replace('Road Type:', '').trim() : 'Unknown'}
-//                     </div>
-//                 `);
-                
-//                 roadBuffers.addLayer(buffer);
-//                 bufferCount++;
-//             }
-//         }
-//     });
-    
-//     if (bufferCount > 0) {
-//         activeBuffers.set('roads', {
-//             layer: roadBuffers,
-//             distance: bufferDistance,
-//             count: bufferCount
-//         });
-        
-//         map.addLayer(roadBuffers);
-//         showToast(`Created road buffers along network (${bufferDistance}m)`, 'success');
-//         updateBufferLegend();
-//     } else {
-//         showToast('No roads found to create buffers', 'warning');
-//     }
-// }
-
-
-
 
 // Using Turf.js for proper buffer calculations (recommended)
 function createBufferAroundRoads() {
@@ -1752,9 +1695,6 @@ function setupEventListeners() {
         }
     });
 
-
-     
-    
     // Base map radio buttons (mutually exclusive)
     document.querySelectorAll('input[name="baseMap"]').forEach(radio => {
         radio.addEventListener('change', function() {

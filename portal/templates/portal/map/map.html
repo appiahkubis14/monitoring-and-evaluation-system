@@ -63,7 +63,7 @@
                             </div>
 
                              <!-- Base Maps Section -->
-                            <div class="control-section">
+                           <div class="control-section">
                                 <div class="section-header" data-toggle="base-maps-section" style="display: flex;gap: 8px;">
                                     <i class="fas fa-map"></i>
                                     <span>Base Maps</span>
@@ -71,42 +71,472 @@
                                 </div>
                                 <div class="section-content" id="base-maps-section">
                                     <div class="layer-control-group">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseMap" id="hybridLayer" checked>
-                                            <label class="form-check-label" for="hybridLayer">
-                                                <i class="fas fa-map me-1"></i>Hybrid
+                                        <!-- Hybrid Layer Card -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="radio" name="baseMap" id="hybridLayer" checked>
+                                            <label class="layer-card-content" for="hybridLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/open.png" alt="Hybrid Map" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-map layer-icon"></i>
+                                                    <span class="layer-name">Hybrid</span>
+                                                </div>
                                             </label>
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseMap" id="streetLayer">
-                                            <label class="form-check-label" for="streetLayer">
-                                                <i class="fas fa-road me-1"></i>Streets
+
+                                        <!-- Streets Layer Card -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="radio" name="baseMap" id="streetLayer">
+                                            <label class="layer-card-content" for="streetLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/street.png" alt="Street Map" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-road layer-icon"></i>
+                                                    <span class="layer-name">Streets</span>
+                                                </div>
                                             </label>
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseMap" id="satelliteLayer">
-                                            <label class="form-check-label" for="satelliteLayer">
-                                                <i class="fas fa-satellite me-1"></i>Satellite
+
+                                        <!-- Satellite Layer Card -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="radio" name="baseMap" id="satelliteLayer">
+                                            <label class="layer-card-content" for="satelliteLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/satellite.png" alt="Satellite Map" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-satellite layer-icon"></i>
+                                                    <span class="layer-name">Satellite</span>
+                                                </div>
                                             </label>
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseMap" id="terrainLayer">
-                                            <label class="form-check-label" for="terrainLayer">
-                                                <i class="fas fa-mountain me-1"></i>Terrain
+
+                                        <!-- Terrain Layer Card -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="radio" name="baseMap" id="terrainLayer">
+                                            <label class="layer-card-content" for="terrainLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/terrian.png" alt="Terrain Map" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-mountain layer-icon"></i>
+                                                    <span class="layer-name">Terrain</span>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>
                                     
                                     <!-- Base Map Opacity -->
-                                    <div class="opacity-control mt-3">
+                                    <div class="opacity-control mt-4">
                                         <h6 class="opacity-title">
-                                            <i class="fas fa-adjust me-1"></i>Base Map Opacity
+                                            <i class="fas fa-adjust me-2"></i>Base Map Opacity
                                         </h6>
-                                        <input type="range" class="form-range base-opacity-slider" id="baseOpacitySlider" min="0" max="100" value="100">
-                                        <small class="text-muted" id="baseOpacityValue">100%</small>
+                                        <div class="slider-container">
+                                            <input type="range" class="form-range base-opacity-slider" id="baseOpacitySlider" min="0" max="100" value="100">
+                                            <div class="slider-labels">
+                                                <span>0%</span>
+                                                <span id="baseOpacityValue">100%</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <style>
+                                /* Layer Cards Container */
+                            .layer-control-group {
+                                display: grid;
+                                grid-template-columns: repeat(2, 1fr);
+                                gap: 12px;
+                                margin-bottom: 16px;
+                            }
+
+                            /* Layer Card Styles */
+                            .layer-card {
+                                position: relative;
+                                border-radius: 12px;
+                                overflow: hidden;
+                                transition: all 0.3s ease;
+                                border: 2px solid var(--bs-border-color);
+                                background: var(--bs-card-bg);
+                            }
+
+                            .layer-card:hover {
+                                transform: translateY(-2px);
+                                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                                border-color: var(--bs-primary);
+                            }
+
+                            .layer-radio {
+                                display: none;
+                            }
+
+                            .layer-radio:checked + .layer-card-content {
+                                border-color: var(--bs-primary);
+                            }
+
+                            .layer-radio:checked + .layer-card-content .layer-preview {
+                                border-color: var(--bs-primary);
+                            }
+
+                            .layer-radio:checked + .layer-card-content .selected-icon {
+                                opacity: 1;
+                                transform: scale(1);
+                            }
+
+                            .layer-radio:checked + .layer-card-content .layer-image {
+                                transform: scale(1.05);
+                            }
+
+                            .layer-card-content {
+                                display: block;
+                                cursor: pointer;
+                                border-radius: 10px;
+                                transition: all 0.3s ease;
+                                border: 2px solid transparent;
+                            }
+
+                            /* Layer Preview with Images */
+                            .layer-preview {
+                                position: relative;
+                                height: 90px;
+                                border-radius: 8px 8px 0 0;
+                                overflow: hidden;
+                                border: 1px solid var(--bs-border-color);
+                                transition: all 0.3s ease;
+                            }
+
+                            .layer-image {
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                                transition: all 0.3s ease;
+                            }
+
+                            .layer-card:hover .layer-image {
+                                transform: scale(1.05);
+                            }
+
+                            /* Layer Overlay */
+                            .layer-overlay {
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                background: linear-gradient(135deg, 
+                                    rgba(var(--bs-primary-rgb), 0.2) 0%, 
+                                    rgba(var(--bs-primary-rgb), 0.1) 50%,
+                                    transparent 100%);
+                                display: flex;
+                                align-items: flex-end;
+                                justify-content: flex-end;
+                                padding: 8px;
+                                opacity: 0;
+                                transition: all 0.3s ease;
+                            }
+
+                            .layer-card:hover .layer-overlay {
+                                opacity: 1;
+                            }
+
+                            .selected-icon {
+                                color: var(--bs-primary);
+                                font-size: 20px;
+                                opacity: 0;
+                                transform: scale(0.8);
+                                transition: all 0.3s ease;
+                                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+                                background: rgba(255, 255, 255, 0.9);
+                                border-radius: 50%;
+                                padding: 2px;
+                            }
+
+                            /* Layer Info */
+                            .layer-info {
+                                padding: 12px;
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                background: var(--bs-card-bg);
+                                border-top: 1px solid var(--bs-border-color);
+                                transition: all 0.3s ease;
+                            }
+
+                            .layer-card:hover .layer-info {
+                                background: var(--bs-secondary-bg);
+                            }
+
+                            .layer-icon {
+                                color: var(--bs-primary);
+                                font-size: 14px;
+                                width: 16px;
+                                text-align: center;
+                            }
+
+                            .layer-name {
+                                font-weight: 600;
+                                color: var(--bs-heading-color);
+                                font-size: 14px;
+                                transition: all 0.3s ease;
+                            }
+
+                            .layer-card:hover .layer-name {
+                                color: var(--bs-primary);
+                            }
+
+                            /* Opacity Control */
+                            .opacity-control {
+                                background: var(--bs-secondary-bg);
+                                padding: 16px;
+                                border-radius: 8px;
+                                border: 1px solid var(--bs-border-color);
+                            }
+
+                            .opacity-title {
+                                color: var(--bs-heading-color);
+                                font-size: 14px;
+                                font-weight: 600;
+                                margin-bottom: 12px;
+                                display: flex;
+                                align-items: center;
+                            }
+
+                            .slider-container {
+                                position: relative;
+                            }
+
+                            .base-opacity-slider {
+                                width: 100%;
+                                height: 6px;
+                                border-radius: 3px;
+                                background: var(--bs-border-color);
+                                outline: none;
+                                -webkit-appearance: none;
+                            }
+
+                            .base-opacity-slider::-webkit-slider-thumb {
+                                -webkit-appearance: none;
+                                appearance: none;
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                background: var(--bs-primary);
+                                cursor: pointer;
+                                border: 2px solid var(--bs-card-bg);
+                                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                                transition: all 0.3s ease;
+                            }
+
+                            .base-opacity-slider::-webkit-slider-thumb:hover {
+                                transform: scale(1.2);
+                                box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
+                            }
+
+                            .base-opacity-slider::-moz-range-thumb {
+                                width: 18px;
+                                height: 18px;
+                                border-radius: 50%;
+                                background: var(--bs-primary);
+                                cursor: pointer;
+                                border: 2px solid var(--bs-card-bg);
+                                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                            }
+
+                            .slider-labels {
+                                display: flex;
+                                justify-content: space-between;
+                                margin-top: 8px;
+                                font-size: 12px;
+                                color: var(--bs-muted-color);
+                            }
+
+                            /* Active State for Selected Layer */
+                            .layer-radio:checked + .layer-card-content .layer-overlay {
+                                opacity: 1;
+                                background: linear-gradient(135deg, 
+                                    rgba(var(--bs-primary-rgb), 0.3) 0%, 
+                                    rgba(var(--bs-primary-rgb), 0.2) 50%,
+                                    transparent 100%);
+                            }
+
+                            .layer-radio:checked + .layer-card-content .layer-info {
+                                background: rgba(var(--bs-primary-rgb), 0.05);
+                                border-top-color: var(--bs-primary);
+                            }
+
+                            .layer-radio:checked + .layer-card-content .layer-name {
+                                color: var(--bs-primary);
+                                font-weight: 700;
+                            }
+
+                            /* Loading State for Images */
+                            .layer-image {
+                                background: linear-gradient(90deg, 
+                                    var(--bs-border-color) 25%, 
+                                    var(--bs-secondary-bg) 50%, 
+                                    var(--bs-border-color) 75%);
+                                background-size: 200% 100%;
+                                animation: loading 1.5s infinite;
+                            }
+
+                            @keyframes loading {
+                                0% {
+                                    background-position: 200% 0;
+                                }
+                                100% {
+                                    background-position: -200% 0;
+                                }
+                            }
+
+                            .layer-image.loaded {
+                                animation: none;
+                                background: none;
+                            }
+
+                            /* Responsive Design */
+                            @media (max-width: 768px) {
+                                .layer-control-group {
+                                    grid-template-columns: 1fr;
+                                    gap: 10px;
+                                }
+                                
+                                .layer-preview {
+                                    height: 80px;
+                                }
+                                
+                                .layer-info {
+                                    padding: 10px;
+                                }
+                                
+                                .opacity-control {
+                                    padding: 12px;
+                                }
+                            }
+
+                            /* Dark Mode Enhancements */
+                            :root[data-bs-theme="dark"] .layer-image {
+                                filter: brightness(0.9) contrast(1.1);
+                            }
+
+                            :root[data-bs-theme="dark"] .layer-card:hover .layer-image {
+                                filter: brightness(1.1) contrast(1.05);
+                            }
+
+                            :root[data-bs-theme="dark"] .selected-icon {
+                                background: rgba(0, 0, 0, 0.7);
+                                color: var(--bs-primary);
+                            }
+
+                            /* Focus States for Accessibility */
+                            .layer-card-content:focus {
+                                outline: 2px solid var(--bs-primary);
+                                outline-offset: 2px;
+                            }
+
+                            .base-opacity-slider:focus {
+                                outline: 2px solid var(--bs-primary);
+                                outline-offset: 2px;
+                            }
+
+                            /* Section Toggle Animation */
+                            .section-content {
+                                transition: all 0.3s ease;
+                                overflow: hidden;
+                            }
+
+                            .section-content.collapsed {
+                                display: none;
+                            }
+
+                            .toggle-icon {
+                                transition: transform 0.3s ease;
+                            }
+
+                            .section-header.active .toggle-icon {
+                                transform: rotate(180deg);
+                            }
+                            </style>
+
+                            <script>
+                            // Update opacity value display
+                            document.getElementById('baseOpacitySlider').addEventListener('input', function(e) {
+                                document.getElementById('baseOpacityValue').textContent = e.target.value + '%';
+                            });
+
+                            // Handle layer selection
+                            document.querySelectorAll('.layer-radio').forEach(radio => {
+                                radio.addEventListener('change', function(e) {
+                                    // Update visual selection state
+                                    document.querySelectorAll('.layer-card').forEach(card => {
+                                        card.classList.remove('active');
+                                    });
+                                    e.target.closest('.layer-card').classList.add('active');
+                                    
+                                    // Here you would typically update the map base layer
+                                    const layerType = e.target.id.replace('Layer', '').toLowerCase();
+                                    console.log('Selected base layer:', layerType);
+                                    
+                                    // Dispatch custom event for map integration
+                                    const event = new CustomEvent('basemapChange', {
+                                        detail: { layer: layerType, opacity: document.getElementById('baseOpacitySlider').value }
+                                    });
+                                    document.dispatchEvent(event);
+                                });
+                            });
+
+                            // Toggle section visibility
+                            document.querySelector('.section-header').addEventListener('click', function() {
+                                const content = document.getElementById('base-maps-section');
+                                const icon = this.querySelector('.toggle-icon');
+                                
+                                content.classList.toggle('collapsed');
+                                this.classList.toggle('active');
+                            });
+
+                            // Handle image loading
+                            document.querySelectorAll('.layer-image').forEach(img => {
+                                img.addEventListener('load', function() {
+                                    this.classList.add('loaded');
+                                });
+                                
+                                // Fallback for error handling
+                                img.addEventListener('error', function() {
+                                    console.warn('Failed to load layer image:', this.src);
+                                    // You could set a fallback background color or pattern here
+                                    this.style.background = 'var(--bs-secondary-bg)';
+                                    this.style.display = 'flex';
+                                    this.style.alignItems = 'center';
+                                    this.style.justifyContent = 'center';
+                                    this.innerHTML = '<i class="fas fa-map" style="font-size: 24px; color: var(--bs-muted-color);"></i>';
+                                });
+                            });
+
+                            // Initialize first layer as active
+                            document.querySelector('.layer-radio:checked').closest('.layer-card').classList.add('active');
+
+                            // Handle opacity changes
+                            document.getElementById('baseOpacitySlider').addEventListener('change', function(e) {
+                                const event = new CustomEvent('opacityChange', {
+                                    detail: { opacity: e.target.value }
+                                });
+                                document.dispatchEvent(event);
+                            });
+                            </script>
 
                             <!-- Farm Data Layers Section -->
                             <div class="control-section">

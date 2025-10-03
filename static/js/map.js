@@ -1609,115 +1609,35 @@ function setBufferLayersOpacity(opacity) {
 }
 
 
-
-
-// Initialize panel sections with toggle functionality
-// function initializePanelSections() {
-//     // Only set active sections for sections that exist in the controls panel
-//     const layersSection = document.getElementById('layers-section');
-//     const opacitySection = document.getElementById('opacity-section');
-//     const legendSection = document.getElementById('legend-section');
-//     const toolsSection = document.getElementById('tools-section');
-
-//     // Set initial active sections only if they exist
-//     if (layersSection) layersSection.classList.add('active');
-//     if (opacitySection) opacitySection.classList.add('active');
-
-//     // Add click handlers to section headers that exist
-//     document.querySelectorAll('.section-header').forEach(header => {
-//         const targetId = header.getAttribute('data-toggle');
-//         const sectionContent = document.getElementById(targetId);
-
-//         // Only add event listener if the target section exists
-//         if (sectionContent) {
-//             header.addEventListener('click', function () {
-//                 const isActive = sectionContent.classList.contains('active');
-
-//                 // Toggle active class
-//                 this.classList.toggle('active');
-//                 sectionContent.classList.toggle('active');
-//             });
-//         }
-//     });
-
-//     // Panel toggle functionality
-//     const togglePanelBtn = document.getElementById('togglePanel');
-//     if (togglePanelBtn) {
-//         togglePanelBtn.addEventListener('click', function () {
-//             const panel = document.querySelector('.map-controls-panel');
-//             if (panel) {
-//                 panel.classList.toggle('collapsed');
-
-//                 // Update icon
-//                 const icon = this.querySelector('i');
-//                 if (panel.classList.contains('collapsed')) {
-//                     icon.classList.remove('fa-chevron-left');
-//                     icon.classList.add('fa-chevron-right');
-//                 } else {
-//                     icon.classList.remove('fa-chevron-right');
-//                     icon.classList.add('fa-chevron-left');
-//                 }
-//             }
-//         });
-//     }
-// }
-// Setup event listeners
-// function setupEventListeners() {
-//     // Search functionality
-//     document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
-//     document.getElementById('searchInput').addEventListener('input', handleSearchInput);
-//     document.getElementById('searchInput').addEventListener('keypress', function (e) {
-//         if (e.key === 'Enter') performSearch();
-//         if (e.key === 'Escape') clearSearch();
-//     });
-
-//     // Layer controls
-//     document.getElementById('satelliteLayer').addEventListener('change', toggleSatelliteLayer);
-//     document.getElementById('streetLayer').addEventListener('change', toggleStreetLayer);
-   
-//     document.getElementById('hybridLayer').addEventListener('change', toggleHybridLayer);
-//     document.getElementById('farmLayer').addEventListener('change', toggleFarmLayer);
-
-//     // Opacity control
-//     document.getElementById('opacitySlider').addEventListener('input', function (e) {
-//         const opacity = e.target.value / 100;
-//         document.getElementById('opacityValue').textContent = `${e.target.value}%`;
-//         setFarmLayerOpacity(opacity);
-//     });
-
-//     // Map tools
-//     document.getElementById('refreshMap').addEventListener('click', loadFarmData);
-//     document.getElementById('fitToBounds').addEventListener('click', fitToBounds);
-//     document.getElementById('clearSelection').addEventListener('click', clearSelection);
-//     document.getElementById('fullScreenBtn').addEventListener('click', toggleFullScreen);
-
-//     // Edit boundary buttons
-//     document.getElementById('editBoundaryBtn').addEventListener('click', startEditingBoundary);
-//     document.getElementById('validateBoundaryBtn').addEventListener('click', validateBoundary);
-//     document.getElementById('saveBoundaryBtn').addEventListener('click', saveBoundaryChanges);
-//     document.getElementById('cancelEditBtn').addEventListener('click', cancelEditing);
-
-//     window.addEventListener('resize', function () {
-//         if (isFullScreen) {
-//             setTimeout(() => {
-//                 map.invalidateSize(true);
-//             }, 100);
-//         }
-//     });
-
-//      document.getElementById('measureDistanceTool').addEventListener('click', startDistanceMeasurement);
-//     document.getElementById('measureAreaTool').addEventListener('click', startAreaMeasurement);
-//     // document.getElementById('clearMeasureTool').addEventListener('click', clearMeasurements);
+// Function to switch base maps
+function switchBaseMap(selectedMapId) {
+    // Remove all base maps first
+    [hybridLayer, streetLayer, satelliteLayer, terrainLayer].forEach(layer => {
+        if (layer && map.hasLayer(layer)) {
+            map.removeLayer(layer);
+        }
+    });
     
-//     // ESC key to stop measurement
-//     document.addEventListener('keydown', function(e) {
-//         if (e.key === 'Escape' && isMeasuring) {
-//             stopMeasurement();
-//         }
-//     });
-// }
-
-
+    // Add the selected base map
+    switch(selectedMapId) {
+        case 'hybridLayer':
+            hybridLayer.addTo(map);
+            break;
+        case 'streetLayer':
+            streetLayer.addTo(map);
+            break;
+        case 'satelliteLayer':
+            satelliteLayer.addTo(map);
+            break;
+        case 'terrainLayer':
+            terrainLayer.addTo(map);
+            break;
+    }
+    
+    // Apply current opacity
+    const opacity = document.getElementById('baseOpacitySlider').value / 100;
+    setBaseMapOpacity(opacity);
+}
 
 
 function initializePanelSections() {

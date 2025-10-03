@@ -10,13 +10,13 @@
             <div style="display: flex; align-items: center; gap: 16px; padding: 10px;padding-top: 20px;">
                 <a href="/" class="logo logo-dark" style="display: flex; align-items: center;">
                     <span class="logo-sm" style="display: none;">
-                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-sm-dark" style="width: 70px;" height="70">
+                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-sm-dark" style="width: 60px;" height="70">
                     </span>
                     <span class="logo-lg">
-                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-dark" style="width: 70px;"  height="70">
+                        <img src="{% static 'images/geximbank_logo.png' %}" alt="logo-dark" style="width: 60px;"  height="70">
                     </span>
                 </a>
-                <a href="/dashboard/">
+                <!-- <a href="/dashboard/">
                     <div style="display: flex; flex-direction: column;align-items: center;">
                         <a href="/" class="logo logo-light">
                             <span class="logo-sm">
@@ -29,7 +29,7 @@
                         
                     </div>
                     
-                </a>
+                </a> -->
             </div>
 
             
@@ -195,301 +195,591 @@
 
                     </script>
                 
+                
                 <style>
-                    #theme-toggle {
-                        background-color: #007bff;
-                        color: white;
-                        border: none;
-                        border-radius: 5px;
-                        padding: 8px 12px;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        font-size: 14px;
-                        cursor: pointer;
-                        transition: background-color 0.3s ease, transform 0.3s ease;
-                    }
+                   /* === Theme Variables === */
+                    /* === Theme Variables === */
+                :root[data-bs-theme="light"] {
+                --bs-light: #f8f9fa;
+                --bs-light-rgb: 248, 249, 250;
+                --bs-dark: #0e2e4e;
+                --bs-dark-rgb: 44, 62, 80;
+                --bs-box-shadow: 0 0 35px 0 rgba(73, 80, 87, 0.15);
                 
-                    #theme-toggle i {
-                        font-size: 16px;
-                    }
+                /* Body */
+                --bs-body-color: #25384b;
+                --bs-body-color-rgb: 52, 77, 102;
+                --bs-body-bg: #f7f9fa;
+                --bs-body-bg-rgb: 247, 249, 250;
                 
-                    #theme-toggle:hover {
-                        background-color: #0056b3;
-                        transform: scale(1.05);
-                    }
+                /* Components */
+                --bs-secondary-bg: #ffffff;
+                --bs-tertiary-bg: #f8f9fa;
+                --bs-border-color: #e9ecef;
+                --bs-card-bg: #ffffff;
+                --bs-dropdown-bg: #ffffff;
+                --bs-modal-bg: #ffffff;
                 
-                    #theme-toggle:active {
-                        background-color: #004085;
-                        transform: scale(0.98);
-                    }
+                /* Text Colors */
+                --bs-heading-color: #2c3e50;
+                --bs-muted-color: #6c757d;
                 
-                    /* === Softened Dark Mode === */
-                    body.dark-mode {
-                        background-color: #383636; /* Softer than pure black */
-                        color: #ffffff;
-                    }
+                /* Links */
+                --bs-link-color: #50C878;
+                --bs-link-hover-color: #3da864;
                 
-                    body.dark-mode .navbar,
-                    body.dark-mode .footer,
-                    body.dark-mode .dropdown-menu,
-                    body.dark-mode .card,
-                    body.dark-mode .modal,
-                    body.dark-mode .offcanvas,
-                    body.dark-mode .list-group-item,
-                    body.dark-mode .form-control,
-                    body.dark-mode .btn,
-                    body.dark-mode .table {
-                        background-color: #3a3838 !important; /* Soft dark background for containers */
-                        color: #ffffff !important;
-                    }
+                /* Buttons */
+                --bs-primary: #50C878;
+                --bs-primary-rgb: 80, 200, 120;
+                --bs-secondary: #6c757d;
+                --bs-success: #198754;
+                --bs-info: #0dcaf0;
+                --bs-warning: #ffc107;
+                --bs-danger: #dc3545;
                 
-                    body.dark-mode .dropdown-item {
-                        color: #ffffff !important;
-                        background-color: #413f3f;
-                    }
-                
-                    body.dark-mode a {
-                        color: #ffffff;
-                    }
-                
-                    body.dark-mode a:hover {
-                        color: #dddddd;
-                    }
-                
-                    body.dark-mode .text-muted {
-                        color: #bbbbbb !important;
-                    }
-                
-                    body.dark-mode .text-primary {
-                        color: #ffffff !important;
-                    }
-                
-                    body.dark-mode .border {
-                        border-color: #333 !important;
-                    }
-                
-                    /* Form elements */
-                    body.dark-mode input,
-                    body.dark-mode textarea,
-                    body.dark-mode select {
-                        background-color: #2a2a2a;
-                        color: #ffffff;
-                        border-color: #444;
-                    }
-                
-                    body.dark-mode input::placeholder,
-                    body.dark-mode textarea::placeholder {
-                        color: #aaaaaa;
-                    }
-                
-                    /* Buttons */
-                    body.dark-mode .btn-primary {
-                        background-color: #007bff;
-                        border-color: #007bff;
-                        color: #ffffff;
-                    }
-                
-                    body.dark-mode .btn-primary:hover {
-                        background-color: #0056b3;
-                        border-color: #0056b3;
-                    }
-                
-                    /* Card elements */
-                    body.dark-mode .card-header,
-                    body.dark-mode .card-title,
-                    body.dark-mode .card-body,
-                    body.dark-mode .card-footer {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
+                /* Header & Navigation */
+                --bs-header-bg: #ffffff;
+                --bs-header-color: #495057;
+                --bs-header-border: #e9ecef;
+                }
 
-                    body.dark-mode table.dataTable {
-                        background-color: #242424;
-                        color: #ffffff;
-                    }
-
-                    body.dark-mode table.dataTable thead {
-                        background-color: #333333;
-                        color: #ffffff;
-                    }
-
-                    body.dark-mode table.dataTable tbody tr {
-                        background-color: #2a2a2a;
-                        color: #ffffff;
-                    }
-
-                    body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button {
-                        background-color: #2a2a2a;
-                        color: #ffffff !important;
-                        border: 1px solid #444444;
-                    }
-
-                    body.dark-mode .dataTables_wrapper .dataTables_filter input,
-                    body.dark-mode .dataTables_wrapper .dataTables_length select {
-                        background-color: #1e1e1e;
-                        color: #ffffff;
-                        border: 1px solid #444;
-                    }
-                    body.dark-mode .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-                        background-color: #444444;
-                        color: #ffffff !important;
-                    }
+                :root[data-bs-theme="dark"] {
+                --bs-light: #162647;
+                --bs-light-rgb: 26, 29, 35;
+                --bs-dark: #f8f9fa;
+                --bs-dark-rgb: 248, 249, 250;
+                --bs-box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.5);
                 
-                    /* Dropdowns */
-                    body.dark-mode .dropdown-menu {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
+                /* Body */
+                --bs-body-color: #b8c2cc;
+                --bs-body-color-rgb: 184, 194, 204;
+                --bs-body-bg: #12141a;
+                --bs-body-bg-rgb: 18, 20, 26;
                 
-                    body.dark-mode .dropdown-item:hover {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
+                /* Components */
+                --bs-secondary-bg: #1a1d23;
+                --bs-tertiary-bg: #23272e;
+                --bs-border-color: #2a2f3c;
+                --bs-card-bg: #0a1429;
+                --bs-dropdown-bg: #1a1d23;
+                --bs-modal-bg: #1a1d23;
                 
-                    /* Offcanvas */
-                    body.dark-mode .offcanvas {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .offcanvas-header {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .offcanvas-body {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .offcanvas-footer {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    /* Modal */
-                    body.dark-mode .modal-content {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .modal-header {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .modal-body {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .modal-footer {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    /* List group */
-                    body.dark-mode .list-group-item {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .list-group-item:hover {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    /* Table */
-                    body.dark-mode .table {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .table thead {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .table tbody tr {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .table tbody tr:hover {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    /* Footer */
-                    body.dark-mode .footer {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .footer a {
-                        color: #ffffff;
-                    }
-                    body.dark-mode .footer a:hover {
-                        color: #dddddd;
-                    }
-                    /* Sidebar */
-                    body.dark-mode .sidebar {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .sidebar a {
-                        color: #ffffff;
-                    }
-                    body.dark-mode .sidebar a:hover {
-                        color: #dddddd;
-                    }
-                    /* Sidebar menu */
-                    body.dark-mode .sidebar-menu {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    }
-                    body.dark-mode .sidebar-menu a {
-                        color: #ffffff;
-                    }
-                    body.dark-mode .sidebar-menu a:hover {
-                        color: #dddddd;
-                    }
-                    /* Sidebar menu items */
-                    body.dark-mode .sidebar-menu-item {
-                        background-color: #3b3a3a;
-                        color: #ffffff;
-                    } 
-                    body.dark-mode .sidebar-menu-item:hover {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }
-                    /* Sidebar menu item active */
-                    body.dark-mode .sidebar-menu-item.active {
-                        background-color: #444444;
-                        color: #ffffff;
-                    }   
-                    body.dark-mode .sidebar-menu-item.active:hover {
-                        background-color: #555555;
-                        color: #ffffff;
-                    }
-                    /* Sidebar menu item active link */
-                    body.dark-mode .sidebar-menu-item.active a {
-                        color: #ffffff;
-                    }
+                /* Text Colors */
+                --bs-heading-color: #e9ecef;
+                --bs-muted-color: #8a99ad;
+                
+                /* Links */
+                --bs-link-color: #64d88a;
+                --bs-link-hover-color: #8ae4a6;
+                
+                /* Buttons */
+                --bs-primary: #64d88a;
+                --bs-primary-rgb: 100, 216, 138;
+                --bs-secondary: #8a99ad;
+                --bs-success: #20c997;
+                --bs-info: #3dd5f3;
+                --bs-warning: #ffca2c;
+                --bs-danger: #e35d6a;
+                
+                /* Header & Navigation */
+                --bs-header-bg: #1a1d23;
+                --bs-header-color: #b8c2cc;
+                --bs-header-border: #2a2f3c;
+                }
+
+                /* === Menu Colors === */
+                :root[data-menu-color="light"] {
+                --bs-menu-bg: #ffffff;
+                --bs-menu-item-color: #495057;
+                --bs-menu-item-hover-color: #50C878;
+                --bs-menu-item-hover-bg: rgba(80, 200, 120, 0.1);
+                --bs-menu-item-active-color: #50C878;
+                --bs-menu-item-active-bg: rgba(13, 28, 59, 0.15);
+                --bs-menu-border-color: #e9ecef;
+                }
+
+                :root[data-bs-theme="dark"][data-menu-color="light"],
+                :root[data-menu-color="dark"] {
+                --bs-menu-bg: #071124;
+                --bs-menu-item-color: #b8c2cc;
+                --bs-menu-item-hover-color: #64d88a;
+                --bs-menu-item-hover-bg: rgba(100, 216, 138, 0.15);
+                --bs-menu-item-active-color: #64d88a;
+                --bs-menu-item-active-bg: rgba(100, 216, 138, 0.2);
+                --bs-menu-border-color: #2a2f3c;
+                }
+
+                :root[data-menu-color="brand"] {
+                --bs-menu-bg: #50C878;
+                --bs-menu-item-color: rgba(255, 255, 255, 0.9);
+                --bs-menu-item-hover-color: #ffffff;
+                --bs-menu-item-hover-bg: rgba(255, 255, 255, 0.2);
+                --bs-menu-item-active-color: #ffffff;
+                --bs-menu-item-active-bg: rgba(255, 255, 255, 0.25);
+                --bs-menu-border-color: rgba(255, 255, 255, 0.15);
+                }
+
+                :root[data-bs-theme="dark"][data-menu-color="brand"] {
+                --bs-menu-bg: #100725;
+                --bs-menu-item-color: rgba(255, 255, 255, 0.95);
+                --bs-menu-item-hover-color: #ffffff;
+                --bs-menu-item-hover-bg: rgba(255, 255, 255, 0.25);
+                --bs-menu-item-active-color: #ffffff;
+                --bs-menu-item-active-bg: rgba(255, 255, 255, 0.3);
+                }
+
+                /* === Topbar Colors === */
+                :root[data-topbar-color="light"] {
+                --bs-topbar-bg: #ffffff;
+                --bs-topbar-item-color: #495057;
+                --bs-topbar-item-hover-color: #50C878;
+                --bs-topbar-search-bg: #f8f9fa;
+                --bs-topbar-user-border: #e9ecef;
+                --bs-topbar-border-color: #e9ecef;
+                }
+
+                :root[data-bs-theme="dark"][data-topbar-color="light"],
+                :root[data-topbar-color="dark"] {
+                --bs-topbar-bg: #1a1d23;
+                --bs-topbar-item-color: #b8c2cc;
+                --bs-topbar-item-hover-color: #64d88a;
+                --bs-topbar-search-bg: #23272e;
+                --bs-topbar-user-border: #2a2f3c;
+                --bs-topbar-border-color: #2a2f3c;
+                }
+
+                :root[data-topbar-color="brand"] {
+                --bs-topbar-bg: #50C878;
+                --bs-topbar-item-color: rgba(255, 255, 255, 0.95);
+                --bs-topbar-item-hover-color: #ffffff;
+                --bs-topbar-search-bg: rgba(255, 255, 255, 0.15);
+                --bs-topbar-user-border: rgba(255, 255, 255, 0.2);
+                --bs-topbar-border-color: rgba(255, 255, 255, 0.15);
+                }
+
+                :root[data-bs-theme="dark"][data-topbar-color="brand"] {
+                --bs-topbar-bg: #64d88a;
+                --bs-topbar-item-color: rgba(255, 255, 255, 0.95);
+                --bs-topbar-item-hover-color: #ffffff;
+                --bs-topbar-search-bg: rgba(255, 255, 255, 0.2);
+                --bs-topbar-user-border: rgba(255, 255, 255, 0.25);
+                }
+
+                /* === Theme Toggle Button === */
+                #theme-toggle {
+                background-color: var(--bs-primary);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.3);
+                }
+
+                #theme-toggle i {
+                font-size: 16px;
+                transition: transform 0.3s ease;
+                }
+
+                #theme-toggle:hover {
+                background-color: var(--bs-link-hover-color);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
+                }
+
+                #theme-toggle:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.3);
+                }
+
+                #theme-toggle:hover i {
+                transform: rotate(15deg);
+                }
+
+                /* === Fullscreen Toggle Button === */
+                #fullscreen-toggle {
+                background-color: var(--bs-secondary-bg);
+                color: var(--bs-topbar-item-color);
+                border: 1px solid var(--bs-border-color);
+                border-radius: 8px;
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                }
+
+                #fullscreen-toggle:hover {
+                background-color: var(--bs-menu-item-hover-bg);
+                color: var(--bs-menu-item-hover-color);
+                border-color: var(--bs-primary);
+                transform: translateY(-2px);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                /* === Top Icon Buttons === */
+                .btn.top-icon {
+                background-color: var(--bs-topbar-bg);
+                color: var(--bs-topbar-item-color);
+                border: 1px solid var(--bs-border-color);
+                border-radius: 8px;
+                padding: 10px 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                }
+
+                .btn.top-icon:hover {
+                background-color: var(--bs-menu-item-hover-bg);
+                color: var(--bs-menu-item-hover-color);
+                border-color: var(--bs-primary);
+                transform: translateY(-2px);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                /* === Header Styling === */
+                #page-topbar {
+                background-color: var(--bs-topbar-bg);
+                border-bottom: 1px solid var(--bs-topbar-border-color);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                .navbar-logo-box {
+                background-color: var(--bs-topbar-bg);
+                }
+
+                /* === Dropdown Menus === */
+                .dropdown-menu {
+                background-color: var(--bs-dropdown-bg);
+                border: 1px solid var(--bs-border-color);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                .dropdown-item {
+                color: var(--bs-body-color);
+                transition: all 0.3s ease;
+                }
+
+                .dropdown-item:hover {
+                background-color: var(--bs-menu-item-hover-bg);
+                color: var(--bs-menu-item-hover-color);
+                }
+
+                /* === Cards === */
+                .card {
+                background-color: var(--bs-card-bg);
+                border: 1px solid var(--bs-border-color);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                .card-header {
+                background-color: var(--bs-secondary-bg);
+                border-bottom: 1px solid var(--bs-border-color);
+                color: var(--bs-heading-color);
+                }
+
+                /* === Tables === */
+                .table {
+                --bs-table-bg: var(--bs-card-bg);
+                --bs-table-color: var(--bs-body-color);
+                --bs-table-border-color: var(--bs-border-color);
+                }
+
+                .table th {
+                background-color: var(--bs-secondary-bg);
+                color: var(--bs-heading-color);
+                border-color: var(--bs-border-color);
+                }
+
+                .table td {
+                border-color: var(--bs-border-color);
+                }
+
+                /* === Forms === */
+                .form-control {
+                background-color: var(--bs-secondary-bg);
+                border: 1px solid var(--bs-border-color);
+                color: var(--bs-body-color);
+                }
+
+                .form-control:focus {
+                background-color: var(--bs-secondary-bg);
+                border-color: var(--bs-primary);
+                color: var(--bs-body-color);
+                box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+                }
+
+                .form-select {
+                background-color: var(--bs-secondary-bg);
+                border: 1px solid var(--bs-border-color);
+                color: var(--bs-body-color);
+                }
+
+                .form-label {
+                color: var(--bs-heading-color);
+                }
+
+                /* === Modals === */
+                .modal-content {
+                background-color: var(--bs-modal-bg);
+                border: 1px solid var(--bs-border-color);
+                box-shadow: var(--bs-box-shadow);
+                }
+
+                .modal-header {
+                background-color: var(--bs-secondary-bg);
+                border-bottom: 1px solid var(--bs-border-color);
+                color: var(--bs-heading-color);
+                }
+
+                .modal-footer {
+                background-color: var(--bs-secondary-bg);
+                border-top: 1px solid var(--bs-border-color);
+                }
+
+                .modal-backdrop {
+                background-color: rgba(0, 0, 0, 0.5);
+                }
+
+                .modal-backdrop.show {
+                opacity: 0.5;
+                }
+
+                /* === Progress Bars === */
+                .progress {
+                background-color: var(--bs-tertiary-bg);
+                }
+
+                .progress-bar {
+                background-color: var(--bs-primary);
+                }
+
+                /* === Badges === */
+                .badge {
+                color: white;
+                }
+
+                .badge.bg-success { background-color: var(--bs-success) !important; }
+                .badge.bg-info { background-color: var(--bs-info) !important; }
+                .badge.bg-warning { background-color: var(--bs-warning) !important; }
+                .badge.bg-danger { background-color: var(--bs-danger) !important; }
+                .badge.bg-primary { background-color: var(--bs-primary) !important; }
+
+                /* === Navigation Tabs === */
+                .nav-tabs {
+                border-bottom-color: var(--bs-border-color);
+                }
+
+                .nav-tabs .nav-link {
+                color: var(--bs-body-color);
+                background-color: var(--bs-secondary-bg);
+                border-color: var(--bs-border-color);
+                }
+
+                .nav-tabs .nav-link.active {
+                background-color: var(--bs-card-bg);
+                border-bottom-color: var(--bs-card-bg);
+                color: var(--bs-primary);
+                font-weight: bold;
+                }
+
+                .nav-tabs .nav-link:hover {
+                border-color: var(--bs-primary);
+                color: var(--bs-primary);
+                }
+
+                /* === Buttons === */
+                .btn-primary {
+                background-color: var(--bs-primary);
+                border-color: var(--bs-primary);
+                color: white;
+                }
+
+                .btn-primary:hover {
+                background-color: var(--bs-link-hover-color);
+                border-color: var(--bs-link-hover-color);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(var(--bs-primary-rgb), 0.3);
+                }
+
+                .btn-secondary {
+                background-color: var(--bs-secondary);
+                border-color: var(--bs-secondary);
+                }
+
+                .btn-success { background-color: var(--bs-success); border-color: var(--bs-success); }
+                .btn-info { background-color: var(--bs-info); border-color: var(--bs-info); }
+                .btn-warning { background-color: var(--bs-warning); border-color: var(--bs-warning); }
+                .btn-danger { background-color: var(--bs-danger); border-color: var(--bs-danger); }
+
+                /* === Footer === */
+                .footer {
+                background-color: var(--bs-secondary-bg);
+                border-top: 1px solid var(--bs-border-color);
+                color: var(--bs-body-color);
+                }
+
+                /* === Smooth Transitions === */
+                /* * {
+                transition: background-color 0.3s ease, border-color 0.3s ease, 
+                            color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+                } */
+
+                body {
+                background-color: var(--bs-body-bg);
+                color: var(--bs-body-color);
+                }
+
+                h1, h2, h3, h4, h5, h6 {
+                color: var(--bs-heading-color);
+                }
+
+                .text-muted {
+                color: var(--bs-muted-color) !important;
+                }
+
+                /* === Custom Scrollbar === */
+                ::-webkit-scrollbar {
+                width: 8px;
+                }
+
+                ::-webkit-scrollbar-track {
+                background: var(--bs-secondary-bg);
+                }
+
+                ::-webkit-scrollbar-thumb {
+                background: var(--bs-border-color);
+                border-radius: 4px;
+                }
+
+                ::-webkit-scrollbar-thumb:hover {
+                background: var(--bs-primary);
+                }
+
+                /* === Notification Marker === */
+                .btn-marker .marker-dot {
+                background-color: var(--bs-danger);
+                }
+
+                /* === Profile Image === */
+                .rounded.avatar-2xs {
+                border: 2px solid var(--bs-topbar-user-border);
+                }
+
+                /* === Modal Specific Styles === */
+                .modal-header.bg-primary {
+                background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-link-hover-color) 100%) !important;
+                }
+
+                .modal-header.bg-danger {
+                background: linear-gradient(135deg, var(--bs-danger) 0%, #c82333 100%) !important;
+                }
+
+                .modal-header.bg-warning {
+                background: linear-gradient(135deg, var(--bs-warning) 0%, #e0a800 100%) !important;
+                }
+
+                /* === Chart Container Background === */
+                .chart-pie, .chart-bar {
+                background-color: var(--bs-card-bg);
+                border-radius: 8px;
+                }
+
+                /* === Select2 Customization === */
+                .select2-container--default .select2-selection--multiple {
+                background-color: var(--bs-secondary-bg);
+                border: 1px solid var(--bs-border-color);
+                color: var(--bs-body-color);
+                }
+
+                .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                background-color: var(--bs-primary);
+                border-color: var(--bs-primary);
+                color: white;
+                }
+
+                /* === Loading States === */
+                .loading {
+                opacity: 0.7;
+                pointer-events: none;
+                }
+
+                /* === Responsive Adjustments === */
+                @media (max-width: 768px) {
+                #theme-toggle, #fullscreen-toggle, .btn.top-icon {
+                    padding: 8px 12px;
+                    font-size: 12px;
+                }
+                
+                #theme-toggle i, #fullscreen-toggle i {
+                    font-size: 14px;
+                }
+                }
+
+                /* === Print Styles === */
+                @media print {
+                :root {
+                    --bs-body-bg: white !important;
+                    --bs-body-color: black !important;
+                    --bs-card-bg: white !important;
+                    --bs-border-color: #ddd !important;
+                }
+                }
 
                 </style>
                 
                 
                 <script>
-                    // Toggle dark mode when button is clicked
-                    document.querySelector("#theme-toggle").addEventListener("click", function() {
-                        const currentTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
-                        localStorage.setItem("theme", currentTheme); // Save theme in localStorage
-                        document.body.classList.toggle("dark-mode");
-                
-                        // Change icon based on theme
-                        const icon = document.querySelector("#theme-toggle i");
-                        if (document.body.classList.contains("dark-mode")) {
-                            icon.classList.remove("fa-moon");
-                            icon.classList.add("fa-sun");
-                        } else {
-                            icon.classList.remove("fa-sun");
-                            icon.classList.add("fa-moon");
-                        }
-                    });
-                
-                    // Apply saved theme from localStorage on page load
-                    const savedTheme = localStorage.getItem("theme") || "light";
-                    if (savedTheme === "dark") {
-                        document.body.classList.add("dark-mode");
-                        document.querySelector("#theme-toggle i").classList.replace("fa-moon", "fa-sun");
+                    // Theme toggle functionality
+                document.querySelector("#theme-toggle").addEventListener("click", function() {
+                    const html = document.documentElement;
+                    const currentTheme = html.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    // Update theme attribute
+                    html.setAttribute('data-bs-theme', newTheme);
+                    
+                    // Save theme preference
+                    localStorage.setItem("theme", newTheme);
+                    
+                    // Update button icon
+                    const icon = document.querySelector("#theme-toggle i");
+                    if (newTheme === "dark") {
+                        icon.classList.remove("fa-moon");
+                        icon.classList.add("fa-sun");
+                    } else {
+                        icon.classList.remove("fa-sun");
+                        icon.classList.add("fa-moon");
                     }
+                });
+
+                // Apply saved theme on page load
+                document.addEventListener('DOMContentLoaded', function() {
+                    const savedTheme = localStorage.getItem("theme") || "light";
+                    const html = document.documentElement;
+                    
+                    html.setAttribute('data-bs-theme', savedTheme);
+                    
+                    // Set correct icon
+                    const icon = document.querySelector("#theme-toggle i");
+                    if (savedTheme === "dark") {
+                        icon.classList.remove("fa-moon");
+                        icon.classList.add("fa-sun");
+                    } else {
+                        // icon.classList.remove("fa-sun");/
+                        icon.classList.add("fa-moon");
+                    }
+                });
                 </script>
                 
 

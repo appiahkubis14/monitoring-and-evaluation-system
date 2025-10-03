@@ -884,3 +884,68 @@ body.fullscreen-mode footer {
     50% { opacity: 0.7; }
     100% { opacity: 1; }
 }
+
+
+/* Opacity Control Styles */
+.opacity-control {
+    border-top: 1px solid #e9ecef;
+    padding-top: 12px;
+}
+
+.opacity-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+/* Legend Group Styles */
+.legend-group {
+    border-bottom: 1px solid #f8f9fa;
+    padding-bottom: 12px;
+}
+
+.legend-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.legend-group-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+/* Layer Control Groups */
+.layer-control-group {
+    margin-bottom: 12px;
+}
+
+.layer-group-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 4px;
+}
+
+/* Active Buffers List */
+.active-buffers-list {
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+}
+
+.buffer-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.buffer-item:last-child {
+    border-bottom: none;
+}

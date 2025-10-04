@@ -1,0 +1,275 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>EXIM Ghana - Monitoring & Evaluation System</title>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="description" content="EXIM Ghana Monitoring & Evaluation System - Advanced analytics and reporting for export-import operations">
+    <meta name="author" content="EXIM Ghana">
+    
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="navbar navbar-light navbar-expand-md">
+            <div class="container">
+                <a class="navbar-brand" href="#"><img src="{% static 'images/exim-logo.png' %}" class="logo" alt="EXIM Ghana Logo"></a>
+                <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#main-nav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="main-nav">
+                    <ul class="navbar-nav ms-auto">
+                        <div class="offcanvas-header mt-3">
+                            <button class="btn btn-outline-danger btn-close float-right"></button>
+                        </div>
+                        <li class="nav-item"><a class="nav-link" href="#features"><i class="fa fa-chart-line menu-item"></i>Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#about">About M&E System</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link login-link" href="https://portal.eximghana.com/login" target="_blank">Login to Portal</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Slideshow Section -->
+        <div id="slideshow">
+            <div class="slditem">
+                <div id="slider" class="slider">
+                    <div class="slider-content">
+                        <div class="slider-content-wrapper">
+                            <div class="slider-content__item image-1">
+                                <img src="{% static 'images/slider/me-analytics.jpg' %}" class="slideitem" alt="M&E Analytics Dashboard">
+                            </div>
+                            <div class="slider-content__item image-2">
+                                <img src="{% static 'images/slider/export-data.jpg' %}" class="slideitem" alt="Export Data Visualization">
+                            </div>
+                            <div class="slider-content__item image-3">
+                                <img src="{% static 'images/slider/trade-monitoring.jpg' %}" class="slideitem" alt="Trade Monitoring Systems">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="container">
+            <div class="section-2">
+                <div class="row">
+                    <div class="col-md-3 offset-0 image1">
+                        <div class="adimg">
+                            <img class="img-fluid fixed imagebg1" src="{% static 'images/me-dashboard-preview.png' %}" alt="M&E Dashboard Preview">
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 midlevel container">
+                        <h1 class="flow-act">Advanced Monitoring & Evaluation System</h1>
+                        <p class="textform">Transform your export-import operations with real-time analytics, comprehensive reporting, and data-driven insights for enhanced decision making.</p>
+
+                        <div class="col-md-12 mt-4">
+                            <div class="d-flex gap-3 flex-wrap">
+                                <a href="#features" class="btn btn-primary btn-lg">Explore Features</a>
+                                <a href="https://portal.eximghana.com/demo" target="_blank" class="btn btn-outline-primary btn-lg">Request Demo</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 formobile" id="features">
+                        <div class="features-highlight">
+                            <h2 class="features-title">Key Capabilities</h2>
+                            <div class="feature-list">
+                                <div class="feature-item">
+                                    <i class="fa fa-chart-line"></i>
+                                    <div class="feature-content">
+                                        <h4>Real-time Analytics</h4>
+                                        <p>Monitor export-import trends with live dashboards and automated reporting systems.</p>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fa fa-shield-alt"></i>
+                                    <div class="feature-content">
+                                        <h4>Risk Assessment</h4>
+                                        <p>Advanced tools for market analysis, credit evaluation, and compliance monitoring.</p>
+                                    </div>
+                                </div>
+                                <div class="feature-item">
+                                    <i class="fa fa-file-alt"></i>
+                                    <div class="feature-content">
+                                        <h4>Automated Reports</h4>
+                                        <p>Generate comprehensive stakeholder reports and performance metrics automatically.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div class="about-section" id="about">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 mx-auto text-center">
+                        <h2 class="section-title">Empowering Ghana's Export Growth</h2>
+                        <p class="section-description">
+                            Our comprehensive Monitoring & Evaluation System provides EXIM Ghana with the tools needed to track performance, 
+                            assess impact, and make data-driven decisions that support Ghana's export development objectives.
+                        </p>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <h3 class="stat-number">500+</h3>
+                                <p>Active Projects</p>
+                            </div>
+                            <div class="stat-item">
+                                <h3 class="stat-number">98%</h3>
+                                <p>Data Accuracy</p>
+                            </div>
+                            <div class="stat-item">
+                                <h3 class="stat-number">24/7</h3>
+                                <p>Monitoring</p>
+                            </div>
+                            <div class="stat-item">
+                                <h3 class="stat-number">150+</h3>
+                                <p>Connected Users</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="contact-section" id="contact">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h2 class="contact-title">Get Started Today</h2>
+                        <p class="contact-description">
+                            Ready to transform your monitoring and evaluation processes? Contact our team to schedule a demonstration 
+                            of the M&E system and discover how it can enhance your export-import operations.
+                        </p>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <i class="fa fa-map-marker-alt"></i>
+                                <div>
+                                    <h4>Address</h4>
+                                    <p>EXIM Ghana House<br>Accra, Ghana</p>
+                                </div>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fa fa-phone"></i>
+                                <div>
+                                    <h4>Phone</h4>
+                                    <p>+233 302 681 681</p>
+                                </div>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fa fa-envelope"></i>
+                                <div>
+                                    <h4>Email</h4>
+                                    <p>me.system@eximghana.com</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="contact-form-container">
+                            <form class="contact-form">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" placeholder="Full Name" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="email" class="form-control" placeholder="Email Address" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="tel" class="form-control" placeholder="Phone Number">
+                                </div>
+                                <div class="form-group">
+                                    <select class="form-control" required>
+                                        <option value="">Select Service Interest</option>
+                                        <option value="demo">Schedule Demo</option>
+                                        <option value="consultation">Consultation</option>
+                                        <option value="implementation">Implementation</option>
+                                        <option value="support">Technical Support</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <textarea class="form-control" placeholder="Message" rows="4"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-clean">
+            <div class="container">
+                <div class="row text-start justify-content-center">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-3 item">
+                        <h3>System Resources</h3>
+                        <ul>
+                            <li><a href="https://eximghana.com/user-guides/" target="_blank">User Guides</a></li>
+                            <li><a href="https://eximghana.com/faq/" target="_blank">Frequently Asked Questions</a></li>
+                            <li><a href="https://eximghana.com/system-status/" target="_blank">System Status</a></li>
+                            <li><a href="https://eximghana.com/training/" target="_blank">Training Resources</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 item">
+                        <h3>M&E Services</h3>
+                        <ul>
+                            <li><a href="https://eximghana.com/analytics/" target="_blank">Analytics Dashboard</a></li>
+                            <li><a href="https://eximghana.com/reporting/" target="_blank">Custom Reports</a></li>
+                            <li><a href="https://eximghana.com/monitoring/" target="_blank">Real-time Monitoring</a></li>
+                            <li><a href="https://eximghana.com/evaluation/" target="_blank">Impact Evaluation</a></li>
+                            <li><a href="https://eximghana.com/data-insights/" target="_blank">Data Insights</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 item">
+                        <h3>Support Services</h3>
+                        <ul>
+                            <li><a href="https://eximghana.com/getting-started/" target="_blank">Getting Started</a></li>
+                            <li><a href="https://eximghana.com/support/" target="_blank">Technical Support</a></li>
+                            <li><a href="https://eximghana.com/training/" target="_blank">Training Programs</a></li>
+                            <li><a href="https://eximghana.com/documentation/" target="_blank">Documentation</a></li>
+                            <li><a href="https://eximghana.com/contact/" target="_blank">Contact Us</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="copyright">
+                <div class="col" style="margin-top: 48px;margin-bottom: -52px;">
+                    <p class="d-grid clearfix blue-grey lighten-2 text-sm-center mb-0 px-2" style="margin-bottom: 0;padding-top: 8px;padding-bottom: 8px;border-top: 1px solid rgb(163,163,163);">
+                        <span class="float-md-left d-block d-md-inline-block">
+                            <b class="">© 2025 EXIM Ghana</b>
+                            <a href="https://eximghana.com/privacy">Privacy Policy</a> | 
+                            <a href="https://eximghana.com/terms">Terms & Conditions</a> | 
+                            <a href="https://eximghana.com/sitemap">Sitemap</a>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/slider.js' %}"></script>
+    <script src="{% static 'js/script.js' %}"></script>
+
+</body>
+</html>

@@ -281,7 +281,7 @@ class UserProfileAdmin(ImportExportModelAdmin):
 @admin.register(Staff)
 class StaffAdmin(ImportExportModelAdmin):
     resource_class = StaffResource
-    list_display = ('staff_id', 'user_profile', 'designation', 'date_joined', 'is_active')
+    list_display = ('staff_id', 'user_profile__user__username', 'designation', 'date_joined', 'is_active')
     list_filter = ('designation', 'is_active', 'date_joined')
     search_fields = ('staff_id', 'user_profile__user__username', 'designation')
     filter_horizontal = ('assigned_districts',)

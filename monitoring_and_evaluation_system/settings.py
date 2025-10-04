@@ -111,83 +111,95 @@ DATABASES = {
 }
 
 
-
 JAZZMIN_SETTINGS = {
-    "site_title": "AmpPortal Admin",
-    "site_header": "AmpPortal Admin Dashboard",
-    "site_brand": "AMP LOGISTICS",
+    # Site identification (uncomment if needed)
+    # "site_title": "AmpPortal Admin",
+    # "site_header": "AmpPortal Admin Dashboard", 
+    # "site_brand": "AMP LOGISTICS",
+    # "welcome_sign": "Welcome to AmpPortal Admin",
+    # "copyright": "AmpPortal © 2025",
     
-    "welcome_sign": "Welcome to AmpPortal Admin",
-    "copyright": "AmpPortal © 2025",
+    # Sidebar configuration
     "show_sidebar": True,
-    "navigation_expanded": False, 
+    "navigation_expanded": False,  # This makes sidebar collapsed by default
     "hide_apps": [],
     "hide_models": [],
     "order_with_respect_to": ["auth", "your_app_name", "another_app"],
+    
+    # Enable UI builder for testing
+    "show_ui_builder": True,
 
+    # Icons configuration
     "icons": {
         "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
+        "auth.user": "fas fa-user", 
         "auth.group": "fas fa-users",
-        "your_app.ModelName": "fas fa-boxes", 
+        "your_app.ModelName": "fas fa-boxes",
     },
 
+    # Top menu configuration
     "topmenu_links": [
         # Link to homepage
         {"name": "Home", "url": "/", "permissions": ["auth.view_user"], "new_window": False},
 
         # Direct model links
-
         {"model": "auth.User"},
         {"model": "auth.Group"},
         {"model": "admin.LogEntry"},
-       
 
         # Link to a named Django URL (using reverse())
         {"name": "Dashboard", "url_name": "dashboard", "permissions": ["dashboard.view_dashboard"]},
-
+        
+        
     ],
 
+    # User menu configuration  
     "usermenu_links": [
         {"name": "Support", "url": "https://support.example.com", "new_window": True},
     ],
 }
 
 
-JAZZMIN_UI_TWEAKS = {
-    # "theme": "cyborg",  # Try "cyborg", "flatly", "superhero", "lux", "minty", "materia"
-    # "dark_mode_theme": "cyborg",  # fallback for dark mode
 
+
+
+#CJ
+JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": True,
     "footer_small_text": True,
     "body_small_text": True,
-
-    "brand_colour": "navbar-dark",
-    "accent": "accent-primary",
-    "navbar": "navbar-primary navbar-dark",
+    "brand_small_text": False,
+    "brand_colour": "navbar-warning",
+    "accent": "accent-warning",
+    "navbar": "navbar-warning navbar-light",
     "no_navbar_border": False,
-
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
     "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-primary",
+    "sidebar": "sidebar-light-warning",
     "sidebar_nav_small_text": False,
-    "sidebar_disable_expand": False,  # Allow expand/collapse
-    "sidebar_nav_flat_style": True,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": True,
     "sidebar_nav_legacy_style": False,
-    "sidebar_nav_compact_style": False,
-
+    "sidebar_nav_flat_style": True,
+    "theme": "default",
+    "dark_mode_theme": None,
     "button_classes": {
-        "primary": "btn btn-primary",
-        "success": "btn btn-success",
-        "info": "btn btn-info",
+        "primary": "btn-outline-primary",
+        "success": "btn-outline-success",
+        "info": "btn-outline-info",
         "warning": "btn btn-warning",
-        "danger": "btn btn-danger",
+        "danger": "btn-outline-danger",
+        "secondary": "btn-outline-secondary"
     },
-
     "actions_sticky_top": True,
     "use_google_fonts_cdn": True,
     "text_inputs": "form-control",
-    "select_inputs": "form-select",
+    "select_inputs": "form-select"
 }
+
 
 
 

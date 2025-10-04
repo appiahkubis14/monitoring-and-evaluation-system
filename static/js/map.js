@@ -34,7 +34,97 @@ let tempLine = null;
 let tempPolygon = null;
 let finishedMeasurements = null;
 
-// Initialize map
+
+// Make sure to call this when initializing the map - FIXED VERSION
+function initializeTreeLayer() {
+    if (!window.treeIconsLayer) {
+        window.treeIconsLayer = L.layerGroup();
+        // Make sure to add it to the map immediately
+        window.treeIconsLayer.addTo(map);
+    }
+    return window.treeIconsLayer;
+}
+
+// Function to clear tree icons - FIXED VERSION
+function clearTreeIcons() {
+    if (window.treeIconsLayer) {
+        window.treeIconsLayer.clearLayers();
+    } else {
+        // If it doesn't exist, initialize it
+        initializeTreeLayer();
+    }
+}
+
+// Add beautiful tree icon - FIXED VERSION
+function addTreeIcon(coords, farm) {
+    // Ensure tree layer exists
+    if (!window.treeIconsLayer) {
+        initializeTreeLayer();
+    }
+    
+    // Create custom tree icon with nice tree-like appearance
+    const treeSize = 16 + Math.random() * 8; // Random size between 16-24px
+    const treeColor = getTreeColor(farm);
+    
+    const treeIcon = L.divIcon({
+        html: `
+            <div style="
+                width: ${treeSize}px;
+                height: ${treeSize}px;
+                position: relative;
+                transform: translate(-50%, -50%);
+            ">
+                <!-- Tree trunk -->
+                <div style="
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: ${treeSize * 0.2}px;
+                    height: ${treeSize * 0.4}px;
+                    background: #8B4513;
+                    border-radius: 1px;
+                    z-index: 1;
+                "></div>
+                <!-- Tree crown -->
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: ${treeSize * 0.8}px;
+                    height: ${treeSize * 0.6}px;
+                    background: ${treeColor};
+                    border-radius: 50% 50% 40% 40%;
+                    box-shadow: 0 0 2px rgba(0,0,0,0.3);
+                    z-index: 2;
+                "></div>
+            </div>
+        `,
+        className: 'tree-icon',
+        iconSize: [treeSize, treeSize],
+        iconAnchor: [treeSize / 2, treeSize]
+    });
+    
+    const treeMarker = L.marker(coords, {
+        icon: treeIcon,
+        zIndexOffset: 1000,
+        farmId: farm.id,
+        interactive: false // Make trees non-clickable
+    });
+    
+    // Safely add to tree icons layer
+    try {
+        window.treeIconsLayer.addLayer(treeMarker);
+    } catch (error) {
+        console.error('Error adding tree icon:', error);
+        // If there's still an issue, create the layer and try again
+        initializeTreeLayer();
+        window.treeIconsLayer.addLayer(treeMarker);
+    }
+}
+
+// Update the map initialization to ensure tree layer is created
 function initializeMap() {
     // Create map centered on Ghana
     map = L.map('map').setView([7.9465, -1.0232], 7);
@@ -65,8 +155,12 @@ function initializeMap() {
     // Add default layers
     hybridLayer.addTo(map);
 
-    // Initialize all layer groups
+    // Initialize all layer groups - MAKE SURE TREE LAYER IS INITIALIZED HERE
     farmLayers.addTo(map);
+    
+    // Initialize tree icons layer before other layers
+    initializeTreeLayer();
+    
     treeDensityLayer.addTo(map);
     cropHealthLayer.addTo(map);
     irrigationLayer.addTo(map);
@@ -98,8 +192,6 @@ function initializeMap() {
     loadFarmData();
 
     // Load additional layers data
-    // loadAdditionalLayers();
-
     loadTreeDensityData();
     
     // Load crop health data
@@ -120,11 +212,6 @@ function initializeMap() {
     initializeOpacityControls();
 }
 
-// Load additional layers data
-// function loadAdditionalLayers() {
-//     // Load tree density data
-    
-// }
 // Tree Density Data
 function loadTreeDensityData() {
     // Extensive tree density data across Ghana
@@ -2326,6 +2413,8 @@ function renderFarmsOnMap() {
 
                     // Add popup with status and validation info
                     layer.bindPopup(createFarmPopup(farm));
+                    // distributeTreesInPolygon(leafletCoords, farm);
+                    safeDistributeTrees(leafletCoords, farm);
 
                     // Add click event
                     // layer.on('click', function (e) {
@@ -2441,6 +2530,415 @@ function renderFarmsOnMap() {
         showToast('No farm boundaries could be displayed', 'warning');
     }
 }
+
+
+// Function to distribute tree icons within a polygon - FIXED VERSION
+function distributeTreesInPolygon(polygonCoords, farm) {
+    const treeCount = calculateTreeCountForFarm(farm);
+    
+    if (treeCount === 0) return;
+
+    // Create a temporary polygon to work with
+    const polygon = L.polygon(polygonCoords);
+    const bounds = polygon.getBounds();
+    
+    // Calculate area using a simple approximation instead of geodesicArea
+    const area = calculatePolygonArea(polygonCoords);
+    
+    // Determine optimal number of icons to display (max 30 for performance)
+    const maxIcons = Math.min(Math.max(5, Math.floor(treeCount / 10)), 30);
+    
+    console.log(`Optimal number of icons for farm ${farm.id}: ${maxIcons}`);
+    console.log(`Area of polygon: ${area} square meters`);
+    
+    // Generate points using random distribution within bounds
+    const treePoints = generateRandomPointsInPolygon(polygon, bounds, maxIcons);
+    
+    // Add tree icons at generated points
+    treePoints.forEach(point => {
+        addTreeIcon(point, farm);
+    });
+    
+    console.log(`Added ${treePoints.length} tree icons for farm ${farm.id}`);
+}
+
+// Simple polygon area calculation (approximate)
+function calculatePolygonArea(coords) {
+    if (!coords || coords.length < 3) return 0;
+    
+    let area = 0;
+    const n = coords.length;
+    
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        area += coords[i][1] * coords[j][0]; // lat * lng
+        area -= coords[j][1] * coords[i][0]; // lat * lng
+    }
+    
+    area = Math.abs(area) / 2;
+    
+    // Convert to square meters (approximate)
+    // This is a simplified conversion that works reasonably well for small areas
+    const centerLat = coords.reduce((sum, coord) => sum + coord[0], 0) / n;
+    const metersPerDegree = 111319.9 * Math.cos(centerLat * Math.PI / 180);
+    return area * metersPerDegree * metersPerDegree;
+}
+
+// Check if point is inside polygon (improved version)
+function isPointInPolygon(point, polygon) {
+    // First check if point is within polygon bounds for quick rejection
+    if (!polygon.getBounds().contains(point)) {
+        return false;
+    }
+    
+    // Use ray casting algorithm for accurate point-in-polygon check
+    return pointInPolygon(point, polygon.getLatLngs()[0]);
+}
+
+// Ray casting algorithm for point in polygon
+function pointInPolygon(point, vs) {
+    // ray-casting algorithm based on
+    // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
+    
+    const x = point.lat, y = point.lng;
+    let inside = false;
+    
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i].lat, yi = vs[i].lng;
+        const xj = vs[j].lat, yj = vs[j].lng;
+        
+        const intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    
+    return inside;
+}
+
+// Generate random points within polygon bounds - IMPROVED VERSION
+function generateRandomPointsInPolygon(polygon, bounds, maxPoints) {
+    const points = [];
+    const maxAttempts = maxPoints * 5; // Increased attempts for better distribution
+    
+    for (let i = 0; i < maxAttempts && points.length < maxPoints; i++) {
+        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+        const point = L.latLng(lat, lng);
+        
+        // Check if point is inside polygon using improved algorithm
+        if (pointInPolygon(point, polygon.getLatLngs()[0])) {
+            points.push([lat, lng]);
+        }
+    }
+    
+    // If we didn't get enough points, try a grid-based approach
+    if (points.length < maxPoints && points.length > 0) {
+        const additionalPoints = generateGridPointsInPolygon(polygon, bounds, maxPoints - points.length);
+        points.push(...additionalPoints);
+    }
+    console.log(`Generated ${points.length} points within polygon`);
+    return points;
+}
+
+// Grid-based point generation as fallback
+function generateGridPointsInPolygon(polygon, bounds, numPoints) {
+    const points = [];
+    const latLngs = polygon.getLatLngs()[0];
+    
+    // Calculate grid size based on number of points needed
+    const gridSize = Math.ceil(Math.sqrt(numPoints * 2));
+    
+    const latStep = (bounds.getNorth() - bounds.getSouth()) / gridSize;
+    const lngStep = (bounds.getEast() - bounds.getWest()) / gridSize;
+    
+    for (let i = 0; i < gridSize && points.length < numPoints; i++) {
+        for (let j = 0; j < gridSize && points.length < numPoints; j++) {
+            const lat = bounds.getSouth() + (i * latStep) + (Math.random() * latStep * 0.3);
+            const lng = bounds.getWest() + (j * lngStep) + (Math.random() * lngStep * 0.3);
+            const point = L.latLng(lat, lng);
+            
+            if (pointInPolygon(point, latLngs)) {
+                points.push([lat, lng]);
+            }
+        }
+    }
+    
+    return points;
+}
+
+// Update the tree distribution call to handle errors gracefully
+function safeDistributeTrees(polygonCoords, farm) {
+    try {
+        distributeTreesInPolygon(polygonCoords, farm);
+    } catch (error) {
+        console.warn('Error distributing trees for farm', farm.id, error);
+        // Fallback: add a single tree icon at the center
+        const polygon = L.polygon(polygonCoords);
+        const center = polygon.getBounds().getCenter();
+        addTreeIcon([center.lat, center.lng], farm);
+    }
+}
+
+// Function to distribute tree icons within a polygon
+// function distributeTreesInPolygon(polygonCoords, farm) {
+//     const treeCount = calculateTreeCountForFarm(farm);
+    
+//     if (treeCount === 0 || !polygonCoords || polygonCoords.length === 0) return;
+
+//     try {
+//         // Create a temporary polygon to work with
+//         const polygon = L.polygon(polygonCoords);
+//         const bounds = polygon.getBounds();
+        
+//         // Calculate area using Turf.js
+//         const turfPolygon = turf.polygon([polygonCoords]);
+//         const area = turf.area(turfPolygon); // Area in square meters
+        
+//         // Determine optimal number of icons to display (max 30 for performance)
+//         const maxIcons = Math.min(Math.max(5, Math.floor(treeCount / 10)), 30);
+        
+//         // Generate points using random distribution within polygon
+//         const treePoints = generateRandomPointsInPolygon(polygonCoords, maxIcons);
+        
+//         // Add tree icons at generated points
+//         treePoints.forEach(point => {
+//             addTreeIcon(point, farm);
+//         });
+        
+//         console.log(`Added ${treePoints.length} tree icons for farm ${farm.id}, Area: ${area.toFixed(2)} m²`);
+//     } catch (error) {
+//         console.error('Error distributing trees:', error);
+//     }
+// }
+
+
+
+// Calculate number of trees for a farm
+function calculateTreeCountForFarm(farm) {
+    // If farm has tree_count data, use it
+    if (farm.tree_count) {
+        return farm.tree_count;
+    }
+    
+    // Otherwise estimate based on area and typical density
+    if (farm.area_hectares) {
+        const typicalDensity = 150; // trees per hectare (average)
+        return Math.round(farm.area_hectares * typicalDensity);
+    }
+    
+    // Default fallback based on farm size
+    return 50;
+}
+
+// Generate random points within polygon bounds
+function generateRandomPointsInPolygon(polygon, bounds, maxPoints) {
+    const points = [];
+    const maxAttempts = maxPoints * 3; // Limit attempts to avoid infinite loop
+    
+    for (let i = 0; i < maxAttempts && points.length < maxPoints; i++) {
+        const lat = bounds.getSouth() + Math.random() * (bounds.getNorth() - bounds.getSouth());
+        const lng = bounds.getWest() + Math.random() * (bounds.getEast() - bounds.getWest());
+        const point = [lat, lng];
+        
+        // Check if point is inside polygon
+        if (isPointInPolygon(point, polygon)) {
+            points.push(point);
+        }
+    }
+    
+    return points;
+}
+
+ function isPointInPolygon(point, polygon) {
+    return polygon.getBounds().contains(point) && polygon.contains(point);
+}
+// Check if point is inside polygon (simplified version)
+function isPointInPolygon(point, polygon) {
+    return polygon.getBounds().contains(point) && L.GeometryUtil.inside(point, polygon);
+}
+
+function isPointInPolygon(point, polygon) {
+    const pt = turf.point([point.lng, point.lat]);
+    const poly = turf.polygon([polygon.getLatLngs()[0].map(ll => [ll.lng, ll.lat])]);
+    return turf.booleanPointInPolygon(pt, poly);
+}
+
+// function isPointInPolygon(point, polygon) {
+//     // First check if point is within bounding box for performance
+//     if (!polygon.getBounds().contains(point)) {
+//         return false;
+//     }
+    
+//     // Ray-casting algorithm for point-in-polygon test
+//     const latlngs = polygon.getLatLngs()[0]; // For simple polygons
+//     let inside = false;
+    
+//     for (let i = 0, j = latlngs.length - 1; i < latlngs.length; j = i++) {
+//         const xi = latlngs[i].lat, yi = latlngs[i].lng;
+//         const xj = latlngs[j].lat, yj = latlngs[j].lng;
+        
+//         const intersect = ((yi > point.lat) !== (yj > point.lat)) &&
+//             (point.lng < (xj - xi) * (point.lat - yi) / (yj - yi) + xi);
+        
+//         if (intersect) inside = !inside;
+//     }
+    
+//     return inside;
+// }
+
+// Add beautiful tree icon
+function addTreeIcon(coords, farm) {
+    // Create custom tree icon with nice tree-like appearance
+    const treeSize = 16 + Math.random() * 8; // Random size between 16-24px
+    const treeColor = getTreeColor(farm);
+    
+    const treeIcon = L.divIcon({
+        html: `
+            <div style="
+                width: ${treeSize}px;
+                height: ${treeSize}px;
+                position: relative;
+                transform: translate(-50%, -50%);
+            ">
+                <!-- Tree trunk -->
+                <div style="
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: ${treeSize * 0.2}px;
+                    height: ${treeSize * 0.4}px;
+                    background: #8B4513;
+                    border-radius: 1px;
+                    z-index: 1;
+                "></div>
+                <!-- Tree crown -->
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: ${treeSize * 0.8}px;
+                    height: ${treeSize * 0.6}px;
+                    background: ${treeColor};
+                    border-radius: 50% 50% 40% 40%;
+                    box-shadow: 0 0 2px rgba(0,0,0,0.3);
+                    z-index: 2;
+                "></div>
+            </div>
+        `,
+        className: 'tree-icon',
+        iconSize: [treeSize, treeSize],
+        iconAnchor: [treeSize / 2, treeSize]
+    });
+    
+    const treeMarker = L.marker(coords, {
+        icon: treeIcon,
+        zIndexOffset: 1000,
+        farmId: farm.id,
+        interactive: false // Make trees non-clickable
+    });
+    
+    // Add to tree icons layer
+    if (!window.treeIconsLayer) {
+        window.treeIconsLayer = L.layerGroup();
+        window.treeIconsLayer.addTo(map);
+    }
+    window.treeIconsLayer.addLayer(treeMarker);
+}
+
+// Get tree color based on farm status
+function getTreeColor(farm) {
+    const statusColors = {
+        'active': '#22c55e', // Green
+        'delayed': '#eab308', // Yellow
+        'critical': '#ef4444', // Red
+        'completed': '#15803d', // Dark Green
+        'abandoned': '#6b7280' // Gray
+    };
+    
+    return statusColors[farm.status] || '#22c55e';
+}
+
+// Update farm style to ensure polygons are visible
+function getFarmStyle(farm) {
+    const baseColor = getStatusColor(farm.status);
+    
+    return {
+        weight: farm.validation_status ? 3 : 2,
+        opacity: farm.validation_status ? 0.9 : 0.7,
+        color: baseColor,
+        fillColor: baseColor,
+        fillOpacity: farm.validation_status ? 0.15 : 0.1, // Low opacity to see trees
+        dashArray: farm.validation_status ? null : '5,5'
+    };
+}
+
+// Function to clear tree icons
+function clearTreeIcons() {
+    if (window.treeIconsLayer) {
+        window.treeIconsLayer.clearLayers();
+    }
+}
+
+// Update marker style
+function getMarkerStyle(farm) {
+    const baseColor = getStatusColor(farm.status);
+    
+    return {
+        radius: farm.validation_status ? 8 : 6,
+        fillColor: baseColor,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    };
+}
+
+// Get status color
+function getStatusColor(status) {
+    const statusColors = {
+        'active': '#22c55e',
+        'delayed': '#eab308', 
+        'critical': '#ef4444',
+        'completed': '#15803d',
+        'abandoned': '#6b7280'
+    };
+    return statusColors[status] || '#22c55e';
+}
+
+// Add CSS for tree icons
+const treeIconStyles = `
+    .tree-icon {
+        background: transparent !important;
+        border: none !important;
+    }
+    .tree-icon div {
+        pointer-events: none;
+    }
+    .leaflet-marker-icon.tree-icon {
+        background: transparent !important;
+    }
+`;
+
+// Inject styles
+if (!document.querySelector('#tree-icon-styles')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = 'tree-icon-styles';
+    styleSheet.innerText = treeIconStyles;
+    document.head.appendChild(styleSheet);
+}
+
+// Make sure to call this when initializing the map
+function initializeTreeLayer() {
+    if (!window.treeIconsLayer) {
+        window.treeIconsLayer = L.layerGroup();
+        window.treeIconsLayer.addTo(map);
+    }
+}
+
+// Call this after map initialization
+// initializeTreeLayer();
 
 // Update validation statistics display
 function updateValidationStats(validated, nonValidated) {

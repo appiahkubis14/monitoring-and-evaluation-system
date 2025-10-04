@@ -1,0 +1,640 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Eximbank Ghana M&E System - Login</title>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="description" content="Eximbank Ghana M&E System - Advanced Monitoring & Evaluation Platform">
+    <meta name="author" content="Eximbank Ghana">
+    <!-- ===============================================================================================-->
+    <link rel="icon" type="image/png" href="{% static 'images/geximbank_logo.png' %}" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0a4da2;
+            --secondary-color: #00b894;
+            --accent-color: #f9a825;
+            --dark-color: #1a237e;
+            --light-color: #f5f7fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand img {
+            height: 50px;
+        }
+        
+        .nav-link {
+            color: #333 !important;
+            font-weight: 500;
+            margin: 0 10px;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        #slideshow {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+            padding: 80px 0;
+            color: white;
+            text-align: center;
+        }
+        
+        .slider-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .slider-content h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        .slider-content p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .hero-buttons {
+            margin-top: 2rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 30px;
+        }
+        
+        .btn-secondary {
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 30px;
+            margin-left: 15px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: white;
+            color: var(--primary-color);
+        }
+        
+        .section-2 {
+            padding: 80px 0;
+        }
+        
+        .flow-act {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        .textform {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .login-card-body {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .sign-in-text {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .md-form {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .prefix {
+            position: absolute;
+            top: 12px;
+            left: 15px;
+            color: #666;
+        }
+        
+        .form-control {
+            padding-left: 45px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            height: 45px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(10, 77, 162, 0.25);
+        }
+        
+        .forgot {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .forgot:hover {
+            text-decoration: underline;
+        }
+        
+        .features {
+            padding: 80px 0;
+            background-color: var(--light-color);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .section-title p {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .feature-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .dashboard-preview {
+            padding: 80px 0;
+        }
+        
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .footer-clean {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 60px 0 20px;
+        }
+        
+        .footer-clean h3 {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+        
+        .footer-clean ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-clean ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-clean ul li a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-clean ul li a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 40px;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .copyright a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+        
+        .copyright a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .slider-content h1 {
+                font-size: 2.2rem;
+            }
+            
+            .slider-content p {
+                font-size: 1.1rem;
+            }
+            
+            .btn-secondary {
+                margin-left: 0;
+                margin-top: 15px;
+            }
+            
+            .section-title h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container">
+                <a class="navbar-brand" href="#"><img src="{% static 'images/geximbank_logo.png' %}" class="logo"></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="main-nav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#login">Login</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div id="slideshow">
+            <div class="slider-content">
+                <h1>Eximbank Ghana M&E System</h1>
+                <p>Transform your project tracking with our powerful, data-driven M&E platform designed specifically for financial institutions and development projects.</p>
+                <div class="hero-buttons">
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary">Dashboard</a>
+                    <a href="#features" class="btn btn-secondary">Explore Features</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="section-2">
+                <div class="row">
+                    <div class="col-md-7">
+                        <h1 class="flow-act">Do more with the Eximbank M&E System</h1>
+                        <p class="textform">Monitor and evaluate your projects anywhere and anytime with our secure and convenient platform designed to help you manage your projects effectively and demonstrate impact.</p>
+
+                        <!-- Features Section -->
+                        <div class="features" id="features">
+                            <div class="section-title">
+                                <h2>Powerful Features</h2>
+                                <p>Our M&E system offers comprehensive tools for effective project monitoring</p>
+                            </div>
+                            <div class="features-grid">
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <h3>Real-time Analytics</h3>
+                                    <p>Monitor project performance with live dashboards and interactive reports that update in real-time.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-project-diagram"></i>
+                                    </div>
+                                    <h3>Project Tracking</h3>
+                                    <p>Track milestones, deliverables, and outcomes across all your projects from a single platform.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-bullseye"></i>
+                                    </div>
+                                    <h3>Impact Assessment</h3>
+                                    <p>Measure and visualize the impact of your projects with advanced assessment tools.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </div>
+                                    <h3>Financial Monitoring</h3>
+                                    <p>Track budgets, expenditures, and financial performance against project goals.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-users-cog"></i>
+                                    </div>
+                                    <h3>Stakeholder Engagement</h3>
+                                    <p>Manage stakeholder interactions and feedback with built-in communication tools.</p>
+                                </div>
+                                <div class="feature-card">
+                                    <div class="feature-icon">
+                                        <i class="fas fa-mobile-alt"></i>
+                                    </div>
+                                    <h3>Mobile Accessibility</h3>
+                                    <p>Access your M&E data anywhere, anytime with our responsive mobile interface.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div class="col-md-5" id="login">
+                        <div class="login-card-body">
+                            <div>
+                                <h1 class="sign-in-text">Sign in to Eximbank M&E System</h1>
+                                <form class="agnet-contact-form" id="FormPost" method="post">
+                                    <div class="minlogin">
+                                        <div class="md-form form-sm mb-3">
+                                            <i class="fas fa-user prefix"></i>
+                                            <input autocomplete="off" class="form-control form-control-sm text-box single-line" id="email" name="email" placeholder="Enter Email" type="text" value="" />
+                                        </div>
+
+                                        <div class="md-form form-sm mb-3">
+                                            <i class="fas fa-lock prefix"></i>
+                                            <input autocomplete="off" class="form-control form-control-sm" id="password" name="password" placeholder="Enter Password" type="password" />
+                                        </div>
+
+                                        <div class="md-form form-sm mb-3">
+                                            <button class="btn btn-primary d-block w-100" type="submit" id="logmein">LOG IN</button>
+                                        </div>
+                                        <a class="forgot" id="fogpass" href="#" title="Provide your username and click here to initiate a forgot password request">Forgot Password?</a>
+                                        <a class="forgot" id="newcus" href="#" data-bs-toggle="modal" data-bs-target="#ModalSignupCustomer" title="If you don't have an account, click here for registration">New User? <span>Sign up Here</span></a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Preview Section -->
+        <div class="dashboard-preview" id="dashboard">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Interactive Dashboard</h2>
+                    <p>Experience our intuitive and powerful dashboard for comprehensive project insights and data visualization</p>
+                </div>
+                <div class="dashboard-container">
+                    <svg class="dashboard-image" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="dashGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#f5f7fa" />
+                                <stop offset="100%" stop-color="#e4e9f2" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="1000" height="600" fill="url(#dashGrad)" rx="15"/>
+                        
+                        <!-- Header -->
+                        <rect x="30" y="30" width="940" height="60" rx="5" fill="#0a4da2"/>
+                        <rect x="50" y="50" width="120" height="20" rx="3" fill="#fff"/>
+                        <rect x="800" y="45" width="40" height="30" rx="5" fill="#f9a825"/>
+                        <rect x="850" y="45" width="40" height="30" rx="5" fill="#00b894"/>
+                        <rect x="900" y="45" width="40" height="30" rx="5" fill="#1a237e"/>
+                        
+                        <!-- Sidebar -->
+                        <rect x="30" y="110" width="200" height="460" rx="5" fill="#1a237e"/>
+                        <rect x="50" y="140" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                        <rect x="50" y="170" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                        <rect x="50" y="200" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                        <rect x="50" y="230" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                        <rect x="50" y="260" width="160" height="15" rx="2" fill="#fff" opacity="0.8"/>
+                        
+                        <!-- Main Content -->
+                        <rect x="250" y="110" width="720" height="200" rx="5" fill="#fff"/>
+                        <rect x="270" y="140" width="300" height="150" rx="3" fill="#e4e9f2"/>
+                        <rect x="590" y="140" width="350" height="150" rx="3" fill="#e4e9f2"/>
+                        
+                        <!-- Charts -->
+                        <circle cx="320" cy="200" r="40" fill="#0a4da2" opacity="0.7"/>
+                        <circle cx="320" cy="200" r="30" fill="#f9a825" opacity="0.7"/>
+                        <circle cx="320" cy="200" r="20" fill="#00b894" opacity="0.7"/>
+                        
+                        <!-- Bars -->
+                        <rect x="620" y="180" width="40" height="80" fill="#0a4da2"/>
+                        <rect x="680" y="160" width="40" height="100" fill="#f9a825"/>
+                        <rect x="740" y="200" width="40" height="60" fill="#00b894"/>
+                        <rect x="800" y="140" width="40" height="120" fill="#1a237e"/>
+                        <rect x="860" y="220" width="40" height="40" fill="#0a4da2" opacity="0.7"/>
+                        
+                        <!-- Cards -->
+                        <rect x="250" y="330" width="220" height="120" rx="5" fill="#fff"/>
+                        <rect x="270" y="350" width="40" height="40" rx="5" fill="#0a4da2"/>
+                        <rect x="320" y="350" width="130" height="15" rx="2" fill="#e4e9f2"/>
+                        <rect x="320" y="375" width="100" height="15" rx="2" fill="#e4e9f2"/>
+                        
+                        <rect x="490" y="330" width="220" height="120" rx="5" fill="#fff"/>
+                        <rect x="510" y="350" width="40" height="40" rx="5" fill="#f9a825"/>
+                        <rect x="560" y="350" width="130" height="15" rx="2" fill="#e4e9f2"/>
+                        <rect x="560" y="375" width="100" height="15" rx="2" fill="#e4e9f2"/>
+                        
+                        <rect x="730" y="330" width="240" height="120" rx="5" fill="#fff"/>
+                        <rect x="750" y="350" width="40" height="40" rx="5" fill="#00b894"/>
+                        <rect x="800" y="350" width="150" height="15" rx="2" fill="#e4e9f2"/>
+                        <rect x="800" y="375" width="120" height="15" rx="2" fill="#e4e9f2"/>
+                        
+                        <!-- Progress Bars -->
+                        <rect x="270" y="470" width="500" height="10" rx="5" fill="#e4e9f2"/>
+                        <rect x="270" y="470" width="350" height="10" rx="5" fill="#0a4da2"/>
+                        <rect x="270" y="500" width="500" height="10" rx="5" fill="#e4e9f2"/>
+                        <rect x="270" y="500" width="400" height="10" rx="5" fill="#f9a825"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-clean">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-3 item">
+                        <h3>Eximbank M&E</h3>
+                        <p>Advanced Monitoring & Evaluation solutions for financial institutions and development projects in Ghana.</p>
+                    </div>
+                    <div class="col-md-3 item">
+                        <h3>Quick Links</h3>
+                        <ul>
+                            <li><a href="#home">Home</a></li>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#dashboard">Dashboard</a></li>
+                            <li><a href="#login">Login</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 item">
+                        <h3>Our Services</h3>
+                        <ul>
+                            <li><a href="#">M&E System Implementation</a></li>
+                            <li><a href="#">Custom Dashboard Development</a></li>
+                            <li><a href="#">Training & Capacity Building</a></li>
+                            <li><a href="#">Data Analytics Consulting</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 item">
+                        <h3>Contact Us</h3>
+                        <ul>
+                            <li>Eximbank Ghana Head Office, Accra, Ghana</li>
+                            <li>+233 24 123 4567</li>
+                            <li>info@eximbankme.gov.gh</li>
+                            <li>Mon - Fri: 8:00AM - 5:00PM</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="copyright">
+                    <p class="d-grid clearfix blue-grey lighten-2 text-sm-center mb-0 px-2">
+                        <span class="float-md-left d-block d-md-inline-block">
+                            <b>© 2023 Eximbank Ghana M&E System</b>
+                            <a href="#">Privacy Policy</a> | 
+                            <a href="#">Terms & Conditions</a> | 
+                            <a href="#">Sitemap</a>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal fade" id="ModalSignupCustomer" tabindex="-1" aria-labelledby="ModalSignupCustomerLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ModalSignupCustomerLabel">Create an account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label for="signupaccountNumber">Account Number</label>
+                        <input type="text" id="signupaccountNumber" class="form-control" placeholder="Account Number" autocomplete="off" maxlength="14" name="signupaccountNumber">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="phoneNumber">Phone Number</label>
+                        <input type="text" id="signupphoneNumber" class="form-control" placeholder="Phone Number" autocomplete="off" maxlength="12" name="signupphoneNumber">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="signupemail">Email</label>
+                        <input type="text" id="signupemail" class="form-control" placeholder="Email" autocomplete="off" maxlength="50" name="signupemail">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="dateOfBirth">Date Of Birth</label>
+                        <input type="date" id="signupdateOfBirth" class="form-control" name="signupdateOfBirth">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmterm">
+                        <label class="form-check-label" for="confirmterm">
+                            I accept the <a href="#" class="text-primary">Terms and Conditions</a>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnsignmeup">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple form validation
+        document.getElementById('FormPost').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if(email && password) {
+                // In a real application, you would submit the form here
+                alert('Login successful! Redirecting to dashboard...');
+                window.location.href = "{% url 'dashboard' %}";
+            } else {
+                alert('Please fill in all fields');
+            }
+        });
+        
+        // Signup form validation
+        document.getElementById('btnsignmeup').addEventListener('click', function() {
+            const accountNumber = document.getElementById('signupaccountNumber').value;
+            const phoneNumber = document.getElementById('signupphoneNumber').value;
+            const email = document.getElementById('signupemail').value;
+            const dob = document.getElementById('signupdateOfBirth').value;
+            const terms = document.getElementById('confirmterm').checked;
+            
+            if(accountNumber && phoneNumber && email && dob && terms) {
+                alert('Registration successful! Please check your email for verification.');
+                bootstrap.Modal.getInstance(document.getElementById('ModalSignupCustomer')).hide();
+            } else {
+                alert('Please fill in all fields and accept the terms and conditions');
+            }
+        });
+    </script>
+</body>
+</html>

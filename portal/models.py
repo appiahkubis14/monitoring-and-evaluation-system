@@ -135,8 +135,8 @@ class UserProfile(TimeStampModel):
 
 class Staff(TimeStampModel):
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, related_name='staff_profile')
-    staff_id = models.CharField(max_length=50, unique=True)
-    designation = models.CharField(max_length=100)
+    staff_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    designation = models.CharField(max_length=100, blank=True, null=True)
     date_joined = models.DateField(default=timezone.now)
     assigned_districts = models.ManyToManyField(District, related_name='assigned_staff', blank=True)
     is_active = models.BooleanField(default=True)
@@ -230,37 +230,13 @@ class MonitoringVisit(models.Model):
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE, verbose_name="Farm Name & ID")
     
     # Farm Information
-    farm_boundary_polygon = models.BooleanField(
-        choices=[(True, 'Yes'), (False, 'No')], 
-        verbose_name="Farm Boundary Polygon (Yes/No)"
-    )
-    land_use_classification = models.CharField(
-        max_length=100, 
-        verbose_name="Land Use Classification",
-        help_text="Classification of land use (e.g., agricultural, residential, commercial)"
-    )
+    farm_boundary_polygon = models.BooleanField(choices=[(True, 'Yes'), (False, 'No')], verbose_name="Farm Boundary Polygon (Yes/No)")
+    land_use_classification = models.CharField(max_length=100, verbose_name="Land Use Classification",help_text="Classification of land use (e.g., agricultural, residential, commercial)")
     
     # Accessibility Information
-    distance_to_road = models.DecimalField(
-        max_digits=8, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
-        verbose_name="Distance to Road (km)",
-        help_text="Distance in kilometers"
-    )
-    distance_to_market = models.DecimalField(
-        max_digits=8, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
-        verbose_name="Distance to Market (km)",
-        help_text="Distance in kilometers"
-    )
-    proximity_to_processing_facility = models.DecimalField(
-        max_digits=8, 
-        decimal_places=2, 
-        validators=[MinValueValidator(0)],
-        verbose_name="Proximity to Processing Facility (km)",
-        help_text="Distance in kilometers"
+    distance_to_road = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)],verbose_name="Distance to Road (km)",help_text="Distance in kilometers")
+    distance_to_market = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)],verbose_name="Distance to Market (km)",help_text="Distance in kilometers")
+    proximity_to_processing_facility = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)],verbose_name="Proximity to Processing Facility (km)",help_text="Distance in kilometers"
     )
     
     # Business Relationships
@@ -365,8 +341,6 @@ class Infrastructure(models.Model):
 
 
 
-
-
 # Project and Loan Management Models
 class Project(TimeStampModel):
     PROJECT_STATUS = (
@@ -447,6 +421,7 @@ class Loan(TimeStampModel):
             farmer_code = self.farmer.national_id[-4:] if self.farmer.national_id else "0000"
             self.loan_id = f"LN{farmer_code}{count:04d}"
         super().save(*args, **kwargs)
+
 
 class LoanDisbursement(TimeStampModel):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='disbursements')

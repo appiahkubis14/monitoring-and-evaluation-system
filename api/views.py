@@ -5,7 +5,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from django.db.models import Q
 from portal.models import (
-    UserProfile, Staff, Farmer, Farm, MonitoringVisit, 
+    ComplianceCheck, Milestone, UserProfile, Staff, Farmer, Farm, MonitoringVisit, 
     Project, District, FarmVisit, versionTbl
 )
 from .serializers import (
@@ -20,6 +20,7 @@ from drf_yasg import openapi
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
+from rest_framework.permissions import AllowAny
 
 def staff_exists_required(func):
     """
@@ -66,10 +67,9 @@ class versionTblView(APIView):
         return JsonResponse(status, safe=False)
 
 
-
 class StaffLoginAPIView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowAny]
     
     @swagger_auto_schema(
         operation_description="Staff login with username and password",
@@ -85,7 +85,7 @@ class StaffLoginAPIView(APIView):
             password (str): staff password
             
         Returns:
-            Response: staff data or error message
+            Response: staff data with district details or error message
         """
         try:
             serializer = StaffLoginSerializer(data=request.data)
@@ -106,6 +106,13 @@ class StaffLoginAPIView(APIView):
                     if staff_profile:
                         staff = Staff.objects.filter(user_profile=staff_profile, is_active=True).first()
                         if staff:
+                            # Prefetch related data to avoid N+1 queries
+                            staff = Staff.objects.select_related(
+                                'user_profile', 
+                                'user_profile__district',
+                                'user_profile__district__region'
+                            ).prefetch_related('assigned_districts').get(id=staff.id)
+                            
                             staff_serializer = StaffSerializer(staff)
                             return Response({
                                 'msg': 'Login successful',
@@ -145,55 +152,52 @@ class StaffLoginAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
+
+
 class FarmerAPIView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowAny]
     
-    @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Fetch all farmers data by district",
-        responses={200: FarmerSerializer(many=True), 404: "No farmers found", 500: "Internal Server Error"}
-    )
+    # @staff_exists_required
+    # @swagger_auto_schema(
+    #     operation_description="Fetch all farmers data by district",
+       
+    # )
     def get(self, request, district):
         """
-        Fetch all farmers data by district
-        
-        Args:
-            district (str): district name
-            
-        Returns:
-            Response: farmers data or error message
+        Fetch farmers data - can filter by district or region
         """
         try:
-            farmers = Farmer.objects.filter(
-                user_profile__district__name=district,
-                is_deleted=False
-            )
+        
+            farmers = Farmer.objects.filter(is_deleted=False)
+            # Filter by district if provided
+            if district:
+                farmers = farmers.filter(user_profile__district__name__icontains=district)
             
-            if farmers.exists():
-                serializer = FarmerSerializer(farmers, many=True)
+            if not farmers.exists():
                 return Response({
-                    'msg': 'Farmers data fetched successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_200_OK)
+                    'msg': 'No farmers found',
+                    'data': [],
+                    'status': 0
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = FarmerSerializer(farmers, many=True)
             
             return Response({
-                'msg': f'No farmers found in {district}',
-                'data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+                'msg': 'Farmers data fetched successfully',
+                'data': serializer.data,
+                'status': 1
+            }, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error fetching farmers: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Create a new farmer",
-        request_body=FarmerCreateSerializer,
-        responses={201: "Farmer created successfully", 400: "Invalid data", 500: "Internal Server Error"}
-    )
+        
+
     def post(self, request):
         """
         Create a new farmer
@@ -205,27 +209,37 @@ class FarmerAPIView(APIView):
             serializer = FarmerCreateSerializer(data=request.data)
             if serializer.is_valid():
                 farmer = serializer.save()
+                
+                # Prepare response data
+                response_serializer = FarmerSerializer(farmer)
+                
                 return Response({
                     'msg': 'Farmer created successfully',
-                    'data': {'farmer_id': farmer.id}
+                    'data': response_serializer.data,
+                    'status': 1
                 }, status=status.HTTP_201_CREATED)
             
             return Response({
-                'msg': serializer.errors,
-                'data': []
+                'msg': 'Validation error',
+                'errors': serializer.errors,
+                'data': [],
+                'status': 0
             }, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error creating farmer: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
 class FarmAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
-    @staff_exists_required
+    # @staff_exists_required
     @swagger_auto_schema(
         operation_description="Fetch all farms data by district",
         responses={200: FarmSerializer(many=True), 404: "No farms found", 500: "Internal Server Error"}
@@ -264,7 +278,7 @@ class FarmAPIView(APIView):
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @staff_exists_required
+    # @staff_exists_required
     @swagger_auto_schema(
         operation_description="Create a new farm with spatial data",
         request_body=FarmCreateSerializer,
@@ -302,8 +316,8 @@ class FarmAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class MonitoringVisitAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(
@@ -380,8 +394,8 @@ class MonitoringVisitAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProjectAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(
@@ -453,8 +467,8 @@ class ProjectAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FollowUpActionAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(
@@ -490,8 +504,8 @@ class FollowUpActionAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class InfrastructureAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(
@@ -527,8 +541,8 @@ class InfrastructureAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class MilestoneAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(
@@ -603,8 +617,8 @@ class MilestoneAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ComplianceCheckAPIView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes= []
+    permission_classes= [AllowAny]
     
     @staff_exists_required
     @swagger_auto_schema(

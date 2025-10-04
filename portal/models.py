@@ -212,13 +212,13 @@ class Farm(TimeStampModel):
         verbose_name = "Farm"
         verbose_name_plural = "Farms"
     
-    def save(self, *args, **kwargs):
-        if not self.farm_code:
-            # Generate farm code if not provided
-            count = Farm.objects.count() + 1
-            farmer_code = self.farmer.national_id[-4:] if self.farmer.national_id else "0000"
-            self.farm_code = f"{farmer_code}F{count:02d}"
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.farm_code:
+    #         # Generate farm code if not provided
+    #         count = Farm.objects.count() + 1
+    #         farmer_code = self.farmer.national_id[-4:] if self.farmer.national_id else "0000"
+    #         self.farm_code = f"{farmer_code}F{count:02d}"
+    #     super().save(*args, **kwargs)
         
 
 
@@ -962,3 +962,150 @@ class DataExport(TimeStampModel):
         verbose_name = "Data Export"
         verbose_name_plural = "Data Exports"
         ordering = ['-requested_at']
+
+
+
+##########################################################################################################
+#Base Data Models
+
+# Tree Density Data Model
+class TreeDensityData(TimeStampModel):
+    DENSITY_LEVELS = (
+        ('high', 'High'),
+        ('medium', 'Medium'), 
+        ('low', 'Low'),
+    )
+    
+    location = gis_models.PointField(geography=True, srid=4326)
+    density = models.CharField(max_length=10, choices=DENSITY_LEVELS)
+    trees_per_hectare = models.IntegerField()
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    recorded_date = models.DateField(default=timezone.now)
+    source = models.CharField(max_length=100, blank=True, null=True)
+    accuracy = models.FloatField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Tree Density Data"
+        verbose_name_plural = "Tree Density Data"
+
+# Crop Health Data Model (NDVI)
+class CropHealthData(TimeStampModel):
+    HEALTH_LEVELS = (
+        ('excellent', 'Excellent'),
+        ('good', 'Good'),
+        ('fair', 'Fair'), 
+        ('poor', 'Poor'),
+    )
+    
+    location = gis_models.PointField(geography=True, srid=4326)
+    ndvi = models.FloatField(validators=[MinValueValidator(-1), MaxValueValidator(1)])
+    health = models.CharField(max_length=10, choices=HEALTH_LEVELS)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    recorded_date = models.DateField(default=timezone.now)
+    source = models.CharField(max_length=100, blank=True, null=True)
+    farm = models.ForeignKey(Farm, on_delete=models.SET_NULL, blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Crop Health Data"
+        verbose_name_plural = "Crop Health Data"
+
+# Irrigation Sources Model
+class IrrigationSource(TimeStampModel):
+    SOURCE_TYPES = (
+        ('river_pump', 'River Pump'),
+        ('well', 'Well'),
+        ('reservoir', 'Reservoir'),
+        ('canal', 'Canal'),
+        ('borehole', 'Borehole'),
+        ('municipal', 'Municipal'),
+    )
+    
+    CAPACITY_LEVELS = (
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    )
+    
+    location = gis_models.PointField(geography=True, srid=4326)
+    source_type = models.CharField(max_length=20, choices=SOURCE_TYPES)
+    capacity = models.CharField(max_length=10, choices=CAPACITY_LEVELS)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, blank=True, null=True)
+    operational_status = models.BooleanField(default=True)
+    installation_date = models.DateField(blank=True, null=True)
+    coverage_area = models.FloatField(help_text="Coverage area in hectares", blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Irrigation Source"
+        verbose_name_plural = "Irrigation Sources"
+
+# Soil Type Model
+class SoilTypeArea(TimeStampModel):
+    FERTILITY_LEVELS = (
+        ('very_low', 'Very Low'),
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('very_high', 'Very High'),
+    )
+    
+    boundary = gis_models.PolygonField(geography=True, srid=4326)
+    soil_type = models.CharField(max_length=100)
+    fertility = models.CharField(max_length=10, choices=FERTILITY_LEVELS)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    area_hectares = models.FloatField(blank=True, null=True)
+    ph_level = models.FloatField(blank=True, null=True)
+    organic_matter = models.FloatField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Soil Type Area"
+        verbose_name_plural = "Soil Type Areas"
+
+# Climate Zone Model
+class ClimateZone(TimeStampModel):
+    RAINFALL_LEVELS = (
+        ('low', 'Low'),
+        ('moderate', 'Moderate'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    )
+    
+    boundary = gis_models.PolygonField(geography=True, srid=4326)
+    zone_name = models.CharField(max_length=100)
+    rainfall = models.CharField(max_length=10, choices=RAINFALL_LEVELS)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    avg_temperature = models.FloatField(blank=True, null=True)
+    avg_rainfall = models.FloatField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Climate Zone"
+        verbose_name_plural = "Climate Zones"
+
+# Road Network Model
+class RoadNetwork(TimeStampModel):
+    ROAD_TYPES = (
+        ('primary_highway', 'Primary Highway'),
+        ('secondary_road', 'Secondary Road'),
+        ('local_road', 'Local Road'),
+        ('rural_track', 'Rural Track'),
+    )
+    
+    CONDITION_LEVELS = (
+        ('excellent', 'Excellent'),
+        ('good', 'Good'),
+        ('fair', 'Fair'),
+        ('poor', 'Poor'),
+        ('very_poor', 'Very Poor'),
+    )
+    
+    path = gis_models.LineStringField(geography=True, srid=4326)
+    road_type = models.CharField(max_length=20, choices=ROAD_TYPES)
+    condition = models.CharField(max_length=10, choices=CONDITION_LEVELS)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    length_km = models.FloatField(blank=True, null=True)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Road Network"
+        verbose_name_plural = "Road Networks"

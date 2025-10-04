@@ -7,6 +7,7 @@ from portal.views.loans import *
 from portal.views.dashboard import *
 from portal.views.monitoring import *
 from portal.views.map import *
+from portal.views.base_data import *
 from django.contrib.auth import views as auth_views
 
 
@@ -197,4 +198,27 @@ urlpatterns = [
     path('map/farm/<int:farm_id>/update-boundary/', update_farm_boundary, name='update_farm_boundary'),
     path('map/farm/<int:farm_id>/validate-boundary/', validate_farm_boundary, name='validate_farm_boundary'),
     # path('map/search/', search_farms, name='search_farms'),
+
+    #################################################################################################################
+
+    # Base data endpoints
+    path('api/tree-density/', get_tree_density_data, name='tree_density_data'),
+    path('api/crop-health/', get_crop_health_data, name='crop_health_data'),
+    path('api/irrigation-sources/', get_irrigation_data, name='irrigation_data'),
+    path('api/soil-types/', get_soil_data, name='soil_data'),
+    path('api/climate-zones/', get_climate_data, name='climate_data'),
+    path('api/road-network/', get_road_data, name='road_data'),
+    path('api/regions/', get_regions_list, name='regions_list'),
+    path('api/all-agricultural-data/', get_all_agricultural_data, name='all_agricultural_data'),
+
+
+    #####################################################################################################################
+
+     # POST endpoints for data creation
+    path('api/tree-density/create/', create_tree_density_data, name='create_tree_density'),
+    path('api/crop-health/create/', create_crop_health_data, name='create_crop_health'),
+    path('api/irrigation-sources/create/', create_irrigation_data, name='create_irrigation'),
+    path('api/soil-types/create/', create_soil_data, name='create_soil'),
+    path('api/climate-zones/create/', create_climate_data, name='create_climate'),
+    path('api/road-network/create/', create_road_data, name='create_roads'),
 ]

@@ -319,9 +319,9 @@ class FarmAdmin(LeafletGeoAdmin):
     settings_overrides = {
         'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
         'DEFAULT_ZOOM': 7,
-        'MIN_ZOOM': 10,
+        'MIN_ZOOM': 1,
         'MAX_ZOOM': 18,
-        'SPATIAL_EXTENT': (-3.5, 4.5, 1.5, 11.5),  # Ghana bounds
+        # 'SPATIAL_EXTENT': (-3.5, 4.5, 1.5, 11.5),  # Ghana bounds
     }
     
     fieldsets = (
@@ -557,3 +557,119 @@ class InfrastructureAdmin(admin.ModelAdmin):
     list_display = ("monitoring_visit", "infrastructure_type", "condition")
     list_filter = ("condition", "infrastructure_type")
     search_fields = ("monitoring_visit__visit_id", "infrastructure_type")
+
+
+from django.contrib import admin
+from django.contrib.gis.admin import GISModelAdmin
+from .models import (
+    TreeDensityData, CropHealthData, IrrigationSource, 
+    SoilTypeArea, ClimateZone, RoadNetwork
+)
+
+@admin.register(TreeDensityData)
+class TreeDensityDataAdmin(GISModelAdmin):
+    list_display = ('id', 'density', 'trees_per_hectare', 'region', 'recorded_date')
+    list_filter = ('density', 'region', 'recorded_date')
+    search_fields = ('region__name', 'density')
+    ordering = ('-recorded_date',)
+    date_hierarchy = 'recorded_date'
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Location Information', {
+            'fields': ('location', 'region', 'recorded_date')
+        }),
+        ('Tree Density Details', {
+            'fields': ('density', 'trees_per_hectare', 'source', 'accuracy')
+        }),
+    )
+
+@admin.register(CropHealthData)
+class CropHealthDataAdmin(GISModelAdmin):
+    list_display = ('id', 'ndvi', 'health', 'region', 'recorded_date')
+    list_filter = ('health', 'region', 'recorded_date')
+    search_fields = ('region__name', 'health')
+    ordering = ('-recorded_date',)
+    date_hierarchy = 'recorded_date'
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Location Information', {
+            'fields': ('location', 'region', 'recorded_date', 'farm')
+        }),
+        ('Crop Health Details', {
+            'fields': ('ndvi', 'health', 'source')
+        }),
+    )
+
+@admin.register(IrrigationSource)
+class IrrigationSourceAdmin(GISModelAdmin):
+    list_display = ('id', 'source_type', 'capacity', 'region', 'operational_status')
+    list_filter = ('source_type', 'capacity', 'region', 'operational_status')
+    search_fields = ('region__name', 'source_type', 'district__name')
+    ordering = ('region', 'source_type')
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Location Information', {
+            'fields': ('location', 'region', 'district')
+        }),
+        ('Irrigation Details', {
+            'fields': ('source_type', 'capacity', 'operational_status', 'coverage_area')
+        }),
+        ('Additional Information', {
+            'fields': ('installation_date',),
+            'classes': ('collapse',)
+        }),
+    )
+
+@admin.register(SoilTypeArea)
+class SoilTypeAreaAdmin(GISModelAdmin):
+    list_display = ('id', 'soil_type', 'fertility', 'region', 'area_hectares')
+    list_filter = ('soil_type', 'fertility', 'region')
+    search_fields = ('region__name', 'soil_type')
+    ordering = ('region', 'soil_type')
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Geographical Information', {
+            'fields': ('boundary', 'region', 'area_hectares')
+        }),
+        ('Soil Properties', {
+            'fields': ('soil_type', 'fertility', 'ph_level', 'organic_matter')
+        }),
+    )
+
+@admin.register(ClimateZone)
+class ClimateZoneAdmin(GISModelAdmin):
+    list_display = ('id', 'zone_name', 'rainfall', 'region', 'avg_temperature')
+    list_filter = ('rainfall', 'region')
+    search_fields = ('region__name', 'zone_name')
+    ordering = ('region', 'zone_name')
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Geographical Information', {
+            'fields': ('boundary', 'region')
+        }),
+        ('Climate Details', {
+            'fields': ('zone_name', 'rainfall', 'avg_temperature', 'avg_rainfall')
+        }),
+    )
+
+@admin.register(RoadNetwork)
+class RoadNetworkAdmin(GISModelAdmin):
+    list_display = ('id', 'name', 'road_type', 'condition', 'region', 'length_km')
+    list_filter = ('road_type', 'condition', 'region')
+    search_fields = ('name', 'region__name', 'district__name')
+    ordering = ('region', 'road_type')
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Geographical Information', {
+            'fields': ('path', 'region', 'district', 'length_km')
+        }),
+        ('Road Details', {
+            'fields': ('name', 'road_type', 'condition')
+        }),
+    )

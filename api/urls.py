@@ -10,7 +10,7 @@ import json
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="Monitoring and Evaluation System API",
+      title="EXIM Ghana Monitoring and Evaluation System APIs",
       default_version='v1',
       description="API documentation for the Monitoring and Evaluation System",
       terms_of_service="https://www.google.com/policies/terms/",

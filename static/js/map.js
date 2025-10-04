@@ -191,6 +191,8 @@ function initializeMap() {
     // Load farm data
     loadFarmData();
 
+    initializeAllDataLayers();
+
     // Load additional layers data
     loadTreeDensityData();
     
@@ -213,406 +215,236 @@ function initializeMap() {
 }
 
 // Tree Density Data
-function loadTreeDensityData() {
-    // Extensive tree density data across Ghana
-    const treeDensityData = [
-        // Northern Region - High density areas
-        { lat: 9.4075, lng: -0.8433, density: 'high', trees_per_hectare: 200, region: 'Northern' },
-        { lat: 9.5204, lng: -0.9852, density: 'high', trees_per_hectare: 185, region: 'Northern' },
-        { lat: 9.3186, lng: -1.0667, density: 'medium', trees_per_hectare: 140, region: 'Northern' },
-        { lat: 9.6258, lng: -1.2345, density: 'high', trees_per_hectare: 195, region: 'Northern' },
-        { lat: 9.2876, lng: -1.4567, density: 'medium', trees_per_hectare: 125, region: 'Northern' },
-        
-        // Ashanti Region - Mixed density
-        { lat: 6.7000, lng: -1.6167, density: 'high', trees_per_hectare: 210, region: 'Ashanti' },
-        { lat: 6.6833, lng: -1.5333, density: 'high', trees_per_hectare: 190, region: 'Ashanti' },
-        { lat: 6.7500, lng: -1.5000, density: 'medium', trees_per_hectare: 150, region: 'Ashanti' },
-        { lat: 6.6333, lng: -1.4333, density: 'low', trees_per_hectare: 85, region: 'Ashanti' },
-        { lat: 6.8000, lng: -1.6833, density: 'medium', trees_per_hectare: 135, region: 'Ashanti' },
-        { lat: 6.5667, lng: -1.7833, density: 'high', trees_per_hectare: 175, region: 'Ashanti' },
-        
-        // Eastern Region
-        { lat: 6.1000, lng: -0.2667, density: 'high', trees_per_hectare: 180, region: 'Eastern' },
-        { lat: 6.2333, lng: -0.4667, density: 'medium', trees_per_hectare: 145, region: 'Eastern' },
-        { lat: 6.0500, lng: -0.1333, density: 'low', trees_per_hectare: 75, region: 'Eastern' },
-        { lat: 6.3167, lng: -0.4833, density: 'high', trees_per_hectare: 195, region: 'Eastern' },
-        
-        // Western Region
-        { lat: 5.5333, lng: -2.1500, density: 'high', trees_per_hectare: 220, region: 'Western' },
-        { lat: 5.3000, lng: -2.0000, density: 'medium', trees_per_hectare: 160, region: 'Western' },
-        { lat: 5.4500, lng: -2.2500, density: 'high', trees_per_hectare: 205, region: 'Western' },
-        { lat: 5.6167, lng: -2.0167, density: 'low', trees_per_hectare: 90, region: 'Western' },
-        
-        // Volta Region
-        { lat: 6.6000, lng: 0.4667, density: 'medium', trees_per_hectare: 130, region: 'Volta' },
-        { lat: 6.7833, lng: 0.3833, density: 'high', trees_per_hectare: 170, region: 'Volta' },
-        { lat: 6.4667, lng: 0.3333, density: 'low', trees_per_hectare: 70, region: 'Volta' },
-        { lat: 6.9000, lng: 0.2833, density: 'medium', trees_per_hectare: 140, region: 'Volta' },
-        
-        // Central Region
-        { lat: 5.1333, lng: -1.2833, density: 'medium', trees_per_hectare: 155, region: 'Central' },
-        { lat: 5.4500, lng: -0.9833, density: 'high', trees_per_hectare: 185, region: 'Central' },
-        { lat: 5.3000, lng: -1.0667, density: 'low', trees_per_hectare: 95, region: 'Central' },
-        { lat: 5.5167, lng: -0.7000, density: 'medium', trees_per_hectare: 125, region: 'Central' },
-        
-        // Brong-Ahafo Region
-        { lat: 7.3333, lng: -2.3167, density: 'high', trees_per_hectare: 195, region: 'Brong-Ahafo' },
-        { lat: 7.5833, lng: -1.9500, density: 'medium', trees_per_hectare: 145, region: 'Brong-Ahafo' },
-        { lat: 7.1500, lng: -2.1000, density: 'high', trees_per_hectare: 175, region: 'Brong-Ahafo' },
-        { lat: 7.4667, lng: -2.1500, density: 'low', trees_per_hectare: 80, region: 'Brong-Ahafo' },
-        
-        // Upper East Region
-        { lat: 10.7850, lng: -0.8514, density: 'low', trees_per_hectare: 65, region: 'Upper East' },
-        { lat: 10.9167, lng: -0.9833, density: 'medium', trees_per_hectare: 115, region: 'Upper East' },
-        { lat: 10.6667, lng: -0.8000, density: 'low', trees_per_hectare: 55, region: 'Upper East' },
-        
-        // Upper West Region
-        { lat: 10.0667, lng: -2.5000, density: 'low', trees_per_hectare: 60, region: 'Upper West' },
-        { lat: 9.9500, lng: -2.3833, density: 'medium', trees_per_hectare: 120, region: 'Upper West' },
-        { lat: 10.2000, lng: -2.3333, density: 'low', trees_per_hectare: 70, region: 'Upper West' },
-        
-        // Greater Accra Region
-        { lat: 5.6500, lng: -0.1833, density: 'low', trees_per_hectare: 45, region: 'Greater Accra' },
-        { lat: 5.5333, lng: -0.4167, density: 'medium', trees_per_hectare: 110, region: 'Greater Accra' },
-        { lat: 5.7167, lng: 0.1000, density: 'low', trees_per_hectare: 50, region: 'Greater Accra' }
-    ];
+// Base API URL
+const API_BASE_URL = '/api';
 
-    console.log('Loaded tree density data:', treeDensityData.length, 'points');
+// Updated load functions using AJAX
+async function loadTreeDensityData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/tree-density/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(point => {
+                const color = point.density === 'high' ? '#006400' : 
+                             point.density === 'medium' ? '#32CD32' : '#90EE90';
+                
+                const marker = L.circleMarker([point.lat, point.lng], {
+                    radius: 6,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(`
+                    <div class="tree-density-popup">
+                        <strong>Tree Density:</strong> ${point.density}<br>
+                        <strong>Trees/Hectare:</strong> ${point.trees_per_hectare}<br>
+                        <strong>Region:</strong> ${point.region}
+                    </div>
+                `);
+
+                treeDensityLayer.addLayer(marker);
+            });
+            console.log(`Loaded ${data.data.length} tree density points from database`);
+        }
+    } catch (error) {
+        console.error('Error loading tree density data:', error);
+    }
+}
+
+async function loadCropHealthData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/crop-health/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(point => {
+                const color = point.ndvi > 0.7 ? '#006400' : 
+                             point.ndvi > 0.5 ? '#32CD32' : 
+                             point.ndvi > 0.3 ? '#FFD700' : '#FF4500';
+                
+                const marker = L.circleMarker([point.lat, point.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                }).bindPopup(`
+                    <div class="crop-health-popup">
+                        <strong>NDVI:</strong> ${point.ndvi}<br>
+                        <strong>Health:</strong> ${point.health}<br>
+                        <strong>Region:</strong> ${point.region}
+                    </div>
+                `);
+
+                cropHealthLayer.addLayer(marker);
+            });
+            console.log(`Loaded ${data.data.length} crop health points from database`);
+        }
+    } catch (error) {
+        console.error('Error loading crop health data:', error);
+    }
+}
+
+async function loadIrrigationData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/irrigation-sources/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(source => {
+                const icon = L.divIcon({
+                    className: 'irrigation-icon',
+                    html: `<div style="background-color: #1E90FF; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center;">
+                              <i class="fas fa-tint" style="color: white; font-size: 9px;"></i>
+                           </div>`,
+                    iconSize: [18, 18]
+                });
+
+                const marker = L.marker([source.lat, source.lng], { icon: icon })
+                    .bindPopup(`
+                        <div class="irrigation-popup">
+                            <strong>Type:</strong> ${source.type}<br>
+                            <strong>Capacity:</strong> ${source.capacity}<br>
+                            <strong>Region:</strong> ${source.region}
+                        </div>
+                    `);
+
+                irrigationLayer.addLayer(marker);
+            });
+            console.log(`Loaded ${data.data.length} irrigation sources from database`);
+        }
+    } catch (error) {
+        console.error('Error loading irrigation data:', error);
+    }
+}
+
+async function loadEnvironmentalData() {
+    await loadSoilData();
+    await loadClimateData();
+    await loadRoadData();
+}
+
+async function loadSoilData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/soil-types/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(soil => {
+                const color = soil.type.includes('Loamy') ? '#8B4513' : 
+                             soil.type.includes('Clay') ? '#654321' :
+                             soil.type.includes('Sandy Loam') ? '#F4A460' : '#DEB887';
+                
+                const polygon = L.polygon(soil.coords, {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.25,
+                    weight: 1,
+                    opacity: 0.7
+                }).bindPopup(`
+                    <div class="soil-popup">
+                        <strong>Soil Type:</strong> ${soil.type}<br>
+                        <strong>Fertility:</strong> ${soil.fertility}<br>
+                        <strong>Region:</strong> ${soil.region}
+                    </div>
+                `);
+
+                soilTypeLayer.addLayer(polygon);
+            });
+            console.log(`Loaded ${data.data.length} soil type areas from database`);
+        }
+    } catch (error) {
+        console.error('Error loading soil data:', error);
+    }
+}
+
+async function loadClimateData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/climate-zones/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(zone => {
+                const color = zone.zone.includes('Tropical Wet') ? '#006400' :
+                             zone.zone.includes('Tropical Dry') ? '#FFD700' :
+                             zone.zone.includes('Coastal Savannah') ? '#90EE90' : '#32CD32';
+                
+                const polygon = L.polygon(zone.coords, {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.15,
+                    weight: 2,
+                    dashArray: '5, 5',
+                    opacity: 0.6
+                }).bindPopup(`
+                    <div class="climate-popup">
+                        <strong>Climate Zone:</strong> ${zone.zone}<br>
+                        <strong>Rainfall:</strong> ${zone.rainfall}<br>
+                        <strong>Region:</strong> ${zone.region}
+                    </div>
+                `);
+
+                climateZoneLayer.addLayer(polygon);
+            });
+            console.log(`Loaded ${data.data.length} climate zones from database`);
+        }
+    } catch (error) {
+        console.error('Error loading climate data:', error);
+    }
+}
+
+async function loadRoadData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/road-network/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            data.data.forEach(road => {
+                const color = road.type === 'primary_highway' ? '#FF0000' : 
+                             road.type === 'secondary_road' ? '#FFA500' : '#FFFF00';
+                const weight = road.type === 'primary_highway' ? 4 : 
+                              road.type === 'secondary_road' ? 3 : 2;
+                
+                const polyline = L.polyline(road.coords, {
+                    color: color,
+                    weight: weight,
+                    opacity: 0.8
+                }).bindPopup(`
+                    <div class="road-popup">
+                        <strong>Road Type:</strong> ${road.type}<br>
+                        <strong>Condition:</strong> ${road.condition}<br>
+                        <strong>Name:</strong> ${road.name || 'Unnamed Road'}
+                    </div>
+                `);
+
+                roadsLayer.addLayer(polyline);
+            });
+            console.log(`Loaded ${data.data.length} road segments from database`);
+        }
+    } catch (error) {
+        console.error('Error loading road data:', error);
+    }
+}
+
+// Initialize all data layers from database
+async function initializeAllDataLayers() {
+    console.log('Loading agricultural data from database...');
     
-    treeDensityData.forEach(point => {
-        const color = point.density === 'high' ? '#006400' : 
-                     point.density === 'medium' ? '#32CD32' : '#90EE90';
-        
-        const marker = L.circleMarker([point.lat, point.lng], {
-            radius: 6,
-            fillColor: color,
-            color: '#fff',
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-        }).bindPopup(`
-            <div class="tree-density-popup">
-                <strong>Tree Density:</strong> ${point.density}<br>
-                <strong>Trees/Hectare:</strong> ${point.trees_per_hectare}<br>
-                <strong>Region:</strong> ${point.region}
-            </div>
-        `);
-
-        treeDensityLayer.addLayer(marker);
-    });
+    await loadTreeDensityData();
+    await loadCropHealthData();
+    await loadIrrigationData();
+    await loadEnvironmentalData();
+    
+    console.log('All agricultural data loaded from database');
 }
 
-// Crop Health Data (NDVI simulation)
-function loadCropHealthData() {
-    // Extensive NDVI data across Ghana
-    const ndviData = [
-        // Northern Region - Various health levels
-        { lat: 9.5000, lng: -0.9000, ndvi: 0.85, health: 'Excellent', region: 'Northern' },
-        { lat: 9.4500, lng: -1.1000, ndvi: 0.72, health: 'Good', region: 'Northern' },
-        { lat: 9.6000, lng: -1.3000, ndvi: 0.45, health: 'Fair', region: 'Northern' },
-        { lat: 9.3500, lng: -1.5000, ndvi: 0.25, health: 'Poor', region: 'Northern' },
-        { lat: 9.5500, lng: -0.7500, ndvi: 0.78, health: 'Good', region: 'Northern' },
-        
-        // Ashanti Region
-        { lat: 6.7000, lng: -1.6000, ndvi: 0.82, health: 'Excellent', region: 'Ashanti' },
-        { lat: 6.6500, lng: -1.5500, ndvi: 0.68, health: 'Good', region: 'Ashanti' },
-        { lat: 6.7500, lng: -1.7000, ndvi: 0.52, health: 'Fair', region: 'Ashanti' },
-        { lat: 6.6000, lng: -1.8000, ndvi: 0.35, health: 'Fair', region: 'Ashanti' },
-        { lat: 6.8000, lng: -1.4500, ndvi: 0.88, health: 'Excellent', region: 'Ashanti' },
-        { lat: 6.5500, lng: -1.6500, ndvi: 0.42, health: 'Fair', region: 'Ashanti' },
-        
-        // Eastern Region
-        { lat: 6.1000, lng: -0.2000, ndvi: 0.79, health: 'Good', region: 'Eastern' },
-        { lat: 6.2000, lng: -0.4000, ndvi: 0.65, health: 'Good', region: 'Eastern' },
-        { lat: 6.0500, lng: -0.1000, ndvi: 0.48, health: 'Fair', region: 'Eastern' },
-        { lat: 6.3000, lng: -0.5000, ndvi: 0.32, health: 'Poor', region: 'Eastern' },
-        
-        // Western Region
-        { lat: 5.5000, lng: -2.1000, ndvi: 0.86, health: 'Excellent', region: 'Western' },
-        { lat: 5.3500, lng: -2.0500, ndvi: 0.74, health: 'Good', region: 'Western' },
-        { lat: 5.6000, lng: -2.2000, ndvi: 0.58, health: 'Fair', region: 'Western' },
-        { lat: 5.4000, lng: -2.3000, ndvi: 0.28, health: 'Poor', region: 'Western' },
-        
-        // Volta Region
-        { lat: 6.6000, lng: 0.4000, ndvi: 0.71, health: 'Good', region: 'Volta' },
-        { lat: 6.7500, lng: 0.3500, ndvi: 0.83, health: 'Excellent', region: 'Volta' },
-        { lat: 6.5000, lng: 0.3000, ndvi: 0.46, health: 'Fair', region: 'Volta' },
-        { lat: 6.8500, lng: 0.2500, ndvi: 0.62, health: 'Good', region: 'Volta' },
-        
-        // Central Region
-        { lat: 5.1000, lng: -1.2500, ndvi: 0.69, health: 'Good', region: 'Central' },
-        { lat: 5.4000, lng: -1.0000, ndvi: 0.81, health: 'Excellent', region: 'Central' },
-        { lat: 5.2500, lng: -1.1000, ndvi: 0.54, health: 'Fair', region: 'Central' },
-        { lat: 5.5000, lng: -0.7500, ndvi: 0.44, health: 'Fair', region: 'Central' },
-        
-        // Brong-Ahafo Region
-        { lat: 7.3000, lng: -2.3000, ndvi: 0.77, health: 'Good', region: 'Brong-Ahafo' },
-        { lat: 7.5500, lng: -2.0000, ndvi: 0.63, health: 'Good', region: 'Brong-Ahafo' },
-        { lat: 7.2000, lng: -2.1500, ndvi: 0.85, health: 'Excellent', region: 'Brong-Ahafo' },
-        { lat: 7.4500, lng: -2.2000, ndvi: 0.38, health: 'Poor', region: 'Brong-Ahafo' },
-        
-        // Upper East Region
-        { lat: 10.7500, lng: -0.8000, ndvi: 0.41, health: 'Fair', region: 'Upper East' },
-        { lat: 10.9000, lng: -1.0000, ndvi: 0.59, health: 'Fair', region: 'Upper East' },
-        { lat: 10.6500, lng: -0.8500, ndvi: 0.33, health: 'Poor', region: 'Upper East' },
-        
-        // Upper West Region
-        { lat: 10.0500, lng: -2.4500, ndvi: 0.36, health: 'Poor', region: 'Upper West' },
-        { lat: 9.9000, lng: -2.3500, ndvi: 0.51, health: 'Fair', region: 'Upper West' },
-        { lat: 10.1500, lng: -2.3000, ndvi: 0.44, health: 'Fair', region: 'Upper West' },
-        
-        // Greater Accra Region
-        { lat: 5.6000, lng: -0.1500, ndvi: 0.29, health: 'Poor', region: 'Greater Accra' },
-        { lat: 5.5000, lng: -0.4000, ndvi: 0.47, health: 'Fair', region: 'Greater Accra' },
-        { lat: 5.7000, lng: 0.0500, ndvi: 0.35, health: 'Poor', region: 'Greater Accra' }
-    ];
 
-    ndviData.forEach(point => {
-        const color = point.ndvi > 0.7 ? '#006400' : 
-                     point.ndvi > 0.5 ? '#32CD32' : 
-                     point.ndvi > 0.3 ? '#FFD700' : '#FF4500';
-        
-        const marker = L.circleMarker([point.lat, point.lng], {
-            radius: 8,
-            fillColor: color,
-            color: '#fff',
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.7
-        }).bindPopup(`
-            <div class="crop-health-popup">
-                <strong>NDVI:</strong> ${point.ndvi}<br>
-                <strong>Health:</strong> ${point.health}<br>
-                <strong>Region:</strong> ${point.region}
-            </div>
-        `);
 
-        cropHealthLayer.addLayer(marker);
-    });
-}
 
-// Irrigation Data
-function loadIrrigationData() {
-    // Extensive irrigation sources across Ghana
-    const irrigationSources = [
-        // Northern Region
-        { lat: 9.5200, lng: -0.8500, type: 'River Pump', capacity: 'high', region: 'Northern' },
-        { lat: 9.4500, lng: -1.2000, type: 'Well', capacity: 'medium', region: 'Northern' },
-        { lat: 9.6000, lng: -1.4000, type: 'Reservoir', capacity: 'high', region: 'Northern' },
-        { lat: 9.3500, lng: -1.1000, type: 'Canal', capacity: 'medium', region: 'Northern' },
-        { lat: 9.5500, lng: -0.9500, type: 'Borehole', capacity: 'low', region: 'Northern' },
-        
-        // Ashanti Region
-        { lat: 6.7200, lng: -1.6200, type: 'River Pump', capacity: 'high', region: 'Ashanti' },
-        { lat: 6.6800, lng: -1.5800, type: 'Well', capacity: 'medium', region: 'Ashanti' },
-        { lat: 6.7500, lng: -1.7200, type: 'Reservoir', capacity: 'high', region: 'Ashanti' },
-        { lat: 6.6200, lng: -1.5200, type: 'Canal', capacity: 'medium', region: 'Ashanti' },
-        { lat: 6.8000, lng: -1.4800, type: 'Borehole', capacity: 'low', region: 'Ashanti' },
-        
-        // Eastern Region
-        { lat: 6.1500, lng: -0.2500, type: 'River Pump', capacity: 'high', region: 'Eastern' },
-        { lat: 6.2200, lng: -0.4500, type: 'Well', capacity: 'medium', region: 'Eastern' },
-        { lat: 6.0800, lng: -0.1500, type: 'Reservoir', capacity: 'high', region: 'Eastern' },
-        
-        // Western Region
-        { lat: 5.5500, lng: -2.1200, type: 'River Pump', capacity: 'high', region: 'Western' },
-        { lat: 5.3800, lng: -2.0800, type: 'Well', capacity: 'medium', region: 'Western' },
-        { lat: 5.6200, lng: -2.2200, type: 'Reservoir', capacity: 'high', region: 'Western' },
-        
-        // Volta Region
-        { lat: 6.6500, lng: 0.4200, type: 'River Pump', capacity: 'high', region: 'Volta' },
-        { lat: 6.7800, lng: 0.3800, type: 'Well', capacity: 'medium', region: 'Volta' },
-        { lat: 6.5200, lng: 0.3200, type: 'Reservoir', capacity: 'high', region: 'Volta' },
-        
-        // Central Region
-        { lat: 5.1800, lng: -1.2800, type: 'River Pump', capacity: 'high', region: 'Central' },
-        { lat: 5.4200, lng: -1.0200, type: 'Well', capacity: 'medium', region: 'Central' },
-        { lat: 5.3200, lng: -1.1200, type: 'Reservoir', capacity: 'high', region: 'Central' },
-        
-        // Brong-Ahafo Region
-        { lat: 7.3500, lng: -2.3200, type: 'River Pump', capacity: 'high', region: 'Brong-Ahafo' },
-        { lat: 7.5800, lng: -2.0500, type: 'Well', capacity: 'medium', region: 'Brong-Ahafo' },
-        { lat: 7.2500, lng: -2.1800, type: 'Reservoir', capacity: 'high', region: 'Brong-Ahafo' },
-        
-        // Upper East Region
-        { lat: 10.7800, lng: -0.8200, type: 'Borehole', capacity: 'low', region: 'Upper East' },
-        { lat: 10.9200, lng: -1.0200, type: 'Well', capacity: 'medium', region: 'Upper East' },
-        
-        // Upper West Region
-        { lat: 10.0800, lng: -2.4800, type: 'Borehole', capacity: 'low', region: 'Upper West' },
-        { lat: 9.9500, lng: -2.3800, type: 'Well', capacity: 'medium', region: 'Upper West' },
-        
-        // Greater Accra Region
-        { lat: 5.6500, lng: -0.1800, type: 'Municipal', capacity: 'high', region: 'Greater Accra' },
-        { lat: 5.5500, lng: -0.4200, type: 'Well', capacity: 'medium', region: 'Greater Accra' }
-    ];
 
-    irrigationSources.forEach(source => {
-        const icon = L.divIcon({
-            className: 'irrigation-icon',
-            html: `<div style="background-color: #1E90FF; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center;">
-                      <i class="fas fa-tint" style="color: white; font-size: 9px;"></i>
-                   </div>`,
-            iconSize: [18, 18]
-        });
-
-        const marker = L.marker([source.lat, source.lng], { icon: icon })
-            .bindPopup(`
-                <div class="irrigation-popup">
-                    <strong>Type:</strong> ${source.type}<br>
-                    <strong>Capacity:</strong> ${source.capacity}<br>
-                    <strong>Region:</strong> ${source.region}
-                </div>
-            `);
-
-        irrigationLayer.addLayer(marker);
-    });
-}
-
-// Environmental Data (Soil Types and Climate Zones)
-function loadEnvironmentalData() {
-    // Extensive soil type areas across Ghana
-    const soilTypes = [
-        // Northern Region - Sandy Loam
-        { coords: [[9.8, -1.2], [10.0, -1.2], [10.0, -1.4], [9.8, -1.4]], type: 'Sandy Loam', fertility: 'Medium', region: 'Northern' },
-        { coords: [[9.6, -0.8], [9.8, -0.8], [9.8, -1.0], [9.6, -1.0]], type: 'Sandy Loam', fertility: 'Medium', region: 'Northern' },
-        
-        // Ashanti Region - Loamy
-        { coords: [[6.5, -1.4], [6.7, -1.4], [6.7, -1.6], [6.5, -1.6]], type: 'Loamy', fertility: 'High', region: 'Ashanti' },
-        { coords: [[6.7, -1.6], [6.9, -1.6], [6.9, -1.8], [6.7, -1.8]], type: 'Loamy', fertility: 'High', region: 'Ashanti' },
-        { coords: [[6.3, -1.8], [6.5, -1.8], [6.5, -2.0], [6.3, -2.0]], type: 'Clay Loam', fertility: 'Medium', region: 'Ashanti' },
-        
-        // Eastern Region - Various
-        { coords: [[6.0, -0.1], [6.2, -0.1], [6.2, -0.3], [6.0, -0.3]], type: 'Loamy', fertility: 'High', region: 'Eastern' },
-        { coords: [[6.2, -0.3], [6.4, -0.3], [6.4, -0.5], [6.2, -0.5]], type: 'Sandy', fertility: 'Low', region: 'Eastern' },
-        
-        // Western Region - Fertile Loam
-        { coords: [[5.2, -2.0], [5.4, -2.0], [5.4, -2.2], [5.2, -2.2]], type: 'Loamy', fertility: 'High', region: 'Western' },
-        { coords: [[5.4, -1.8], [5.6, -1.8], [5.6, -2.0], [5.4, -2.0]], type: 'Clay', fertility: 'Medium', region: 'Western' },
-        
-        // Volta Region
-        { coords: [[6.4, 0.2], [6.6, 0.2], [6.6, 0.4], [6.4, 0.4]], type: 'Sandy Loam', fertility: 'Medium', region: 'Volta' },
-        { coords: [[6.8, 0.1], [7.0, 0.1], [7.0, 0.3], [6.8, 0.3]], type: 'Loamy', fertility: 'High', region: 'Volta' },
-        
-        // Central Region
-        { coords: [[5.0, -1.0], [5.2, -1.0], [5.2, -1.2], [5.0, -1.2]], type: 'Sandy', fertility: 'Low', region: 'Central' },
-        { coords: [[5.4, -0.8], [5.6, -0.8], [5.6, -1.0], [5.4, -1.0]], type: 'Loamy', fertility: 'High', region: 'Central' },
-        
-        // Brong-Ahafo Region
-        { coords: [[7.1, -2.1], [7.3, -2.1], [7.3, -2.3], [7.1, -2.3]], type: 'Loamy', fertility: 'High', region: 'Brong-Ahafo' },
-        { coords: [[7.3, -1.9], [7.5, -1.9], [7.5, -2.1], [7.3, -2.1]], type: 'Sandy Loam', fertility: 'Medium', region: 'Brong-Ahafo' },
-        
-        // Upper Regions - Sandy
-        { coords: [[10.5, -0.7], [10.7, -0.7], [10.7, -0.9], [10.5, -0.9]], type: 'Sandy', fertility: 'Low', region: 'Upper East' },
-        { coords: [[9.8, -2.3], [10.0, -2.3], [10.0, -2.5], [9.8, -2.5]], type: 'Sandy', fertility: 'Low', region: 'Upper West' },
-        
-        // Greater Accra - Coastal
-        { coords: [[5.4, -0.3], [5.6, -0.3], [5.6, -0.5], [5.4, -0.5]], type: 'Sandy', fertility: 'Very Low', region: 'Greater Accra' }
-    ];
-
-    soilTypes.forEach(soil => {
-        const color = soil.type === 'Loamy' ? '#8B4513' : 
-                     soil.type === 'Clay' ? '#654321' :
-                     soil.type === 'Clay Loam' ? '#A0522D' :
-                     soil.type === 'Sandy Loam' ? '#F4A460' : '#DEB887';
-        
-        const polygon = L.polygon(soil.coords, {
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.25,
-            weight: 1,
-            opacity: 0.7
-        }).bindPopup(`
-            <div class="soil-popup">
-                <strong>Soil Type:</strong> ${soil.type}<br>
-                <strong>Fertility:</strong> ${soil.fertility}<br>
-                <strong>Region:</strong> ${soil.region}
-            </div>
-        `);
-
-        soilTypeLayer.addLayer(polygon);
-    });
-
-    // Extensive climate zones across Ghana
-    const climateZones = [
-        // Tropical Wet (Forest zones)
-        { coords: [[5.5, -2.5], [6.5, -2.5], [6.5, -1.0], [5.5, -1.0]], zone: 'Tropical Wet', rainfall: 'High', region: 'Western/South' },
-        { coords: [[6.0, -0.5], [7.0, -0.5], [7.0, 0.5], [6.0, 0.5]], zone: 'Tropical Wet', rainfall: 'High', region: 'Eastern/Volta' },
-        
-        // Tropical Dry (Northern regions)
-        { coords: [[8.5, -2.5], [10.5, -2.5], [10.5, -0.5], [8.5, -0.5]], zone: 'Tropical Dry', rainfall: 'Low', region: 'Northern' },
-        
-        // Coastal Savannah
-        { coords: [[5.0, -0.8], [6.0, -0.8], [6.0, 0.2], [5.0, 0.2]], zone: 'Coastal Savannah', rainfall: 'Moderate', region: 'Greater Accra' },
-        
-        // Transition Zone
-        { coords: [[7.0, -2.5], [8.5, -2.5], [8.5, -1.0], [7.0, -1.0]], zone: 'Transition', rainfall: 'Medium', region: 'Brong-Ahafo' }
-    ];
-
-    climateZones.forEach(zone => {
-        const color = zone.zone === 'Tropical Wet' ? '#006400' :
-                     zone.zone === 'Tropical Dry' ? '#FFD700' :
-                     zone.zone === 'Coastal Savannah' ? '#90EE90' : '#32CD32';
-        
-        const polygon = L.polygon(zone.coords, {
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.15,
-            weight: 2,
-            dashArray: '5, 5',
-            opacity: 0.6
-        }).bindPopup(`
-            <div class="climate-popup">
-                <strong>Climate Zone:</strong> ${zone.zone}<br>
-                <strong>Rainfall:</strong> ${zone.rainfall}<br>
-                <strong>Region:</strong> ${zone.region}
-            </div>
-        `);
-
-        climateZoneLayer.addLayer(polygon);
-    });
-
-    // Extensive road network across Ghana
-    const roads = [
-        // Major Highways
-        { coords: [[5.55, -0.20], [6.10, -0.25], [6.70, -1.62], [7.35, -2.33]], type: 'Primary Highway', condition: 'Good' },
-        { coords: [[5.55, -0.20], [5.13, -1.28], [5.55, -2.12]], type: 'Primary Highway', condition: 'Good' },
-        { coords: [[6.70, -1.62], [9.52, -0.85]], type: 'Primary Highway', condition: 'Fair' },
-        
-        // Regional Roads
-        { coords: [[6.10, -0.25], [6.65, 0.42]], type: 'Secondary Road', condition: 'Good' },
-        { coords: [[7.35, -2.33], [9.60, -1.40]], type: 'Secondary Road', condition: 'Fair' },
-        { coords: [[5.55, -2.12], [6.00, -2.50]], type: 'Secondary Road', condition: 'Poor' },
-        { coords: [[9.52, -0.85], [10.78, -0.82]], type: 'Secondary Road', condition: 'Fair' },
-        { coords: [[9.60, -1.40], [10.08, -2.48]], type: 'Secondary Road', condition: 'Poor' },
-        
-        // Local Access Roads
-        { coords: [[6.70, -1.62], [6.75, -1.72], [6.80, -1.48]], type: 'Local Road', condition: 'Good' },
-        { coords: [[9.52, -0.85], [9.45, -1.20], [9.60, -1.40]], type: 'Local Road', condition: 'Fair' },
-        { coords: [[5.55, -2.12], [5.38, -2.08], [5.62, -2.22]], type: 'Local Road', condition: 'Poor' },
-        { coords: [[6.65, 0.42], [6.78, 0.38], [6.52, 0.32]], type: 'Local Road', condition: 'Good' }
-    ];
-
-    roads.forEach(road => {
-        const color = road.type === 'Primary Highway' ? '#FF0000' : 
-                     road.type === 'Secondary Road' ? '#FFA500' : '#FFFF00';
-        const weight = road.type === 'Primary Highway' ? 4 : 
-                      road.type === 'Secondary Road' ? 3 : 2;
-        
-        const polyline = L.polyline(road.coords, {
-            color: color,
-            weight: weight,
-            opacity: 0.8
-        }).bindPopup(`
-            <div class="road-popup">
-                <strong>Road Type:</strong> ${road.type}<br>
-                <strong>Condition:</strong> ${road.condition}
-            </div>
-        `);
-
-        roadsLayer.addLayer(polyline);
-    });
-}
 // Buffer Analysis Functions
 // Buffer Analysis Functions - Enhanced for multiple independent buffers
 let activeBuffers = new Map(); // Track active buffers by type
@@ -2597,9 +2429,7 @@ function isPointInPolygon(point, polygon) {
 
 // Ray casting algorithm for point in polygon
 function pointInPolygon(point, vs) {
-    // ray-casting algorithm based on
-    // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
-    
+   
     const x = point.lat, y = point.lng;
     let inside = false;
     
@@ -2679,38 +2509,6 @@ function safeDistributeTrees(polygonCoords, farm) {
     }
 }
 
-// Function to distribute tree icons within a polygon
-// function distributeTreesInPolygon(polygonCoords, farm) {
-//     const treeCount = calculateTreeCountForFarm(farm);
-    
-//     if (treeCount === 0 || !polygonCoords || polygonCoords.length === 0) return;
-
-//     try {
-//         // Create a temporary polygon to work with
-//         const polygon = L.polygon(polygonCoords);
-//         const bounds = polygon.getBounds();
-        
-//         // Calculate area using Turf.js
-//         const turfPolygon = turf.polygon([polygonCoords]);
-//         const area = turf.area(turfPolygon); // Area in square meters
-        
-//         // Determine optimal number of icons to display (max 30 for performance)
-//         const maxIcons = Math.min(Math.max(5, Math.floor(treeCount / 10)), 30);
-        
-//         // Generate points using random distribution within polygon
-//         const treePoints = generateRandomPointsInPolygon(polygonCoords, maxIcons);
-        
-//         // Add tree icons at generated points
-//         treePoints.forEach(point => {
-//             addTreeIcon(point, farm);
-//         });
-        
-//         console.log(`Added ${treePoints.length} tree icons for farm ${farm.id}, Area: ${area.toFixed(2)} m²`);
-//     } catch (error) {
-//         console.error('Error distributing trees:', error);
-//     }
-// }
-
 
 
 // Calculate number of trees for a farm
@@ -2762,29 +2560,6 @@ function isPointInPolygon(point, polygon) {
     const poly = turf.polygon([polygon.getLatLngs()[0].map(ll => [ll.lng, ll.lat])]);
     return turf.booleanPointInPolygon(pt, poly);
 }
-
-// function isPointInPolygon(point, polygon) {
-//     // First check if point is within bounding box for performance
-//     if (!polygon.getBounds().contains(point)) {
-//         return false;
-//     }
-    
-//     // Ray-casting algorithm for point-in-polygon test
-//     const latlngs = polygon.getLatLngs()[0]; // For simple polygons
-//     let inside = false;
-    
-//     for (let i = 0, j = latlngs.length - 1; i < latlngs.length; j = i++) {
-//         const xi = latlngs[i].lat, yi = latlngs[i].lng;
-//         const xj = latlngs[j].lat, yj = latlngs[j].lng;
-        
-//         const intersect = ((yi > point.lat) !== (yj > point.lat)) &&
-//             (point.lng < (xj - xi) * (point.lat - yi) / (yj - yi) + xi);
-        
-//         if (intersect) inside = !inside;
-//     }
-    
-//     return inside;
-// }
 
 // Add beautiful tree icon
 function addTreeIcon(coords, farm) {

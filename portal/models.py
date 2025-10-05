@@ -71,25 +71,26 @@ class versionTbl(TimeStampModel):
 
 # Region and District Models
 class Region(TimeStampModel):
-    name = models.CharField(max_length=250, unique=True)
-    code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    region = models.CharField(max_length=250, unique=True)
+    reg_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
     geom = GeometryField(blank=True, null=True, srid=4326)
     
     def __str__(self):
-        return self.name
+        return self.region
     
     class Meta:
         verbose_name = "Region"
         verbose_name_plural = "Regions"
 
 class District(TimeStampModel):
-    region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='districts')
-    name = models.CharField(max_length=250)
-    code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    district = models.CharField(max_length=250)
+    district_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    region = models.CharField(max_length=250,null=True, blank=True)
+    reg_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
     geom = GeometryField(blank=True, null=True, srid=4326)
     
     def __str__(self):
-        return f"{self.name} ({self.region.name})"
+        return f"{self.district} ({self.region})"
     
 
 class societyTble(models.Model):

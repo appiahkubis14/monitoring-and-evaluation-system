@@ -221,4 +221,10 @@ urlpatterns = [
     path('api/soil-types/create/', create_soil_data, name='create_soil'),
     path('api/climate-zones/create/', create_climate_data, name='create_climate'),
     path('api/road-network/create/', create_road_data, name='create_roads'),
+
+    #############################################################################################################################
+
+    path('api/regions/geojson/', regions_geojson, name='regions_geojson'),
+    path('api/districts/geojson/', districts_geojson, name='districts_geojson'),
+    # path('api/societies/geojson/', societies_geojson, name='societies_geojson'),
 ]

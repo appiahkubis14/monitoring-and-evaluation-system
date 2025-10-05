@@ -537,6 +537,224 @@
                                 document.dispatchEvent(event);
                             });
                             </script>
+                            <!-- Administrative Boundaries Section -->
+                            <div class="control-section">
+                                <div class="section-header" data-toggle="admin-boundaries-section" style="display: flex;gap: 8px;">
+                                    <i class="fas fa-landmark"></i>
+                                    <span>Administrative Boundaries</span>
+                                    <i class="fas fa-chevron-down toggle-icon"></i>
+                                </div>
+                                <div class="section-content" id="admin-boundaries-section">
+                                    <div class="layer-control-group">
+                                        <!-- Region Boundaries -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="checkbox" id="regionBoundariesLayer">
+                                            <label class="layer-card-content" for="regionBoundariesLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/reg.jpeg" alt="Region Boundaries" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-map layer-icon"></i>
+                                                    <span class="layer-name">Region Boundaries</span>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        <!-- District Boundaries -->
+                                        <div class="layer-card">
+                                            <input class="layer-radio" type="checkbox" id="districtBoundariesLayer">
+                                            <label class="layer-card-content" for="districtBoundariesLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/dis.jpeg" alt="District Boundaries" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-map-marked layer-icon"></i>
+                                                    <span class="layer-name">District Boundaries</span>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        <!-- Society Boundaries -->
+                                        <!-- <div class="layer-card">
+                                            <input class="layer-radio" type="checkbox" id="societyBoundariesLayer">
+                                            <label class="layer-card-content" for="societyBoundariesLayer">
+                                                <div class="layer-preview">
+                                                    <img src="/static/images/basemaps/societies.png" alt="Society Boundaries" class="layer-image">
+                                                    <div class="layer-overlay">
+                                                        <i class="fas fa-check-circle selected-icon"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-info">
+                                                    <i class="fas fa-users layer-icon"></i>
+                                                    <span class="layer-name">Society Boundaries</span>
+                                                </div>
+                                            </label>
+                                        </div> -->
+                                    </div>
+                                    
+                                    <!-- Administrative Boundaries Opacity -->
+                                    <div class="opacity-control mt-4">
+                                        <h6 class="opacity-title">
+                                            <i class="fas fa-adjust me-2"></i>Boundaries Opacity
+                                        </h6>
+                                        <div class="slider-container">
+                                            <input type="range" class="form-range boundaries-opacity-slider" id="boundariesOpacitySlider" min="0" max="100" value="70">
+                                            <div class="slider-labels">
+                                                <span>0%</span>
+                                                <span id="boundariesOpacityValue">70%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Boundary Style Options -->
+                                    <div class="style-controls mt-3">
+                                        <h6 class="style-title">
+                                            <i class="fas fa-palette me-2"></i>Boundary Styles
+                                        </h6>
+                                        
+                                        <!-- Color Picker for Regions -->
+                                        <div class="color-picker-group mb-2">
+                                            <label class="color-label">Region Color:</label>
+                                            <input type="color" class="form-control form-control-color" id="regionColorPicker" value="#FF6B35" title="Choose region boundary color">
+                                        </div>
+                                        
+                                        <!-- Color Picker for Districts -->
+                                        <div class="color-picker-group mb-2">
+                                            <label class="color-label">District Color:</label>
+                                            <input type="color" class="form-control form-control-color" id="districtColorPicker" value="#004E89" title="Choose district boundary color">
+                                        </div>
+                                        
+                                        <!-- Color Picker for Societies -->
+                                        <!-- <div class="color-picker-group mb-3">
+                                            <label class="color-label">Society Color:</label>
+                                            <input type="color" class="form-control form-control-color" id="societyColorPicker" value="#00A896" title="Choose society boundary color">
+                                        </div> -->
+
+                                        <!-- Line Weight Control -->
+                                        <div class="weight-control">
+                                            <label class="weight-label">Line Weight:</label>
+                                            <input type="range" class="form-range line-weight-slider" id="lineWeightSlider" min="1" max="8" value="3">
+                                            <div class="slider-labels">
+                                                <span>Thin</span>
+                                                <span id="lineWeightValue">3px</span>
+                                                <span>Thick</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <style>
+                                /* Administrative Boundaries Styles */
+                                .style-controls {
+                                    background: var(--bs-secondary-bg);
+                                    padding: 16px;
+                                    border-radius: 8px;
+                                    border: 1px solid var(--bs-border-color);
+                                }
+
+                                .style-title {
+                                    color: var(--bs-heading-color);
+                                    font-size: 14px;
+                                    font-weight: 600;
+                                    margin-bottom: 12px;
+                                    display: flex;
+                                    align-items: center;
+                                }
+
+                                .color-picker-group {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    gap: 12px;
+                                }
+
+                                .color-label {
+                                    font-size: 12px;
+                                    color: var(--bs-muted-color);
+                                    font-weight: 500;
+                                    min-width: 80px;
+                                }
+
+                                .form-control-color {
+                                    width: 40px;
+                                    height: 30px;
+                                    border: 2px solid var(--bs-border-color);
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    transition: all 0.3s ease;
+                                }
+
+                                .form-control-color:hover {
+                                    border-color: var(--bs-primary);
+                                    transform: scale(1.1);
+                                }
+
+                                .weight-control {
+                                    margin-top: 16px;
+                                }
+
+                                .weight-label {
+                                    font-size: 12px;
+                                    color: var(--bs-muted-color);
+                                    font-weight: 500;
+                                    margin-bottom: 8px;
+                                    display: block;
+                                }
+
+                                .line-weight-slider {
+                                    width: 100%;
+                                    height: 6px;
+                                    border-radius: 3px;
+                                    background: var(--bs-border-color);
+                                    outline: none;
+                                    -webkit-appearance: none;
+                                }
+
+                                .line-weight-slider::-webkit-slider-thumb {
+                                    -webkit-appearance: none;
+                                    appearance: none;
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    background: var(--bs-primary);
+                                    cursor: pointer;
+                                    border: 2px solid var(--bs-card-bg);
+                                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                                }
+
+                                /* Legend for Administrative Boundaries */
+                                .legend-group {
+                                    margin-bottom: 16px;
+                                }
+
+                                .legend-group-title {
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                    color: var(--bs-heading-color);
+                                    margin-bottom: 8px;
+                                    display: flex;
+                                    align-items: center;
+                                }
+
+                                .legend-item {
+                                    margin-bottom: 4px;
+                                }
+
+                                .legend-color {
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 3px;
+                                    margin-right: 8px;
+                                    border: 1px solid var(--bs-border-color);
+                                }
+                            </style>
 
                             <!-- Farm Data Layers Section -->
                             <div class="control-section">

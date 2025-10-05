@@ -15,21 +15,16 @@ class GeoAdmin(gis_admin.GISModelAdmin):
 class RegionResource(resources.ModelResource):
     class Meta:
         model = Region
-        import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'geom', 'created_at', 'updated_at')
+        import_id_fields = ['reg_code']
+        fields = ('id', 'region', 'reg_code', 'geom', 'created_at', 'updated_at')
 
 # District Resource
 class DistrictResource(resources.ModelResource):
-    region = fields.Field(
-        column_name='region',
-        attribute='region',
-        widget=ForeignKeyWidget(Region, 'name')
-    )
-    
+   
     class Meta:
         model = District
-        import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'region', 'geom', 'created_at', 'updated_at')
+        import_id_fields = ['district_code']
+        fields = ('id', 'district', 'district_code', 'region', 'geom', 'created_at', 'updated_at')
 
 # UserProfile Resource
 class UserProfileResource(resources.ModelResource):
@@ -42,7 +37,7 @@ class UserProfileResource(resources.ModelResource):
     district = fields.Field(
         column_name='district',
         attribute='district',
-        widget=ForeignKeyWidget(District, 'name')
+        widget=ForeignKeyWidget(District, 'district')
     )
     
     class Meta:
@@ -126,19 +121,94 @@ class ProjectResource(resources.ModelResource):
                  'status', 'total_budget', 'manager')
 
 # Admin Classes
+# @admin.register(Region)
+# class RegionAdmin(ImportExportModelAdmin):
+#     resource_class = RegionResource
+#     list_display = ('region', 'reg_code', 'created_at')
+#     search_fields = ('region', 'reg_code')
+#     list_filter = ('created_at',)
+
+# @admin.register(District)
+# class DistrictAdmin(ImportExportModelAdmin):
+#     resource_class = DistrictResource
+#     list_display = ('district', 'region', 'district_code','reg_code')
+#     list_filter = ('region',)
+#     search_fields = ('district', 'district_code')
+
+# @admin.register(Region)
+# class RegionAdmin(ImportExportModelAdmin):
+#     resource_class = RegionResource
+#     list_display = ('region', 'reg_code', 'created_at')
+#     search_fields = ('region', 'reg_code')
+#     list_filter = ('created_at',)
+    
+#     # Leaflet map settings for the geom field - customized for regions
+#     settings_overrides = {
+#         'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
+#         'DEFAULT_ZOOM': 6,  # Slightly more zoomed out for regions
+#         'MIN_ZOOM': 1,
+#         'MAX_ZOOM': 16,
+#     }
+
+# @admin.register(District)
+# class DistrictAdmin(ImportExportModelAdmin):
+#     resource_class = DistrictResource
+#     list_display = ('district', 'region', 'district_code', 'reg_code')
+#     list_filter = ('region',)
+#     search_fields = ('district', 'district_code')
+   
+    
+    
+#     # Leaflet map settings for the geom field
+#     settings_overrides = {
+#         'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
+#         'DEFAULT_ZOOM': 7,
+#         'MIN_ZOOM': 1,
+#         'MAX_ZOOM': 18,
+#     }
+
+
+from django.contrib.gis import admin
+from leaflet.admin import LeafletGeoAdmin
+from import_export.admin import ImportExportModelAdmin
+
+# Option 1: Use LeafletGeoAdmin as the base and add import-export functionality
 @admin.register(Region)
-class RegionAdmin(ImportExportModelAdmin):
+class RegionAdmin(LeafletGeoAdmin, ImportExportModelAdmin):  # Change order
     resource_class = RegionResource
-    list_display = ('name', 'code', 'created_at')
-    search_fields = ('name', 'code')
+    list_display = ('region', 'reg_code', 'created_at')
+    search_fields = ('region', 'reg_code')
     list_filter = ('created_at',)
+    
+    # Leaflet map settings for the geom field
+    settings_overrides = {
+        'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
+        'DEFAULT_ZOOM': 6,
+        'MIN_ZOOM': 1,
+        'MAX_ZOOM': 16,
+    }
 
 @admin.register(District)
-class DistrictAdmin(ImportExportModelAdmin):
+class DistrictAdmin(LeafletGeoAdmin, ImportExportModelAdmin):  # Change order
     resource_class = DistrictResource
-    list_display = ('name', 'region', 'code')
+    list_display = ('district', 'region', 'district_code', 'reg_code')
     list_filter = ('region',)
-    search_fields = ('name', 'code', 'region__name')
+    search_fields = ('district', 'district_code')
+    # list_select_related = ['region']
+    
+    # def get_region_name(self, obj):
+    #     return obj.region.region
+    # get_region_name.short_description = 'Region'
+    
+    # Leaflet map settings for the geom field
+    settings_overrides = {
+        'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
+        'DEFAULT_ZOOM': 7,
+        'MIN_ZOOM': 1,
+        'MAX_ZOOM': 18,
+    }
+
+
 
 @admin.register(UserProfile)
 class UserProfileAdmin(ImportExportModelAdmin):

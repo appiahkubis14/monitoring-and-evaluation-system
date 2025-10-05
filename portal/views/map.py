@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.contrib.gis.geos import Polygon
 
-from portal.models import Farm, UserProfile
+from portal.models import District, Farm, Region, UserProfile
 from utils.sidebar import UserRole
 
 @login_required
@@ -199,3 +199,80 @@ def validate_farm_boundary(request, farm_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+
+# views.py
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
+
+def regions_geojson(request):
+    """Return regions as GeoJSON"""
+    try:
+        regions = Region.objects.all()
+        geojson = serialize('geojson', regions, 
+                          geometry_field='geom',
+                          fields=('region', 'reg_code'))
+        
+        # Add district count to each region
+        data = json.loads(geojson)
+        # for feature in data['features']:
+        #     region_id = feature['properties']['id']
+        #     district_count = District.objects.filter(region_id=region_id).count()
+        #     feature['properties']['district_count'] = district_count
+        
+        return JsonResponse({
+            'success': True,
+            'data': data
+        })
+    except Exception as e:
+        print(f"Error in regions_geojson: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+def districts_geojson(request):
+    """Return districts as GeoJSON"""
+    try:
+        districts = District.objects.all()
+        geojson = serialize('geojson', districts, 
+                          geometry_field='geom',
+                          fields=('district', 'district_code', 'region'))
+        
+        # Add society count to each district
+        data = json.loads(geojson)
+        # for feature in data['features']:
+            # district_id = feature['properties']['id']
+            # society_count = SocietyTble.objects.filter(district_id=district_id).count()
+            # feature['properties']['society_count'] = society_count
+        
+        return JsonResponse({
+            'success': True,
+            'data': data
+        })
+    except Exception as e:
+        print(f"Error in districts_geojson: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+# def societies_geojson(request):
+#     """Return societies as GeoJSON"""
+#     try:
+#         societies = SocietyTble.objects.all()
+#         geojson = serialize('geojson', societies, 
+#                           geometry_field='geom',
+#                           fields=('soceity', 'soceity_code', 'district'))
+        
+#         return JsonResponse({
+#             'success': True,
+#             'data': json.loads(geojson)
+#         })
+#     except Exception as e:
+#         return JsonResponse({
+#             'success': False,
+#             'error': str(e)
+#         }, status=500)

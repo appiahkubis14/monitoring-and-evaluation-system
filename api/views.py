@@ -272,7 +272,6 @@ class FarmAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def post(self, request):
-        print(request.data)
         """
         Create a new farm
         
@@ -309,8 +308,7 @@ class FarmAPIView(APIView):
 
 
 
-
-
+            
 class MonitoringVisitAPIView(APIView):
     authentication_classes= []
     permission_classes= [AllowAny]

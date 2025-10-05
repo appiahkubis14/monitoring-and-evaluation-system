@@ -191,6 +191,10 @@ function initializeMap() {
     // Load farm data
     loadFarmData();
 
+    // Load administrative boundaries
+    initializeAdministrativeBoundaries();
+
+    // Initialize all data layers
     initializeAllDataLayers();
 
     // Load additional layers data
@@ -214,9 +218,222 @@ function initializeMap() {
     initializeOpacityControls();
 }
 
+
+const API_BASE_URL = '/api';
+
+
+
+// Administrative Boundaries Layers
+let regionBoundariesLayer = L.layerGroup();
+let districtBoundariesLayer = L.layerGroup();
+// let societyBoundariesLayer = L.layerGroup();
+
+// Boundary styles - NO FILL COLORS
+let boundaryStyles = {
+    regions: {
+        color: '#FF6B35',
+        weight: 3,
+        opacity: 0.7,
+        fill: false, // No fill
+        fillOpacity: 0 // No fill
+    },
+    districts: {
+        color: '#004E89',
+        weight: 2,
+        opacity: 0.7,
+        fill: false, // No fill
+        fillOpacity: 0 // No fill
+    }
+    // societies: {
+    //     color: '#00A896',
+    //     weight: 1,
+    //     opacity: 0.7,
+    //     fill: false, // No fill
+    //     fillOpacity: 0 // No fill
+    // }
+};
+
+// Load Administrative Boundaries from API
+async function loadAdministrativeBoundaries() {
+    try {
+        console.log('Loading administrative boundaries...');
+        
+        // Load Region Boundaries
+        const regionsResponse = await fetch(`${API_BASE_URL}/regions/geojson/`);
+        const regionsData = await regionsResponse.json();
+        
+        if (regionsData.success) {
+            const regionLayer = L.geoJSON(regionsData.data, {
+                style: boundaryStyles.regions,
+                onEachFeature: function(feature, layer) {
+                    if (feature.properties) {
+                        const popupContent = `
+                            <div class="boundary-popup">
+                                <strong>Region:</strong> ${feature.properties.region || 'N/A'}<br>
+                                <strong>Code:</strong> ${feature.properties.reg_code || 'N/A'}<br>
+                                <strong>Districts:</strong> ${feature.properties.district_count || 0}
+                            </div>
+                        `;
+                        layer.bindPopup(popupContent);
+                    }
+                }
+            });
+            regionBoundariesLayer.addLayer(regionLayer);
+        }
+
+        // Load District Boundaries
+        const districtsResponse = await fetch(`${API_BASE_URL}/districts/geojson/`);
+        const districtsData = await districtsResponse.json();
+        
+        if (districtsData.success) {
+            const districtLayer = L.geoJSON(districtsData.data, {
+                style: boundaryStyles.districts,
+                onEachFeature: function(feature, layer) {
+                    if (feature.properties) {
+                        const popupContent = `
+                            <div class="boundary-popup">
+                                <strong>District:</strong> ${feature.properties.district || 'N/A'}<br>
+                                <strong>Code:</strong> ${feature.properties.district_code || 'N/A'}<br>
+                                <strong>Region:</strong> ${feature.properties.region || 'N/A'}<br>
+                                <strong>Societies:</strong> ${feature.properties.society_count || 0}
+                            </div>
+                        `;
+                        layer.bindPopup(popupContent);
+                    }
+                }
+            });
+            districtBoundariesLayer.addLayer(districtLayer);
+        }
+
+        console.log('Administrative boundaries loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading administrative boundaries:', error);
+    }
+}
+
+// Boundary Control Functions
+function toggleRegionBoundariesLayer(e) {
+    if (e.target.checked) {
+        map.addLayer(regionBoundariesLayer);
+        console.log('Region boundaries layer added');
+    } else {
+        map.removeLayer(regionBoundariesLayer);
+        console.log('Region boundaries layer removed');
+    }
+}
+
+function toggleDistrictBoundariesLayer(e) {
+    if (e.target.checked) {
+        map.addLayer(districtBoundariesLayer);
+        console.log('District boundaries layer added');
+    } else {
+        map.removeLayer(districtBoundariesLayer);
+        console.log('District boundaries layer removed');
+    }
+}
+
+// function toggleSocietyBoundariesLayer(e) {
+//     if (e.target.checked) {
+//         map.addLayer(societyBoundariesLayer);
+//         console.log('Society boundaries layer added');
+//     } else {
+//         map.removeLayer(societyBoundariesLayer);
+//         console.log('Society boundaries layer removed');
+//     }
+// }
+
+function updateBoundariesOpacity(e) {
+    const opacity = e.target.value / 100;
+    document.getElementById('boundariesOpacityValue').textContent = e.target.value + '%';
+    
+    // Update all boundary opacities - NO FILL OPACITY
+    boundaryStyles.regions.opacity = opacity;
+    boundaryStyles.districts.opacity = opacity;
+    // boundaryStyles.societies.opacity = opacity;
+    
+    updateBoundaryStyles();
+    console.log('Boundaries opacity updated to:', opacity);
+}
+
+function updateRegionBoundaryColor(e) {
+    boundaryStyles.regions.color = e.target.value;
+    updateBoundaryStyles();
+    console.log('Region boundary color updated to:', e.target.value);
+}
+
+function updateDistrictBoundaryColor(e) {
+    boundaryStyles.districts.color = e.target.value;
+    updateBoundaryStyles();
+    console.log('District boundary color updated to:', e.target.value);
+}
+
+function updateSocietyBoundaryColor(e) {
+    // boundaryStyles.societies.color = e.target.value;
+    // updateBoundaryStyles();
+    console.log('Society boundary color updated to:', e.target.value);
+}
+
+function updateBoundaryLineWeight(e) {
+    const weight = parseInt(e.target.value);
+    document.getElementById('lineWeightValue').textContent = weight + 'px';
+    
+    boundaryStyles.regions.weight = weight;
+    boundaryStyles.districts.weight = Math.max(1, weight - 1);
+    // boundaryStyles.societies.weight = Math.max(1, weight - 2);
+    
+    updateBoundaryStyles();
+    console.log('Boundary line weight updated to:', weight);
+}
+
+function updateBoundaryStyles() {
+    // Update region boundaries
+    regionBoundariesLayer.eachLayer(layer => {
+        if (layer.setStyle) {
+            layer.setStyle(boundaryStyles.regions);
+        }
+    });
+    
+    // Update district boundaries
+    districtBoundariesLayer.eachLayer(layer => {
+        if (layer.setStyle) {
+            layer.setStyle(boundaryStyles.districts);
+        }
+    });
+    
+    console.log('All boundary styles updated');
+}
+
+// Initialize Administrative Boundaries
+function initializeAdministrativeBoundaries() {
+    // Load boundaries data
+    loadAdministrativeBoundaries();
+    
+    // Set up initial state
+    document.getElementById('boundariesOpacityValue').textContent = '70%';
+    document.getElementById('lineWeightValue').textContent = '3px';
+    
+    console.log('Administrative boundaries initialized');
+}
+
+
+
+// function initializeAdministrativeBoundaries() {
+//     // Load boundaries data
+//     loadAdministrativeBoundaries();
+    
+//     // Set up initial state
+//     document.getElementById('boundariesOpacityValue').textContent = '70%';
+//     document.getElementById('lineWeightValue').textContent = '3px';
+    
+//     console.log('Administrative boundaries initialized');
+// }
+
+
+
 // Tree Density Data
 // Base API URL
-const API_BASE_URL = '/api';
+
 
 // Updated load functions using AJAX
 async function loadTreeDensityData() {
@@ -1548,6 +1765,83 @@ function initializePanelSections() {
 
 
 
+// // Enhanced setupEventListeners function
+// function setupEventListeners() {
+//     // Existing event listeners...
+//     document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+//     document.getElementById('searchInput').addEventListener('input', handleSearchInput);
+//     document.getElementById('searchInput').addEventListener('keypress', function (e) {
+//         if (e.key === 'Enter') performSearch();
+//         if (e.key === 'Escape') clearSearch();
+//     });
+
+//     // Base map layers
+//     document.getElementById('satelliteLayer').addEventListener('change', toggleSatelliteLayer);
+//     document.getElementById('streetLayer').addEventListener('change', toggleStreetLayer);
+//     document.getElementById('hybridLayer').addEventListener('change', toggleHybridLayer);
+//     document.getElementById('terrainLayer').addEventListener('change', toggleTerrainLayer);
+
+//     // Farm data layers
+//     document.getElementById('farmLayer').addEventListener('change', toggleFarmLayer);
+//     document.getElementById('treeDensityLayer').addEventListener('change', toggleTreeDensityLayer);
+//     document.getElementById('cropHealthLayer').addEventListener('change', toggleCropHealthLayer);
+//     document.getElementById('irrigationLayer').addEventListener('change', toggleIrrigationLayer);
+
+//     // Environmental layers
+//     document.getElementById('soilTypeLayer').addEventListener('change', toggleSoilTypeLayer);
+//     document.getElementById('climateZoneLayer').addEventListener('change', toggleClimateZoneLayer);
+//     document.getElementById('roadsLayer').addEventListener('change', toggleRoadsLayer);
+
+//     // Buffer analysis
+//     document.getElementById('bufferIrrigationBtn').addEventListener('click', createBufferAroundIrrigation);
+//     document.getElementById('bufferRoadsBtn').addEventListener('click', createBufferAroundRoads);
+//     document.getElementById('bufferFarmsBtn').addEventListener('click', createBufferAroundFarms);
+//     document.getElementById('bufferGradientBtn').addEventListener('click', createGradientBuffer);
+//     document.getElementById('clearBufferBtn').addEventListener('click', clearBufferAnalysis);
+
+//     // Opacity control
+//     // document.getElementById('opacitySlider').addEventListener('input', function (e) {
+//     //     const opacity = e.target.value / 100;
+//     //     document.getElementById('opacityValue').textContent = `${e.target.value}%`;
+//     //     setFarmLayerOpacity(opacity);
+//     // });
+
+//     // Map tools
+//     document.getElementById('refreshMap').addEventListener('click', loadFarmData);
+//     document.getElementById('fitToBounds').addEventListener('click', fitToBounds);
+//     document.getElementById('clearSelection').addEventListener('click', clearSelection);
+//     document.getElementById('fullScreenBtn').addEventListener('click', toggleFullScreen);
+
+//     // Edit boundary buttons
+//     document.getElementById('editBoundaryBtn').addEventListener('click', startEditingBoundary);
+//     document.getElementById('validateBoundaryBtn').addEventListener('click', validateBoundary);
+//     document.getElementById('saveBoundaryBtn').addEventListener('click', saveBoundaryChanges);
+//     document.getElementById('cancelEditBtn').addEventListener('click', cancelEditing);
+
+//     // Measurement tools
+//     document.getElementById('measureDistanceTool').addEventListener('click', startDistanceMeasurement);
+//     document.getElementById('measureAreaTool').addEventListener('click', startAreaMeasurement);
+//     document.getElementById('clearMeasureTool').addEventListener('click', clearAllMeasurements);
+
+//     window.addEventListener('resize', function () {
+//         if (isFullScreen) {
+//             setTimeout(() => {
+//                 map.invalidateSize(true);
+//             }, 100);
+//         }
+//     });
+
+//     // Base map radio buttons (mutually exclusive)
+//     document.querySelectorAll('input[name="baseMap"]').forEach(radio => {
+//         radio.addEventListener('change', function() {
+//             if (this.checked) {
+//                 switchBaseMap(this.id);
+//             }
+//         });
+//     });
+
+// }
+
 // Enhanced setupEventListeners function
 function setupEventListeners() {
     // Existing event listeners...
@@ -1575,6 +1869,17 @@ function setupEventListeners() {
     document.getElementById('climateZoneLayer').addEventListener('change', toggleClimateZoneLayer);
     document.getElementById('roadsLayer').addEventListener('change', toggleRoadsLayer);
 
+     // Administrative Boundaries layers
+    document.getElementById('regionBoundariesLayer').addEventListener('change', toggleRegionBoundariesLayer);
+    document.getElementById('districtBoundariesLayer').addEventListener('change', toggleDistrictBoundariesLayer);
+    // document.getElementById('societyBoundariesLayer').addEventListener('change', toggleSocietyBoundariesLayer);
+
+    // Administrative Boundaries controls
+    document.getElementById('boundariesOpacitySlider').addEventListener('input', updateBoundariesOpacity);
+    document.getElementById('regionColorPicker').addEventListener('change', updateRegionBoundaryColor);
+    document.getElementById('districtColorPicker').addEventListener('change', updateDistrictBoundaryColor);
+    // document.getElementById('societyColorPicker').addEventListener('change', updateSocietyBoundaryColor);
+    document.getElementById('lineWeightSlider').addEventListener('input', updateBoundaryLineWeight);
     // Buffer analysis
     document.getElementById('bufferIrrigationBtn').addEventListener('click', createBufferAroundIrrigation);
     document.getElementById('bufferRoadsBtn').addEventListener('click', createBufferAroundRoads);

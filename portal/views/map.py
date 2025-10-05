@@ -206,6 +206,15 @@ def validate_farm_boundary(request, farm_id):
 from django.http import JsonResponse
 from django.core.serializers import serialize
 import json
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
+from django.db.models import Count
+# views.py
+from django.http import JsonResponse
+from django.core.serializers import serialize
+import json
+from django.db.models import Count
 
 def regions_geojson(request):
     """Return regions as GeoJSON"""
@@ -215,12 +224,31 @@ def regions_geojson(request):
                           geometry_field='geom',
                           fields=('region', 'reg_code'))
         
-        # Add district count to each region
+        # Add district count to each region using reg_code
         data = json.loads(geojson)
-        # for feature in data['features']:
-        #     region_id = feature['properties']['id']
-        #     district_count = District.objects.filter(region_id=region_id).count()
-        #     feature['properties']['district_count'] = district_count
+        
+        # Get ALL districts to debug
+        all_districts = District.objects.all()
+        print(f"Total districts in database: {all_districts.count()}")
+        
+        # Get district counts per region
+        district_counts = District.objects.values('reg_code').annotate(
+            district_count=Count('id')
+        )
+        
+        # Convert to dictionary for easy lookup
+        count_dict = {item['reg_code']: item['district_count'] for item in district_counts if item['reg_code']}
+        # print("District counts by reg_code:", count_dict)
+        
+        # Debug: Print all region codes and their district counts
+        print("=== REGION DEBUG INFO ===")
+        for feature in data['features']:
+            region_code = feature['properties']['reg_code']
+            district_count = count_dict.get(region_code, 0)
+            feature['properties']['district_count'] = district_count
+            # print(f"Region: {feature['properties']['region']}, Code: {region_code}, Districts: {district_count}")
+        
+        print("=== END REGION DEBUG ===")
         
         return JsonResponse({
             'success': True,
@@ -239,14 +267,16 @@ def districts_geojson(request):
         districts = District.objects.all()
         geojson = serialize('geojson', districts, 
                           geometry_field='geom',
-                          fields=('district', 'district_code', 'region'))
+                          fields=('district', 'district_code', 'region', 'reg_code'))
         
-        # Add society count to each district
         data = json.loads(geojson)
-        # for feature in data['features']:
-            # district_id = feature['properties']['id']
-            # society_count = SocietyTble.objects.filter(district_id=district_id).count()
-            # feature['properties']['society_count'] = society_count
+        
+        # Debug: Print district information
+        print("=== DISTRICT DEBUG INFO ===")
+        for feature in data['features']:
+            pass
+            # print(f"District: {feature['properties']['district']}, Region Code: {feature['properties']['reg_code']}")
+        print("=== END DISTRICT DEBUG ===")
         
         return JsonResponse({
             'success': True,
@@ -258,21 +288,3 @@ def districts_geojson(request):
             'success': False,
             'error': str(e)
         }, status=500)
-
-# def societies_geojson(request):
-#     """Return societies as GeoJSON"""
-#     try:
-#         societies = SocietyTble.objects.all()
-#         geojson = serialize('geojson', societies, 
-#                           geometry_field='geom',
-#                           fields=('soceity', 'soceity_code', 'district'))
-        
-#         return JsonResponse({
-#             'success': True,
-#             'data': json.loads(geojson)
-#         })
-#     except Exception as e:
-#         return JsonResponse({
-#             'success': False,
-#             'error': str(e)
-#         }, status=500)

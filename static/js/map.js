@@ -254,64 +254,175 @@ let boundaryStyles = {
 };
 
 // Load Administrative Boundaries from API
+// Load Administrative Boundaries from API
 async function loadAdministrativeBoundaries() {
     try {
         console.log('Loading administrative boundaries...');
         
         // Load Region Boundaries
         const regionsResponse = await fetch(`${API_BASE_URL}/regions/geojson/`);
-        const regionsData = await regionsResponse.json();
+        if (!regionsResponse.ok) {
+            throw new Error(`Regions API responded with status: ${regionsResponse.status}`);
+        }
         
-        if (regionsData.success) {
+        const regionsData = await regionsResponse.json();
+        console.log('Regions API response:', regionsData);
+        
+        if (regionsData.success && regionsData.data && regionsData.data.features) {
             const regionLayer = L.geoJSON(regionsData.data, {
-                style: boundaryStyles.regions,
+                style: {
+                    ...boundaryStyles.regions,
+                    fill: false, // Ensure no fill
+                    fillOpacity: 0, // Ensure no fill
+                    interactive: true, // Make sure it's clickable
+                    bubblingMouseEvents: true // Allow mouse events to bubble
+                },
                 onEachFeature: function(feature, layer) {
                     if (feature.properties) {
+                        const regionName = feature.properties.region || 'N/A';
+                        const regionCode = feature.properties.reg_code || 'N/A';
+                        const districtCount = feature.properties.district_count || 0;
+                        
+                        console.log(`Region Popup - ${regionName}: ${districtCount} districts`);
+                        
                         const popupContent = `
-                            <div class="boundary-popup">
-                                <strong>Region:</strong> ${feature.properties.region || 'N/A'}<br>
-                                <strong>Code:</strong> ${feature.properties.reg_code || 'N/A'}<br>
-                                <strong>Districts:</strong> ${feature.properties.district_count || 0}
+                            <div class="boundary-popup" style="min-width: 200px;">
+                                <h6 style="margin: 0 0 10px 0; color: #FF6B35;">Region Information</h6>
+                                <div style="line-height: 1.6;">
+                                    <strong>Region:</strong> ${regionName}<br>
+                                    <strong>Code:</strong> ${regionCode}<br>
+                                    <strong>Districts:</strong> ${districtCount}
+                                </div>
                             </div>
                         `;
-                        layer.bindPopup(popupContent);
+                        
+                        // Bind popup to layer
+                        layer.bindPopup(popupContent, {
+                            className: 'boundary-popup-container',
+                            maxWidth: 300,
+                            minWidth: 200,
+                            autoPan: true,
+                            closeButton: true
+                        });
+                        
+                        // Add click event for debugging
+                        layer.on('click', function(e) {
+                            console.log('Region clicked:', regionName);
+                            console.log('Layer bounds:', layer.getBounds());
+                            console.log('Event type:', e.type);
+                        });
+                        
+                        // Add mouseover effect to show it's clickable
+                        layer.on('mouseover', function() {
+                            layer.setStyle({
+                                weight: boundaryStyles.regions.weight + 1,
+                                color: '#FF0000' // Highlight color on hover
+                            });
+                        });
+                        
+                        layer.on('mouseout', function() {
+                            layer.setStyle(boundaryStyles.regions);
+                        });
                     }
                 }
             });
             regionBoundariesLayer.addLayer(regionLayer);
+            console.log(`Loaded ${regionsData.data.features.length} regions with district counts`);
+        } else {
+            console.warn('No region data available or invalid response structure');
         }
 
         // Load District Boundaries
         const districtsResponse = await fetch(`${API_BASE_URL}/districts/geojson/`);
-        const districtsData = await districtsResponse.json();
+        if (!districtsResponse.ok) {
+            throw new Error(`Districts API responded with status: ${districtsResponse.status}`);
+        }
         
-        if (districtsData.success) {
+        const districtsData = await districtsResponse.json();
+        console.log('Districts API response:', districtsData);
+        
+        if (districtsData.success && districtsData.data && districtsData.data.features) {
             const districtLayer = L.geoJSON(districtsData.data, {
-                style: boundaryStyles.districts,
+                style: {
+                    ...boundaryStyles.districts,
+                    fill: false, // Ensure no fill
+                    fillOpacity: 0, // Ensure no fill
+                    interactive: true, // Make sure it's clickable
+                    bubblingMouseEvents: true // Allow mouse events to bubble
+                },
                 onEachFeature: function(feature, layer) {
                     if (feature.properties) {
+                        const districtName = feature.properties.district || 'N/A';
+                        const districtCode = feature.properties.district_code || 'N/A';
+                        const regionName = feature.properties.region || 'N/A';
+                        
+                        console.log(`District Popup - ${districtName} in ${regionName}`);
+                        
                         const popupContent = `
-                            <div class="boundary-popup">
-                                <strong>District:</strong> ${feature.properties.district || 'N/A'}<br>
-                                <strong>Code:</strong> ${feature.properties.district_code || 'N/A'}<br>
-                                <strong>Region:</strong> ${feature.properties.region || 'N/A'}<br>
-                                <strong>Societies:</strong> ${feature.properties.society_count || 0}
+                            <div class="boundary-popup" style="min-width: 200px;">
+                                <h6 style="margin: 0 0 10px 0; color: #004E89;">District Information</h6>
+                                <div style="line-height: 1.6;">
+                                    <strong>District:</strong> ${districtName}<br>
+                                    <strong>Code:</strong> ${districtCode}<br>
+                                    <strong>Region:</strong> ${regionName}<br>
+                                    
+                                </div>
                             </div>
                         `;
-                        layer.bindPopup(popupContent);
+                        
+                        // Bind popup to layer
+                        layer.bindPopup(popupContent, {
+                            className: 'boundary-popup-container',
+                            maxWidth: 300,
+                            minWidth: 200,
+                            autoPan: true,
+                            closeButton: true
+                        });
+                        
+                        // Add click event for debugging
+                        layer.on('click', function(e) {
+                            console.log('District clicked:', districtName);
+                            console.log('Layer bounds:', layer.getBounds());
+                            e.originalEvent.stopPropagation(); // Prevent event bubbling
+                        });
+                        
+                        // Add mouseover effect to show it's clickable
+                        layer.on('mouseover', function() {
+                            layer.setStyle({
+                                weight: boundaryStyles.districts.weight + 1,
+                                color: '#FF0000' // Highlight color on hover
+                            });
+                        });
+                        
+                        layer.on('mouseout', function() {
+                            layer.setStyle(boundaryStyles.districts);
+                        });
                     }
                 }
             });
             districtBoundariesLayer.addLayer(districtLayer);
+            console.log(`Loaded ${districtsData.data.features.length} districts`);
+        } else {
+            console.warn('No district data available or invalid response structure');
         }
 
-        console.log('Administrative boundaries loaded successfully');
+        console.log('Administrative boundaries loading completed');
+        
+        // Test: Try to open a popup programmatically for debugging
+        setTimeout(() => {
+            if (regionBoundariesLayer.getLayers().length > 0) {
+                const firstRegion = regionBoundariesLayer.getLayers()[0];
+                if (firstRegion.getBounds) {
+                    console.log('First region bounds:', firstRegion.getBounds());
+                    // firstRegion.openPopup(); // Uncomment to test auto-opening
+                }
+            }
+        }, 1000);
         
     } catch (error) {
         console.error('Error loading administrative boundaries:', error);
     }
 }
-
 // Boundary Control Functions
 function toggleRegionBoundariesLayer(e) {
     if (e.target.checked) {

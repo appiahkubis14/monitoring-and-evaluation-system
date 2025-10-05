@@ -234,59 +234,47 @@ class FarmerAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class FarmAPIView(APIView):
-    authentication_classes= []
-    permission_classes= [AllowAny]
+    authentication_classes = []
+    permission_classes = [AllowAny]
     
-    # @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Fetch all farms data by district",
-        responses={200: FarmSerializer(many=True), 404: "No farms found", 500: "Internal Server Error"}
-    )
     def get(self, request, district):
         """
-        Fetch all farms data by district
-        
-        Args:
-            district (str): district name
-            
-        Returns:
-            Response: farms data or error message
+        Fetch farms data - can filter by district
         """
         try:
-            farms = Farm.objects.filter(
-                farmer__user_profile__district__name=district,
-                is_deleted=False
-            )
+            farms = Farm.objects.filter(is_deleted=False)
             
-            if farms.exists():
-                serializer = FarmSerializer(farms, many=True)
+            # Filter by district if provided
+            if district:
+                farms = farms.filter(farmer__user_profile__district__name__icontains=district)
+            
+            if not farms.exists():
                 return Response({
-                    'msg': 'Farms data fetched successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_200_OK)
+                    'msg': 'No farms found',
+                    'data': [],
+                    'status': 0
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = FarmSerializer(farms, many=True)
             
             return Response({
-                'msg': f'No farms found in {district}',
-                'data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+                'msg': 'Farms data fetched successfully',
+                'data': serializer.data,
+                'status': 1
+            }, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error fetching farms: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    # @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Create a new farm with spatial data",
-        request_body=FarmCreateSerializer,
-        responses={201: "Farm created successfully", 400: "Invalid data", 500: "Internal Server Error"}
-    )
     def post(self, request):
+        print(request.data)
         """
-        Create a new farm with boundary coordinates
+        Create a new farm
         
         Returns:
             Response: success message or error
@@ -295,25 +283,33 @@ class FarmAPIView(APIView):
             serializer = FarmCreateSerializer(data=request.data)
             if serializer.is_valid():
                 farm = serializer.save()
+                
+                # Prepare response data
+                response_serializer = FarmSerializer(farm)
+                
                 return Response({
                     'msg': 'Farm created successfully',
-                    'data': {
-                        'farm_id': farm.id,
-                        'farm_code': farm.farm_code
-                    }
+                    'data': response_serializer.data,
+                    'status': 1
                 }, status=status.HTTP_201_CREATED)
             
             return Response({
-                'msg': serializer.errors,
-                'data': []
+                'msg': 'Validation error',
+                'errors': serializer.errors,
+                'data': [],
+                'status': 0
             }, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            print(e)
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error creating farm: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
 
 class MonitoringVisitAPIView(APIView):
     authentication_classes= []
@@ -393,49 +389,47 @@ class MonitoringVisitAPIView(APIView):
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
 class ProjectAPIView(APIView):
-    authentication_classes= []
-    permission_classes= [AllowAny]
+    authentication_classes = []
+    permission_classes = [AllowAny]
     
-    @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Fetch all projects",
-        responses={200: ProjectSerializer(many=True), 404: "No projects found", 500: "Internal Server Error"}
-    )
-    def get(self, request):
+    def get(self, request, district):
         """
-        Fetch all projects
-        
-        Returns:
-            Response: projects data or error message
+        Fetch projects data - can filter by district
         """
         try:
             projects = Project.objects.filter(is_deleted=False)
             
-            if projects.exists():
-                serializer = ProjectSerializer(projects, many=True)
+            # Filter by district if provided
+            if district:
+                projects = projects.filter(
+                    participating_farmers__user_profile__district__name__icontains=district
+                ).distinct()
+            
+            if not projects.exists():
                 return Response({
-                    'msg': 'Projects data fetched successfully',
-                    'data': serializer.data
-                }, status=status.HTTP_200_OK)
+                    'msg': 'No projects found',
+                    'data': [],
+                    'status': 0
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = ProjectSerializer(projects, many=True)
             
             return Response({
-                'msg': 'No projects found',
-                'data': []
-            }, status=status.HTTP_404_NOT_FOUND)
+                'msg': 'Projects data fetched successfully',
+                'data': serializer.data,
+                'status': 1
+            }, status=status.HTTP_200_OK)
             
         except Exception as e:
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error fetching projects: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    @staff_exists_required
-    @swagger_auto_schema(
-        operation_description="Create a new project",
-        request_body=ProjectCreateSerializer,
-        responses={201: "Project created successfully", 400: "Invalid data", 500: "Internal Server Error"}
-    )
     def post(self, request):
         """
         Create a new project
@@ -447,24 +441,31 @@ class ProjectAPIView(APIView):
             serializer = ProjectCreateSerializer(data=request.data)
             if serializer.is_valid():
                 project = serializer.save()
+                
+                # Prepare response data
+                response_serializer = ProjectSerializer(project)
+                
                 return Response({
                     'msg': 'Project created successfully',
-                    'data': {
-                        'project_id': project.id,
-                        'project_code': project.code
-                    }
+                    'data': response_serializer.data,
+                    'status': 1
                 }, status=status.HTTP_201_CREATED)
             
             return Response({
-                'msg': serializer.errors,
-                'data': []
+                'msg': 'Validation error',
+                'errors': serializer.errors,
+                'data': [],
+                'status': 0
             }, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
             return Response({
-                'msg': str(e),
-                'data': []
+                'msg': f'Error creating project: {str(e)}',
+                'data': [],
+                'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 class FollowUpActionAPIView(APIView):
     authentication_classes= []

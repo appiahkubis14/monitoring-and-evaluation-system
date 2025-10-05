@@ -10,6 +10,7 @@ from django.contrib.gis.db.models.functions import Distance
 import base64
 import uuid
 from django.core.files.base import ContentFile
+from django.utils import timezone
 
 class DistrictSerializer(serializers.ModelSerializer):
     region_name = serializers.CharField(source='region.name', read_only=True)
@@ -42,44 +43,65 @@ class StaffSerializer(serializers.ModelSerializer):
 
 
 ##############################################################################################################
+
+
 class FarmerSerializer(serializers.ModelSerializer):
-    # Instead of full UserProfileSerializer, just include needed fields
+    # User profile related fields
+    first_name = serializers.CharField(source='user_profile.user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user_profile.user.last_name', read_only=True)
+    email = serializers.CharField(source='user_profile.user.email', read_only=True)
+    phone_number = serializers.CharField(source='user_profile.phone_number', read_only=True)
+    gender = serializers.CharField(source='user_profile.gender', read_only=True)
+    date_of_birth = serializers.DateField(source='user_profile.date_of_birth', read_only=True)
+    address = serializers.CharField(source='user_profile.address', read_only=True)
+    bank_account_number = serializers.CharField(source='user_profile.bank_account_number', read_only=True)
+    bank_name = serializers.CharField(source='user_profile.bank_name', read_only=True)
+    
+    # Location fields
     district_name = serializers.CharField(source='user_profile.district.name', read_only=True)
     region_name = serializers.CharField(source='user_profile.district.region.name', read_only=True)
-    full_name = serializers.SerializerMethodField()
-    phone_number = serializers.CharField(source='user_profile.phone_number', read_only=True)
-    email = serializers.CharField(source='user_profile.user.email', read_only=True)
-    username = serializers.CharField(source='user_profile.user.username', read_only=True)
     
     class Meta:
         model = Farmer
         fields = [
-            'id', 'national_id', 'farm_size', 'years_of_experience',
-            'primary_crop', 'secondary_crops', 'cooperative_membership', 
-            'extension_services', 'district_name', 'region_name', 'full_name',
-            'phone_number', 'email', 'username', 'created_at', 'updated_at'
+            'id', 'national_id', 'years_of_experience', 'primary_crop', 
+            'secondary_crops', 'cooperative_membership', 'extension_services',
+            'business_name', 'community', 'crop_type', 'variety', 'planting_date',
+            'labour_hired', 'estimated_yield', 'yield_in_pre_season', 'harvest_date',
+            'first_name', 'last_name', 'email', 'phone_number', 'gender', 
+            'date_of_birth', 'address', 'bank_account_number', 'bank_name',
+            'district_name', 'region_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['national_id', 'created_at', 'updated_at']
-    
-    def get_full_name(self, obj):
-        return obj.user_profile.user.get_full_name()
-    
-
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class FarmerCreateSerializer(serializers.ModelSerializer):
+    # User data
     first_name = serializers.CharField(write_only=True, max_length=30)
     last_name = serializers.CharField(write_only=True, max_length=30)
     phone_number = serializers.CharField(write_only=True, max_length=15)
-    district_name = serializers.CharField(write_only=True)  # Change from district_id
     email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
+    district_name = serializers.CharField(write_only=True)
+    
+    # User profile optional fields
+    gender = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=10)
+    date_of_birth = serializers.DateField(write_only=True, required=False, allow_null=True)
+    address = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    bank_account_number = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=50)
+    bank_name = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=100)
     
     class Meta:
         model = Farmer
         fields = [
-            'first_name', 'last_name', 'phone_number', 'district_name', 'email',
-            'national_id', 'farm_size', 'years_of_experience', 'primary_crop',
-            'secondary_crops', 'cooperative_membership', 'extension_services'
+            # User data
+            'first_name', 'last_name', 'phone_number', 'email', 'district_name',
+            # User profile data
+            'gender', 'date_of_birth', 'address', 'bank_account_number', 'bank_name',
+            # Farmer data
+            'national_id', 'years_of_experience', 'primary_crop', 'secondary_crops',
+            'cooperative_membership', 'extension_services', 'business_name',
+            'community', 'crop_type', 'variety', 'planting_date', 'labour_hired',
+            'estimated_yield', 'yield_in_pre_season', 'harvest_date'
         ]
     
     def validate_district_name(self, value):
@@ -91,27 +113,38 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         try:
             # Extract user data
-            first_name = validated_data.pop('first_name')
-            last_name = validated_data.pop('last_name')
-            phone_number = validated_data.pop('phone_number')
-            district_name = validated_data.pop('district_name')  # Get district name
-            email = validated_data.pop('email', None)
+            user_data = {
+                'first_name': validated_data.pop('first_name'),
+                'last_name': validated_data.pop('last_name'),
+                'phone_number': validated_data.pop('phone_number'),
+                'district_name': validated_data.pop('district_name'),
+                'email': validated_data.pop('email', None),
+            }
+            
+            # Extract user profile optional data
+            profile_data = {
+                'gender': validated_data.pop('gender', ''),
+                'date_of_birth': validated_data.pop('date_of_birth', None),
+                'address': validated_data.pop('address', ''),
+                'bank_account_number': validated_data.pop('bank_account_number', ''),
+                'bank_name': validated_data.pop('bank_name', ''),
+            }
             
             # Get district by name
-            district = District.objects.get(name__iexact=district_name)
+            district = District.objects.get(name__iexact=user_data['district_name'])
             
-            # ... rest of create method remains the same
             # Generate email if not provided
+            email = user_data['email']
             if not email:
-                base_email = f"{first_name.lower()}.{last_name.lower()}@farmer.com"
+                base_email = f"{user_data['first_name'].lower()}.{user_data['last_name'].lower()}@farmer.com"
                 counter = 1
                 email = base_email
                 while User.objects.filter(email=email).exists():
-                    email = f"{first_name.lower()}.{last_name.lower()}{counter}@farmer.com"
+                    email = f"{user_data['first_name'].lower()}.{user_data['last_name'].lower()}{counter}@farmer.com"
                     counter += 1
             
             # Generate username
-            username = f"farmer_{phone_number}"
+            username = f"farmer_{user_data['phone_number']}"
             counter = 1
             original_username = username
             while User.objects.filter(username=username).exists():
@@ -125,19 +158,24 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
                 username=username,
                 email=email,
                 password=password,
-                first_name=first_name,
-                last_name=last_name
+                first_name=user_data['first_name'],
+                last_name=user_data['last_name']
             )
             
-            # Create UserProfile
+            # Create UserProfile with all fields
             user_profile = UserProfile.objects.create(
                 user=user,
                 role='farmer',
-                phone_number=phone_number,
-                district=district
+                phone_number=user_data['phone_number'],
+                district=district,
+                gender=profile_data['gender'] or None,
+                date_of_birth=profile_data['date_of_birth'],
+                address=profile_data['address'] or None,
+                bank_account_number=profile_data['bank_account_number'] or None,
+                bank_name=profile_data['bank_name'] or None
             )
             
-            # Create Farmer
+            # Create Farmer with all new fields
             farmer = Farmer.objects.create(
                 user_profile=user_profile,
                 **validated_data
@@ -150,21 +188,76 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
         except Exception as e:
             if 'user' in locals():
                 user.delete()
-            raise serializers.ValidationError(f"Error creating farmer: {str(e)}") 
-        
+            raise serializers.ValidationError(f"Error creating farmer: {str(e)}")
 
-
+from django.utils.dateparse import parse_date, parse_datetime
         
 ######################################################################################################
-
 class FarmSerializer(serializers.ModelSerializer):
     farmer_name = serializers.CharField(source='farmer.user_profile.user.get_full_name', read_only=True)
+    farmer_national_id = serializers.CharField(source='farmer.national_id', read_only=True)
     district_name = serializers.CharField(source='farmer.user_profile.district.name', read_only=True)
     region_name = serializers.CharField(source='farmer.user_profile.district.region.name', read_only=True)
+    officer_name = serializers.CharField(source='officer.user_profile.user.get_full_name', read_only=True)
+    project_name = serializers.CharField(source='project.name', read_only=True)
+    visit_date = serializers.DateField(write_only=True, required=False, allow_null=True)
+    last_visit_date = serializers.DateField(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    
+    # Location fields for display
+    boundary_coordinates = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
     
     class Meta:
         model = Farm
-        fields = '__all__'
+        fields = [
+            'id', 'farmer', 'farmer_name', 'farmer_national_id', 'name', 'farm_code',
+            'project', 'project_name', 'main_buyers', 'land_use_classification',
+            'has_farm_boundary_polygon', 'accessibility', 'proximity_to_processing_plants',
+            'service_provider', 'farmer_groups_affiliated', 'value_chain_linkages',
+            'visit_id', 'visit_date', 'officer', 'officer_name', 'observation',
+            'issues_identified', 'infrastructure_identified', 'recommended_actions',
+            'follow_up_actions', 'area_hectares', 'soil_type', 'irrigation_type',
+            'irrigation_coverage', 'boundary_coordinates', 'latitude', 'longitude',
+            'altitude', 'slope', 'district_name', 'region_name', 'status',
+            'registration_date', 'last_visit_date', 'validation_status',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_boundary_coordinates(self, obj):
+        return obj.boundary_coord if obj.boundary_coord else None
+    
+    def get_latitude(self, obj):
+        return obj.location.y if obj.location else None
+    
+    def get_longitude(self, obj):
+        return obj.location.x if obj.location else None
+
+
+class DateFieldWithDatetimeSupport(serializers.DateField):
+    """Custom DateField that safely handles datetime strings"""
+    
+    def to_internal_value(self, value):
+        if isinstance(value, str):
+            # Handle datetime strings by extracting date part
+            if 'T' in value:
+                try:
+                    # Extract date part from ISO datetime string
+                    value = value.split('T')[0]
+                except (IndexError, AttributeError):
+                    pass
+            # Also handle datetime strings with space separator
+            elif ' ' in value:
+                try:
+                    value = value.split(' ')[0]
+                except (IndexError, AttributeError):
+                    pass
+        
+        return super().to_internal_value(value)
+
 
 class FarmCreateSerializer(serializers.ModelSerializer):
     boundary_coordinates = serializers.ListField(
@@ -175,13 +268,109 @@ class FarmCreateSerializer(serializers.ModelSerializer):
     latitude = serializers.FloatField(write_only=True, required=False)
     longitude = serializers.FloatField(write_only=True, required=False)
     
+    # Use custom date fields that handle datetime strings
+    visit_date = DateFieldWithDatetimeSupport(write_only=True, required=False)
+    last_visit_date = DateFieldWithDatetimeSupport(write_only=True, required=False)
+    
     class Meta:
         model = Farm
         fields = [
-            'farmer', 'name', 'area_hectares', 'soil_type', 'irrigation_type',
-            'irrigation_coverage', 'boundary_coordinates', 'latitude', 'longitude',
-            'altitude', 'slope'
+            'farmer', 'name', 'project', 'main_buyers', 'land_use_classification',
+            'accessibility', 'proximity_to_processing_plants', 'service_provider',
+            'farmer_groups_affiliated', 'value_chain_linkages', 'visit_id',
+            'visit_date', 'officer', 'observation', 'issues_identified',
+            'infrastructure_identified', 'recommended_actions', 'follow_up_actions',
+            'area_hectares', 'soil_type', 'irrigation_type', 'irrigation_coverage',
+            'boundary_coordinates', 'latitude', 'longitude', 'altitude', 'slope',
+            'status', 'last_visit_date', 'validation_status'
         ]
+
+        def to_internal_value(self, data):
+            """Handle datetime to date conversion before any validation"""
+            data = data.copy()
+            
+            # Handle visit_date conversion
+            if 'visit_date' in data and data['visit_date']:
+                data['visit_date'] = self._convert_to_date_string(data['visit_date'])
+            
+            # Handle last_visit_date conversion
+            if 'last_visit_date' in data and data['last_visit_date']:
+                data['last_visit_date'] = self._convert_to_date_string(data['last_visit_date'])
+            
+            return super().to_internal_value(data)
+        
+        def _convert_to_date_string(self, value):
+            """Convert various date/datetime formats to date string"""
+            if isinstance(value, str):
+                # Try parsing as datetime first
+                parsed_datetime = parse_datetime(value)
+                if parsed_datetime:
+                    return parsed_datetime.date().isoformat()
+                
+                # Try parsing as date
+                parsed_date = parse_date(value)
+                if parsed_date:
+                    return value  # Already a valid date string
+                
+                # Handle common datetime string formats manually
+                if 'T' in value:
+                    return value.split('T')[0]
+                elif ' ' in value:
+                    return value.split(' ')[0]
+            
+            return value
+
+     # Keep all your existing validate methods the same...
+    def validate_visit_date(self, value):
+        """Ensure visit date is not in the future"""
+        if value and value > timezone.now().date():
+            raise serializers.ValidationError("Visit date cannot be in the future.")
+        return value
+    
+    def validate_last_visit_date(self, value):
+        """Ensure last visit date is not in the future"""
+        if value and value > timezone.now().date():
+            raise serializers.ValidationError("Last visit date cannot be in the future.")
+        return value
+    
+    def validate(self, data):
+        """Additional validation for date logic"""
+        # Ensure last_visit_date is after visit_date if both provided
+        if data.get('last_visit_date') and data.get('visit_date'):
+            if data['last_visit_date'] < data['visit_date']:
+                raise serializers.ValidationError("Last visit date cannot be before visit date.")
+        
+        return data
+    
+    def validate_farmer(self, value):
+        """Validate farmer exists and is not deleted"""
+        if value.is_deleted:
+            raise serializers.ValidationError("Farmer does not exist.")
+        return value
+    
+    def validate_project(self, value):
+        """Validate project exists and is not deleted"""
+        if value and value.is_deleted:
+            raise serializers.ValidationError("Project does not exist.")
+        return value
+    
+    def validate_officer(self, value):
+        """Validate officer exists and is not deleted"""
+        if value and value.is_deleted:
+            raise serializers.ValidationError("Officer does not exist.")
+        return value
+    
+    def validate_area_hectares(self, value):
+        """Validate area is at least 0.1 hectares"""
+        if value and value < 0.1:
+            raise serializers.ValidationError("Area must be at least 0.1 hectares.")
+        return value
+    
+    def validate_irrigation_coverage(self, value):
+        """Validate irrigation coverage is between 0 and 100"""
+        if value and (value < 0 or value > 100):
+            raise serializers.ValidationError("Irrigation coverage must be between 0 and 100.")
+        return value
     
     def create(self, validated_data):
         boundary_coordinates = validated_data.pop('boundary_coordinates', None)
@@ -199,9 +388,9 @@ class FarmCreateSerializer(serializers.ModelSerializer):
                     boundary_coordinates.append(boundary_coordinates[0])
                 
                 polygon = Polygon(boundary_coordinates)
+                # Update has_farm_boundary_polygon field
+                validated_data['has_farm_boundary_polygon'] = True
             except Exception as e:
-                print(f"Polygon creation error: {e}")
-                # You might want to raise a validation error here
                 raise serializers.ValidationError(f"Invalid boundary coordinates: {str(e)}")
         
         # Create point from latitude/longitude if provided
@@ -209,8 +398,6 @@ class FarmCreateSerializer(serializers.ModelSerializer):
             try:
                 location = Point(longitude, latitude, srid=4326)
             except Exception as e:
-                print(f"Point creation error: {e}")
-                # You might want to raise a validation error here
                 raise serializers.ValidationError(f"Invalid coordinates: {str(e)}")
         
         # Initialize region and district codes
@@ -277,7 +464,7 @@ class FarmCreateSerializer(serializers.ModelSerializer):
         # Add spatial fields only if they are valid
         if polygon:
             farm_data['boundary'] = polygon
-            farm_data['geom'] = polygon  # Save to both boundary and geom fields
+            farm_data['geom'] = polygon
         
         if location:
             farm_data['location'] = location
@@ -285,10 +472,47 @@ class FarmCreateSerializer(serializers.ModelSerializer):
         farm = Farm.objects.create(**farm_data)
         
         return farm
-    
 ################################################################################################################################
 
+class ProjectSerializer(serializers.ModelSerializer):
+    manager_name = serializers.CharField(source='manager.user_profile.user.get_full_name', read_only=True)
+    total_farmers = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'name', 'code', 'description', 'start_date', 'end_date',
+            'status', 'total_budget', 'manager', 'manager_name', 'total_farmers',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_total_farmers(self, obj):
+        return obj.participating_farmers.count()
 
+
+class ProjectCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            'name', 'code', 'description', 'start_date', 'end_date',
+            'status', 'total_budget', 'manager'
+        ]
+    
+    def validate_code(self, value):
+        """Validate project code is unique"""
+        if Project.objects.filter(code=value).exists():
+            raise serializers.ValidationError("Project code already exists.")
+        return value
+    
+    def validate(self, data):
+        """Validate date logic"""
+        if data['start_date'] > data['end_date']:
+            raise serializers.ValidationError("End date must be after start date.")
+        return data
+
+
+####################################################################################################################
 
 class MonitoringVisitSerializer(serializers.ModelSerializer):
     officer_name = serializers.CharField(source='officer.user.get_full_name', read_only=True)
@@ -326,29 +550,29 @@ class InfrastructureSerializer(serializers.ModelSerializer):
         model = Infrastructure
         fields = '__all__'
 
-class ProjectSerializer(serializers.ModelSerializer):
-    manager_name = serializers.CharField(source='manager.user_profile.user.get_full_name', read_only=True)
+# class ProjectSerializer(serializers.ModelSerializer):
+#     manager_name = serializers.CharField(source='manager.user_profile.user.get_full_name', read_only=True)
     
-    class Meta:
-        model = Project
-        fields = '__all__'
+#     class Meta:
+#         model = Project
+#         fields = '__all__'
 
-class ProjectCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = '__all__'
+# class ProjectCreateSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Project
+#         fields = '__all__'
     
-    def create(self, validated_data):
-        # Generate project code
-        project_count = Project.objects.count() + 1
-        project_code = f"PROJ-{project_count:06d}"
+#     def create(self, validated_data):
+#         # Generate project code
+#         project_count = Project.objects.count() + 1
+#         project_code = f"PROJ-{project_count:06d}"
         
-        project = Project.objects.create(
-            code=project_code,
-            **validated_data
-        )
+#         project = Project.objects.create(
+#             code=project_code,
+#             **validated_data
+#         )
         
-        return project
+#         return project
 
 class MilestoneSerializer(serializers.ModelSerializer):
     class Meta:

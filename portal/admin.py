@@ -1,25 +1,22 @@
 from django.contrib import admin
 from django.contrib.gis import admin as gis_admin
 from import_export import resources, fields
-from import_export.admin import ImportExportModelAdmin, ImportExportActionModelAdmin
-from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
+from import_export.admin import ImportExportModelAdmin
+from import_export.widgets import ForeignKeyWidget
+from leaflet.admin import LeafletGeoAdmin
 from .models import *
 
-from django.contrib import admin
-from django.contrib.gis import admin as gis_admin
-from leaflet.admin import LeafletGeoAdmin
-
-
 class GeoAdmin(gis_admin.GISModelAdmin):
-    default_lon = -1  # Default longitude
-    default_lat = 6   # Default latitude (adjust for Ghana)
-    default_zoom = 7  # Default zoom level
+    default_lon = -1
+    default_lat = 6
+    default_zoom = 7
+
 # Region Resource
 class RegionResource(resources.ModelResource):
     class Meta:
         model = Region
         import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'geom','created_at', 'updated_at')
+        fields = ('id', 'name', 'code', 'geom', 'created_at', 'updated_at')
 
 # District Resource
 class DistrictResource(resources.ModelResource):
@@ -72,11 +69,22 @@ class FarmerResource(resources.ModelResource):
         attribute='user_profile',
         widget=ForeignKeyWidget(UserProfile, 'user__username')
     )
+    district = fields.Field(
+        column_name='district',
+        attribute='district',
+        widget=ForeignKeyWidget(District, 'name')
+    )
     
     class Meta:
         model = Farmer
         import_id_fields = ['national_id']
-        fields = ('id', 'user_profile', 'national_id', 'farm_size', 'years_of_experience', 'primary_crop', 'secondary_crops', 'cooperative_membership', 'extension_services')
+        fields = (
+            'id', 'user_profile', 'national_id', 'years_of_experience', 
+            'primary_crop', 'secondary_crops', 'cooperative_membership', 
+            'extension_services', 'business_name', 'district', 'community',
+            'crop_type', 'variety', 'planting_date', 'labour_hired',
+            'estimated_yield', 'yield_in_pre_season', 'harvest_date'
+        )
 
 # Farm Resource
 class FarmResource(resources.ModelResource):
@@ -85,11 +93,23 @@ class FarmResource(resources.ModelResource):
         attribute='farmer',
         widget=ForeignKeyWidget(Farmer, 'national_id')
     )
+    officer = fields.Field(
+        column_name='officer',
+        attribute='officer',
+        widget=ForeignKeyWidget(Staff, 'staff_id')
+    )
     
     class Meta:
         model = Farm
         import_id_fields = ['farm_code']
-        fields = ('id', 'farmer', 'name', 'farm_code', 'area_hectares', 'soil_type', 'irrigation_type', 'irrigation_coverage', 'status', 'registration_date')
+        fields = (
+            'id', 'farmer', 'name', 'farm_code', 'area_hectares', 
+            'soil_type', 'irrigation_type', 'irrigation_coverage', 'status',
+            'registration_date', 'last_visit_date', 'validation_status',
+            'location', 'boundary', 'altitude', 'slope', 'main_buyers',
+            'land_use_classification', 'accessibility', 'service_provider',
+            'farmer_groups_affiliated', 'value_chain_linkages', 'officer'
+        )
 
 # Project Resource
 class ProjectResource(resources.ModelResource):
@@ -102,159 +122,8 @@ class ProjectResource(resources.ModelResource):
     class Meta:
         model = Project
         import_id_fields = ['code']
-        fields = ('id', 'name', 'code', 'description', 'start_date', 'end_date', 'status', 'total_budget', 'manager')
-
-# Loan Resource
-class LoanResource(resources.ModelResource):
-    farmer = fields.Field(
-        column_name='farmer',
-        attribute='farmer',
-        widget=ForeignKeyWidget(Farmer, 'national_id')
-    )
-    
-    project = fields.Field(
-        column_name='project',
-        attribute='project',
-        widget=ForeignKeyWidget(Project, 'code')
-    )
-    
-    class Meta:
-        model = Loan
-        import_id_fields = ['loan_id']
-        fields = ('id', 'farmer', 'project', 'loan_id', 'amount', 'purpose', 'application_date', 'approval_date', 'interest_rate', 'term_months', 'status', 'collateral_details')
-
-# MangoVariety Resource
-class MangoVarietyResource(resources.ModelResource):
-    class Meta:
-        model = MangoVariety
-        fields = ('id', 'name', 'scientific_name', 'description', 'maturity_period', 'yield_potential')
-
-# FarmCrop Resource
-class FarmCropResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    variety = fields.Field(
-        column_name='variety',
-        attribute='variety',
-        widget=ForeignKeyWidget(MangoVariety, 'name')
-    )
-    
-    class Meta:
-        model = FarmCrop
-        fields = ('id', 'farm', 'variety', 'planting_date', 'planting_density', 'total_trees', 'expected_yield')
-
-# FarmInput Resource
-class FarmInputResource(resources.ModelResource):
-    class Meta:
-        model = FarmInput
-        fields = ('id', 'name', 'type', 'description', 'unit', 'unit_cost')
-
-# InputDistribution Resource
-class InputDistributionResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    input_item = fields.Field(
-        column_name='input_item',
-        attribute='input_item',
-        widget=ForeignKeyWidget(FarmInput, 'name')
-    )
-    
-    distributed_by = fields.Field(
-        column_name='distributed_by',
-        attribute='distributed_by',
-        widget=ForeignKeyWidget(Staff, 'staff_id')
-    )
-    
-    class Meta:
-        model = InputDistribution
-        fields = ('id', 'farm', 'input_item', 'quantity', 'distribution_date', 'distributed_by', 'notes')
-
-# FarmVisit Resource
-class FarmVisitResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    conducted_by = fields.Field(
-        column_name='conducted_by',
-        attribute='conducted_by',
-        widget=ForeignKeyWidget(Staff, 'staff_id')
-    )
-    
-    class Meta:
-        model = FarmVisit
-        fields = ('id', 'farm', 'visit_date', 'conducted_by', 'purpose', 'observations', 'recommendations', 'next_visit_date', 'latitude', 'longitude', 'accuracy')
-
-# Tree Resource
-class TreeResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    variety = fields.Field(
-        column_name='variety',
-        attribute='variety',
-        widget=ForeignKeyWidget(MangoVariety, 'name')
-    )
-    
-    class Meta:
-        model = Tree
-        import_id_fields = ['tree_id']
-        fields = ('id', 'farm', 'tree_id', 'variety', 'planting_date', 'status', 'height', 'circumference', 'age')
-
-# Harvest Resource
-class HarvestResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    variety = fields.Field(
-        column_name='variety',
-        attribute='variety',
-        widget=ForeignKeyWidget(MangoVariety, 'name')
-    )
-    
-    recorded_by = fields.Field(
-        column_name='recorded_by',
-        attribute='recorded_by',
-        widget=ForeignKeyWidget(Staff, 'staff_id')
-    )
-    
-    class Meta:
-        model = Harvest
-        fields = ('id', 'farm', 'harvest_date', 'variety', 'quantity', 'quality_grade', 'recorded_by', 'notes')
-
-# Sale Resource
-class SaleResource(resources.ModelResource):
-    farm = fields.Field(
-        column_name='farm',
-        attribute='farm',
-        widget=ForeignKeyWidget(Farm, 'farm_code')
-    )
-    
-    recorded_by = fields.Field(
-        column_name='recorded_by',
-        attribute='recorded_by',
-        widget=ForeignKeyWidget(Staff, 'staff_id')
-    )
-    
-    class Meta:
-        model = Sale
-        fields = ('id', 'farm', 'sale_date', 'buyer', 'quantity', 'price_per_kg', 'total_amount', 'recorded_by', 'notes')
+        fields = ('id', 'name', 'code', 'description', 'start_date', 'end_date', 
+                 'status', 'total_budget', 'manager')
 
 # Admin Classes
 @admin.register(Region)
@@ -281,39 +150,106 @@ class UserProfileAdmin(ImportExportModelAdmin):
 @admin.register(Staff)
 class StaffAdmin(ImportExportModelAdmin):
     resource_class = StaffResource
-    list_display = ('staff_id', 'user_profile__user__username', 'designation', 'date_joined', 'is_active')
+    list_display = ('staff_id', 'get_username', 'designation', 'date_joined', 'is_active')
     list_filter = ('designation', 'is_active', 'date_joined')
     search_fields = ('staff_id', 'user_profile__user__username', 'designation')
     filter_horizontal = ('assigned_districts',)
+    
+    def get_username(self, obj):
+        return obj.user_profile.user.username
+    get_username.short_description = 'Username'
+    get_username.admin_order_field = 'user_profile__user__username'
 
 @admin.register(Farmer)
 class FarmerAdmin(ImportExportModelAdmin):
     resource_class = FarmerResource
-    list_display = ('national_id', 'user_profile', 'farm_size', 'primary_crop', 'extension_services')
-    list_filter = ('primary_crop', 'extension_services', 'years_of_experience')
-    search_fields = ('national_id', 'user_profile__user__username', 'primary_crop')
-
-# @admin.register(Farm)
-# class FarmAdmin(GeoAdmin, ImportExportModelAdmin):
-#     resource_class = FarmResource
-#     list_display = ('name', 'farm_code', 'farmer', 'area_hectares', 'status', 'registration_date')
-#     list_filter = ('status', 'soil_type', 'irrigation_type', 'registration_date')
-#     search_fields = ('name', 'farm_code', 'farmer__national_id')
-#     readonly_fields = ('farm_code',)
-
-
-# In your admin.py
-from django.contrib.gis import admin
-from leaflet.admin import LeafletGeoAdmin
-from .models import Farm, Farmer, FarmCrop
+    list_display = (
+        'national_id', 'get_username', 'get_full_name', 'district', 
+        'primary_crop', 'years_of_experience', 'extension_services', 
+        'cooperative_membership', 'farms_count'
+    )
+    list_filter = (
+        'primary_crop', 'extension_services', 'years_of_experience',
+        'district', 'cooperative_membership'
+    )
+    search_fields = (
+        'national_id', 'user_profile__user__username', 
+        'user_profile__user__first_name', 'user_profile__user__last_name',
+        'primary_crop', 'business_name', 'community'
+    )
+    list_select_related = ('user_profile__user', 'district')
+    readonly_fields = ('national_id', 'created_at', 'updated_at', 'farms_count')
+    date_hierarchy = 'user_profile__user__date_joined'
+    
+    fieldsets = (
+        ('Personal Information', {
+            'fields': (
+                'user_profile', 'national_id', 'business_name'
+            )
+        }),
+        ('Location Details', {
+            'fields': (
+                'district', 'community'
+            )
+        }),
+        ('Farming Information', {
+            'fields': (
+                'years_of_experience', 'primary_crop', 'secondary_crops',
+                'crop_type', 'variety', 'extension_services'
+            )
+        }),
+        ('Production Details', {
+            'fields': (
+                'planting_date', 'harvest_date', 'labour_hired',
+                'estimated_yield', 'yield_in_pre_season'
+            )
+        }),
+        ('Organizational Information', {
+            'fields': (
+                'cooperative_membership',
+            )
+        }),
+        ('Metadata', {
+            'fields': (
+                'created_at', 'updated_at', 'farms_count'
+            ),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_username(self, obj):
+        return obj.user_profile.user.username
+    get_username.short_description = 'Username'
+    get_username.admin_order_field = 'user_profile__user__username'
+    
+    def get_full_name(self, obj):
+        return obj.user_profile.user.get_full_name()
+    get_full_name.short_description = 'Full Name'
+    get_full_name.admin_order_field = 'user_profile__user__first_name'
+    
+    def farms_count(self, obj):
+        return obj.farms.count()
+    farms_count.short_description = 'Number of Farms'
 
 @admin.register(Farm)
-class FarmAdmin(LeafletGeoAdmin):
-    list_display = ('farm_code', 'name', 'farmer', 'status', 'area_hectares', 'validation_status', 'boundary_preview')
-    list_filter = ('status', 'validation_status', 'soil_type', 'irrigation_type', 'registration_date')
-    search_fields = ('farm_code', 'name', 'farmer__first_name', 'farmer__last_name', 'farmer__national_id')
-    readonly_fields = ('farm_code', 'registration_date')
+class FarmAdmin(LeafletGeoAdmin, ImportExportModelAdmin):
+    resource_class = FarmResource
+    list_display = (
+        'farm_code', 'name', 'get_farmer_name', 'get_farmer_national_id',
+        'status', 'area_hectares', 'validation_status', 'boundary_preview',
+        'registration_date', 'last_visit_date'
+    )
+    list_filter = (
+        'status', 'validation_status', 'soil_type', 'irrigation_type', 
+        'registration_date'
+    )
+    search_fields = (
+        'farm_code', 'name', 'farmer__user_profile__user__first_name',
+        'farmer__user_profile__user__last_name', 'farmer__national_id'
+    )
+    readonly_fields = ('farm_code', 'registration_date', 'created_at', 'updated_at')
     date_hierarchy = 'registration_date'
+    list_select_related = ('farmer__user_profile__user',)
     
     # Leaflet map settings
     settings_overrides = {
@@ -321,355 +257,100 @@ class FarmAdmin(LeafletGeoAdmin):
         'DEFAULT_ZOOM': 7,
         'MIN_ZOOM': 1,
         'MAX_ZOOM': 18,
-        # 'SPATIAL_EXTENT': (-3.5, 4.5, 1.5, 11.5),  # Ghana bounds
     }
     
     fieldsets = (
         ('Basic Information', {
             'fields': (
-                'farm_code', 'farmer', 'name', 'status', 
+                'farm_code', 'farmer', 'name', 'status',
                 'registration_date', 'last_visit_date', 'validation_status'
             )
         }),
         ('Location Details', {
             'fields': (
                 'location', 'boundary', 'geom',
-                'area_hectares', 'soil_type'
+                'area_hectares', 'soil_type', 'altitude', 'slope'
             ),
             'description': 'Click on the map to set location or draw boundary polygon'
         }),
-        ('Irrigation & Environment', {
+        ('Irrigation & Infrastructure', {
             'fields': (
                 'irrigation_type', 'irrigation_coverage',
-                'altitude', 'slope'
+                'land_use_classification', 'accessibility',
+                'proximity_to_processing_plants'
             )
+        }),
+        ('Business & Organizational', {
+            'fields': (
+                'main_buyers', 'service_provider',
+                'farmer_groups_affiliated', 'value_chain_linkages'
+            )
+        }),
+        ('Field Visit Information', {
+            'fields': (
+                'officer', 'visit_date', 'observation',
+                'issues_identified', 'infrastructure_identified',
+                'recommended_actions', 'follow_up_actions'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': (
+                'created_at', 'updated_at'
+            ),
+            'classes': ('collapse',)
         }),
     )
     
+    def get_farmer_name(self, obj):
+        return str(obj.farmer)
+    get_farmer_name.short_description = 'Farmer Name'
+    get_farmer_name.admin_order_field = 'farmer__user_profile__user__first_name'
+    
+    def get_farmer_national_id(self, obj):
+        return obj.farmer.national_id
+    get_farmer_national_id.short_description = 'Farmer ID'
+    get_farmer_national_id.admin_order_field = 'farmer__national_id'
+    
     def boundary_preview(self, obj):
         if obj.boundary:
-            return f"✅ {obj.boundary.num_points} points"
+            return f"✅ {obj.boundary.num_points} points ({obj.area_hectares or 'N/A'} ha)"
         return "❌ No boundary"
     boundary_preview.short_description = "Boundary"
 
-
-
+    # Actions
+    actions = ['validate_farms', 'mark_as_active']
+    
+    def validate_farms(self, request, queryset):
+        updated = queryset.update(validation_status=True)
+        self.message_user(request, f'{updated} farms validated successfully.')
+    validate_farms.short_description = "Validate selected farms"
+    
+    def mark_as_active(self, request, queryset):
+        updated = queryset.update(status='active')
+        self.message_user(request, f'{updated} farms marked as active.')
+    mark_as_active.short_description = "Mark selected farms as active"
 
 @admin.register(Project)
 class ProjectAdmin(ImportExportModelAdmin):
     resource_class = ProjectResource
-    list_display = ('name', 'code', 'start_date', 'end_date', 'status', 'total_budget')
+    list_display = ('name', 'code', 'start_date', 'end_date', 'status', 'total_budget', 'get_manager_name')
     list_filter = ('status', 'start_date', 'end_date')
-    search_fields = ('name', 'code', 'description')
-    # filter_horizontal = ('participating_farmers',)
-
-@admin.register(ProjectParticipation)
-class ProjectParticipationAdmin(ImportExportModelAdmin):
-    list_display = ('farmer', 'project', 'enrollment_date', 'status')
-    list_filter = ('status', 'enrollment_date')
-    search_fields = ('farmer__national_id', 'project__name')
-
-@admin.register(Loan)
-class LoanAdmin(ImportExportModelAdmin):
-    resource_class = LoanResource
-    list_display = ('loan_id', 'farmer', 'amount', 'status', 'application_date', 'approval_date')
-    list_filter = ('status', 'application_date', 'approval_date')
-    search_fields = ('loan_id', 'farmer__national_id', 'purpose')
-    readonly_fields = ('loan_id',)
-
-@admin.register(LoanDisbursement)
-class LoanDisbursementAdmin(ImportExportModelAdmin):
-    list_display = ('loan', 'amount', 'disbursement_date', 'stage')
-    list_filter = ('disbursement_date', 'stage')
-    search_fields = ('loan__loan_id', 'transaction_reference')
-
-@admin.register(LoanRepayment)
-class LoanRepaymentAdmin(ImportExportModelAdmin):
-    list_display = ('loan', 'amount', 'repayment_date')
-    list_filter = ('repayment_date',)
-    search_fields = ('loan__loan_id', 'transaction_reference')
-
-@admin.register(MangoVariety)
-class MangoVarietyAdmin(ImportExportModelAdmin):
-    resource_class = MangoVarietyResource
-    list_display = ('name', 'scientific_name', 'maturity_period', 'yield_potential')
-    search_fields = ('name', 'scientific_name')
-
-@admin.register(FarmCrop)
-class FarmCropAdmin(ImportExportModelAdmin):
-    resource_class = FarmCropResource
-    list_display = ('farm', 'variety', 'planting_date', 'total_trees', 'expected_yield')
-    list_filter = ('variety', 'planting_date')
-    search_fields = ('farm__farm_code', 'variety__name')
-
-@admin.register(FarmInput)
-class FarmInputAdmin(ImportExportModelAdmin):
-    resource_class = FarmInputResource
-    list_display = ('name', 'type', 'unit', 'unit_cost')
-    list_filter = ('type',)
-    search_fields = ('name', 'type')
-
-@admin.register(InputDistribution)
-class InputDistributionAdmin(ImportExportModelAdmin):
-    resource_class = InputDistributionResource
-    list_display = ('farm', 'input_item', 'quantity', 'distribution_date')
-    list_filter = ('distribution_date', 'input_item__type')
-    search_fields = ('farm__farm_code', 'input_item__name')
-
-@admin.register(FarmVisit)
-class FarmVisitAdmin(ImportExportModelAdmin):
-    resource_class = FarmVisitResource
-    list_display = ('farm', 'visit_date', 'conducted_by', 'purpose')
-    list_filter = ('visit_date', 'conducted_by')
-    search_fields = ('farm__farm_code', 'purpose', 'conducted_by__staff_id')
-
-@admin.register(FarmPhoto)
-class FarmPhotoAdmin(ImportExportModelAdmin):
-    list_display = ('farm', 'photo_type', 'taken_at')
-    list_filter = ('photo_type', 'taken_at')
-    search_fields = ('farm__farm_code', 'caption')
-    readonly_fields = ('image_preview',)
+    search_fields = ('name', 'code', 'description', 'manager__user_profile__user__first_name')
+    readonly_fields = ('created_at', 'updated_at')
     
-    def image_preview(self, obj):
-        if obj.image:
-            return f'<img src="{obj.image.url}" style="max-height: 200px; max-width: 200px;" />'
-        return "No image"
-    image_preview.allow_tags = True
+    def get_manager_name(self, obj):
+        return str(obj.manager) if obj.manager else "Not assigned"
+    get_manager_name.short_description = 'Manager'
 
-@admin.register(Tree)
-class TreeAdmin(GeoAdmin, ImportExportModelAdmin):
-    resource_class = TreeResource
-    list_display = ('tree_id', 'farm', 'variety', 'planting_date', 'status')
-    list_filter = ('status', 'variety', 'planting_date')
-    search_fields = ('tree_id', 'farm__farm_code', 'variety__name')
-    readonly_fields = ('tree_id',)
-
-@admin.register(TreeMonitoring)
-class TreeMonitoringAdmin(ImportExportModelAdmin):
-    list_display = ('tree', 'monitor_date', 'status', 'monitored_by')
-    list_filter = ('monitor_date', 'status')
-    search_fields = ('tree__tree_id', 'monitored_by__staff_id')
-
-@admin.register(Harvest)
-class HarvestAdmin(ImportExportModelAdmin):
-    resource_class = HarvestResource
-    list_display = ('farm', 'harvest_date', 'variety', 'quantity', 'quality_grade')
-    list_filter = ('harvest_date', 'quality_grade', 'variety')
-    search_fields = ('farm__farm_code', 'variety__name')
-
-@admin.register(Sale)
-class SaleAdmin(ImportExportModelAdmin):
-    resource_class = SaleResource
-    list_display = ('farm', 'sale_date', 'buyer', 'quantity', 'total_amount')
-    list_filter = ('sale_date',)
-    search_fields = ('farm__farm_code', 'buyer')
-
-@admin.register(SatelliteImage)
-class SatelliteImageAdmin(ImportExportModelAdmin):
-    list_display = ('farm', 'image_date', 'image_type', 'ndvi_value')
-    list_filter = ('image_date', 'image_type')
-    search_fields = ('farm__farm_code', 'source')
-
-@admin.register(DroneImage)
-class DroneImageAdmin(ImportExportModelAdmin):
-    list_display = ('farm', 'flight_date', 'image_type', 'operator')
-    list_filter = ('flight_date', 'image_type')
-    search_fields = ('farm__farm_code', 'operator__staff_id')
-
-@admin.register(SensorData)
-class SensorDataAdmin(ImportExportModelAdmin):
-    list_display = ('farm', 'sensor_type', 'value', 'unit', 'recorded_at')
-    list_filter = ('sensor_type', 'recorded_at')
-    search_fields = ('farm__farm_code', 'sensor_id')
-
-@admin.register(Notification)
-class NotificationAdmin(ImportExportModelAdmin):
-    list_display = ('recipient', 'notification_type', 'title', 'sent_at', 'read')
-    list_filter = ('notification_type', 'sent_at', 'read')
-    search_fields = ('recipient__user__username', 'title', 'message')
-
-@admin.register(MessageTemplate)
-class MessageTemplateAdmin(ImportExportModelAdmin):
-    list_display = ('name', 'message_type', 'is_active')
-    list_filter = ('message_type', 'is_active')
-    search_fields = ('name', 'subject')
-
-@admin.register(AuditLog)
-class AuditLogAdmin(ImportExportModelAdmin):
-    list_display = ('user', 'action_type', 'model_name', 'timestamp')
-    list_filter = ('action_type', 'model_name', 'timestamp')
-    search_fields = ('user__username', 'model_name', 'object_id')
-    readonly_fields = ('user', 'action_type', 'model_name', 'object_id', 'details', 'timestamp')
-
-@admin.register(SystemSetting)
-class SystemSettingAdmin(ImportExportModelAdmin):
-    list_display = ('key', 'value', 'is_public', 'updated_at')
-    list_filter = ('is_public',)
-    search_fields = ('key', 'description')
-
-@admin.register(DataExport)
-class DataExportAdmin(ImportExportModelAdmin):
-    list_display = ('requested_by', 'export_format', 'model_name', 'status', 'requested_at')
-    list_filter = ('export_format', 'status', 'requested_at')
-    search_fields = ('requested_by__username', 'model_name')
-    readonly_fields = ('requested_by', 'requested_at', 'completed_at', 'status')
-
-
-from django.contrib import admin
-from .models import MonitoringVisit, FollowUpAction, Infrastructure
-
-
-class FollowUpActionInline(admin.TabularInline):
-    model = FollowUpAction
-    extra = 1
-    fields = ("action_description", "responsible_person", "deadline", "status", "notes")
+# Farm Inline for Farmer Admin
+class FarmInline(admin.TabularInline):
+    model = Farm
+    extra = 0
+    fields = ('farm_code', 'name', 'status', 'area_hectares', 'validation_status', 'registration_date')
+    readonly_fields = ('farm_code', 'registration_date')
+    can_delete = False
     show_change_link = True
 
-
-class InfrastructureInline(admin.TabularInline):
-    model = Infrastructure
-    extra = 1
-    fields = ("infrastructure_type", "description", "condition")
-    show_change_link = True
-
-
-@admin.register(MonitoringVisit)
-class MonitoringVisitAdmin(admin.ModelAdmin):
-    list_display = ("visit_id", "date_of_visit", "officer", "farm", "follow_up_status", "created_at")
-    list_filter = ("follow_up_status", "date_of_visit", "officer")
-    search_fields = ("visit_id", "officer__user__username", "officer__user__first_name", "officer__user__last_name", "farm__name")
-    inlines = [FollowUpActionInline, InfrastructureInline]
-    ordering = ("-date_of_visit", "visit_id")
-    readonly_fields = ("created_at", "updated_at")
-
-
-@admin.register(FollowUpAction)
-class FollowUpActionAdmin(admin.ModelAdmin):
-    list_display = ("monitoring_visit", "responsible_person", "deadline", "status", "created_at")
-    list_filter = ("status", "deadline")
-    search_fields = ("monitoring_visit__visit_id", "responsible_person")
-    ordering = ("deadline",)
-    readonly_fields = ("created_at", "updated_at")
-
-
-@admin.register(Infrastructure)
-class InfrastructureAdmin(admin.ModelAdmin):
-    list_display = ("monitoring_visit", "infrastructure_type", "condition")
-    list_filter = ("condition", "infrastructure_type")
-    search_fields = ("monitoring_visit__visit_id", "infrastructure_type")
-
-
-from django.contrib import admin
-from django.contrib.gis.admin import GISModelAdmin
-from .models import (
-    TreeDensityData, CropHealthData, IrrigationSource, 
-    SoilTypeArea, ClimateZone, RoadNetwork
-)
-
-@admin.register(TreeDensityData)
-class TreeDensityDataAdmin(GISModelAdmin):
-    list_display = ('id', 'density', 'trees_per_hectare', 'region', 'recorded_date')
-    list_filter = ('density', 'region', 'recorded_date')
-    search_fields = ('region__name', 'density')
-    ordering = ('-recorded_date',)
-    date_hierarchy = 'recorded_date'
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Location Information', {
-            'fields': ('location', 'region', 'recorded_date')
-        }),
-        ('Tree Density Details', {
-            'fields': ('density', 'trees_per_hectare', 'source', 'accuracy')
-        }),
-    )
-
-@admin.register(CropHealthData)
-class CropHealthDataAdmin(GISModelAdmin):
-    list_display = ('id', 'ndvi', 'health', 'region', 'recorded_date')
-    list_filter = ('health', 'region', 'recorded_date')
-    search_fields = ('region__name', 'health')
-    ordering = ('-recorded_date',)
-    date_hierarchy = 'recorded_date'
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Location Information', {
-            'fields': ('location', 'region', 'recorded_date', 'farm')
-        }),
-        ('Crop Health Details', {
-            'fields': ('ndvi', 'health', 'source')
-        }),
-    )
-
-@admin.register(IrrigationSource)
-class IrrigationSourceAdmin(GISModelAdmin):
-    list_display = ('id', 'source_type', 'capacity', 'region', 'operational_status')
-    list_filter = ('source_type', 'capacity', 'region', 'operational_status')
-    search_fields = ('region__name', 'source_type', 'district__name')
-    ordering = ('region', 'source_type')
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Location Information', {
-            'fields': ('location', 'region', 'district')
-        }),
-        ('Irrigation Details', {
-            'fields': ('source_type', 'capacity', 'operational_status', 'coverage_area')
-        }),
-        ('Additional Information', {
-            'fields': ('installation_date',),
-            'classes': ('collapse',)
-        }),
-    )
-
-@admin.register(SoilTypeArea)
-class SoilTypeAreaAdmin(GISModelAdmin):
-    list_display = ('id', 'soil_type', 'fertility', 'region', 'area_hectares')
-    list_filter = ('soil_type', 'fertility', 'region')
-    search_fields = ('region__name', 'soil_type')
-    ordering = ('region', 'soil_type')
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Geographical Information', {
-            'fields': ('boundary', 'region', 'area_hectares')
-        }),
-        ('Soil Properties', {
-            'fields': ('soil_type', 'fertility', 'ph_level', 'organic_matter')
-        }),
-    )
-
-@admin.register(ClimateZone)
-class ClimateZoneAdmin(GISModelAdmin):
-    list_display = ('id', 'zone_name', 'rainfall', 'region', 'avg_temperature')
-    list_filter = ('rainfall', 'region')
-    search_fields = ('region__name', 'zone_name')
-    ordering = ('region', 'zone_name')
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Geographical Information', {
-            'fields': ('boundary', 'region')
-        }),
-        ('Climate Details', {
-            'fields': ('zone_name', 'rainfall', 'avg_temperature', 'avg_rainfall')
-        }),
-    )
-
-@admin.register(RoadNetwork)
-class RoadNetworkAdmin(GISModelAdmin):
-    list_display = ('id', 'name', 'road_type', 'condition', 'region', 'length_km')
-    list_filter = ('road_type', 'condition', 'region')
-    search_fields = ('name', 'region__name', 'district__name')
-    ordering = ('region', 'road_type')
-    list_per_page = 20
-    
-    fieldsets = (
-        ('Geographical Information', {
-            'fields': ('path', 'region', 'district', 'length_km')
-        }),
-        ('Road Details', {
-            'fields': ('name', 'road_type', 'condition')
-        }),
-    )
+# Add inline to FarmerAdmin
+FarmerAdmin.inlines = [FarmInline]

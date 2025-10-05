@@ -45,6 +45,7 @@ urlpatterns = [
     
     # Projects
     path('v1/projects/', views.ProjectAPIView.as_view(), name='projects'),
+    path('v1/projects/<str:district>/', views.ProjectAPIView.as_view(), name='projects-by-district'),
 
     # Milestones
     path('v1/milestones/<int:project_id>/', views.MilestoneAPIView.as_view(), name='milestones-by-project'),

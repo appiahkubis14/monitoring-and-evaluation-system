@@ -152,12 +152,23 @@ class Staff(TimeStampModel):
 class Farmer(TimeStampModel):
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE, related_name='farmer_profile')
     national_id = models.CharField(max_length=50, unique=True)
-    farm_size = models.FloatField(help_text="Farm size in hectares")
+    
     years_of_experience = models.IntegerField(default=0)
     primary_crop = models.CharField(max_length=100, default="Mango")
     secondary_crops = ArrayField(models.CharField(max_length=100), blank=True, null=True)
     cooperative_membership = models.CharField(max_length=200, blank=True, null=True)
     extension_services = models.BooleanField(default=False)
+    business_name = models.CharField(max_length=200, blank=True, null=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, blank=True, null=True)
+    
+    community = models.CharField(max_length=200, blank=True, null=True)
+    crop_type = models.CharField(max_length=200, blank=True, null=True)
+    variety = models.CharField(max_length=200, blank=True, null=True)
+    planting_date = models.DateField(blank=True, null=True)
+    labour_hired = models.PositiveIntegerField(default=0)
+    estimated_yield = models.CharField(max_length=200, blank=True, null=True)
+    yield_in_pre_season = models.CharField(max_length=200, blank=True, null=True)
+    harvest_date = models.DateField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.user_profile.user.get_full_name()} - {self.national_id}"
@@ -175,6 +186,30 @@ class Farmer(TimeStampModel):
         super().save(*args, **kwargs)
 
 
+class Project(TimeStampModel):
+    PROJECT_STATUS = (
+        ('planning', 'Planning'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('suspended', 'Suspended'),
+    )
+    
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='planning')
+    total_budget = models.DecimalField(max_digits=12, decimal_places=2)
+    manager = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, related_name='managed_projects')
+    participating_farmers = models.ManyToManyField(Farmer, through='ProjectParticipation', related_name='projects')
+    
+    def __str__(self):
+        return f"{self.name} - {self.code}"
+    
+    class Meta:
+        verbose_name = "Project"
+        verbose_name_plural = "Projects"
 
 class Farm(TimeStampModel):
     FARM_STATUS = (
@@ -188,13 +223,31 @@ class Farm(TimeStampModel):
     farmer = models.ForeignKey(Farmer, on_delete=models.CASCADE, related_name='farms')
     name = models.CharField(max_length=200, blank=True, null=True)
     farm_code = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
+    main_buyers = models.TextField(blank=True, null=True)
+    land_use_classification = models.CharField(max_length=100, blank=True, null=True)
+    has_farm_boundary_polygon = models.BooleanField(default=False)
+    accessibility = models.CharField(max_length=100, blank=True, null=True)
+    proximity_to_processing_plants = models.CharField(max_length=100, blank=True, null=True)
+    service_provider = models.CharField(max_length=100, blank=True, null=True)
+    farmer_groups_affiliated = models.CharField(max_length=100, blank=True, null=True)
+    value_chain_linkages = models.CharField(max_length=100, blank=True, null=True)
+    visit_id = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    visit_date = models.DateField(blank=True, null=True)
+    officer = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True)
+    observation = models.TextField(blank=True, null=True)
+    issues_identified = models.TextField(blank=True, null=True)
+    infrastructure_identified = models.TextField(blank=True, null=True)
+    recommended_actions = models.TextField(blank=True, null=True)
+    follow_up_actions = models.TextField(blank=True, null=True)
+
     location = gis_models.PointField(geography=True, srid=4326, blank=True, null=True)
     boundary = gis_models.PolygonField(geography=True, srid=4326, blank=True, null=True)
     area_hectares = models.FloatField(validators=[MinValueValidator(0.1)], blank=True, null=True)
     soil_type = models.CharField(max_length=100, blank=True, null=True)
     irrigation_type = models.CharField(max_length=100, blank=True, null=True)
-    irrigation_coverage = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0)
-    status = models.CharField(max_length=20, choices=FARM_STATUS, default='active')
+    irrigation_coverage = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=FARM_STATUS, default='active', blank=True, null=True)
     registration_date = models.DateField(default=timezone.now)
     last_visit_date = models.DateField(blank=True, null=True)
     boundary_coord = ArrayField(ArrayField(models.FloatField()), blank=True, null=True)
@@ -341,31 +394,7 @@ class Infrastructure(models.Model):
 
 
 
-# Project and Loan Management Models
-class Project(TimeStampModel):
-    PROJECT_STATUS = (
-        ('planning', 'Planning'),
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('suspended', 'Suspended'),
-    )
-    
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True, null=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    status = models.CharField(max_length=20, choices=PROJECT_STATUS, default='planning')
-    total_budget = models.DecimalField(max_digits=12, decimal_places=2)
-    manager = models.ForeignKey(Staff, on_delete=models.SET_NULL, blank=True, null=True, related_name='managed_projects')
-    participating_farmers = models.ManyToManyField(Farmer, through='ProjectParticipation', related_name='projects')
-    
-    def __str__(self):
-        return f"{self.name} - {self.code}"
-    
-    class Meta:
-        verbose_name = "Project"
-        verbose_name_plural = "Projects"
+
 
 class ProjectParticipation(TimeStampModel):
     farmer = models.ForeignKey(Farmer, on_delete=models.CASCADE)

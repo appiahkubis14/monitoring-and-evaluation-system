@@ -41,29 +41,33 @@ def staff_exists_required(func):
 @method_decorator(csrf_exempt, name='dispatch')
 class versionTblView(APIView):
     def post(self, request):
+        status = {
+            "status": False,
+            "msg": "Error Occured!",
+            "data": None
+        }
+        
         try:
             data = json.loads(request.body)
-            status ={}
-            status["status"] =False
-
-            if data["version"] :
-                if versionTbl.objects.filter(version=data["version"]).exists():
-                    status["status"] =  1
-                    status["msg"] =  "sucessful"
-                else:
-                    status["status"] =  0
-                    status["msg"] =  "not sucessful"
-                    
-            else:
-                status["status"] =  0
-                status["msg"] =  "not sucessful"
-
-        except Exception as e:
             
-            status["status"] =  0
-            status["msg"] =  "Error Occured!"
-            status["data"] =str(e),
-            raise e
+            if data.get("version"):
+                if versionTbl.objects.filter(version=data["version"]).exists():
+                    status["status"] = True
+                    status["msg"] = "successful"
+                else:
+                    status["status"] = False
+                    status["msg"] = "not successful"
+            else:
+                status["status"] = False
+                status["msg"] = "version field is required"
+
+        except json.JSONDecodeError as e:
+            status["msg"] = "Invalid JSON format"
+            status["data"] = str(e)
+        except Exception as e:
+            status["msg"] = "Error Occurred!"
+            status["data"] = str(e)
+            
         return JsonResponse(status, safe=False)
 
 class StaffLoginAPIView(APIView):

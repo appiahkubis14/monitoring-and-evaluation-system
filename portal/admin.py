@@ -172,6 +172,8 @@ from django.contrib.gis import admin
 from leaflet.admin import LeafletGeoAdmin
 from import_export.admin import ImportExportModelAdmin
 
+admin.site.register(versionTbl)
+
 # Option 1: Use LeafletGeoAdmin as the base and add import-export functionality
 @admin.register(Region)
 class RegionAdmin(LeafletGeoAdmin, ImportExportModelAdmin):  # Change order

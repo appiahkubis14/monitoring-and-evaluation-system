@@ -127,11 +127,11 @@
                             <i class="fas fa-map-marked-alt me-2"></i>Farm Map
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
+                    <!-- <li class="nav-item" role="presentation">
                         <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="false">
                             <i class="fas fa-chart-pie me-2"></i>Statistics
                         </button>
-                    </li>
+                    </li> -->
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail" type="button" role="tab" aria-controls="detail" aria-selected="false">
                             <i class="fas fa-info-circle me-2"></i>Farm Details
@@ -202,11 +202,11 @@
     </div>
 
     <!-- Statistics Tab -->
-    <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+    <!-- <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
         <div class="row" id="statsContainer">
-            <!-- Statistics will be loaded via AJAX -->
+            
         </div>
-    </div>
+    </div> -->
 
     <!-- Detail Tab -->
     <div class="tab-pane fade" id="detail" role="tabpanel" aria-labelledby="detail-tab">
@@ -998,170 +998,201 @@ $(document).ready(function() {
     }
 
     // Update farm map with specific farm data
-    function updateFarmMap(farmId) {
-        // Clear existing markers
-        farmMarkers.forEach(marker => farmMap.removeLayer(marker));
-        farmMarkers = [];
-        
-        // Load farm data
-        $.ajax({
-            url: `/farmers/farms/geojson/${farmId}/`,
-            type: "GET",
-            success: function(response) {
-                if (response.features && response.features.length > 0) {
-                    const farmGroup = L.featureGroup();
+   // Update farm map with specific farm data
+function updateFarmMap(farmId) {
+    console.log('Updating map for farm ID:', farmId);
+    // Clear existing markers
+    farmMarkers.forEach(marker => farmMap.removeLayer(marker));
+    farmMarkers = [];
+    
+    // Load farm data
+    $.ajax({
+        url: `/farmers/farms/geojson/${farmId}/`,
+        type: "GET",
+        success: function(response) {
+            if (response.features && response.features.length > 0) {
+                const farmGroup = L.featureGroup();
+                
+                response.features.forEach(function(feature) {
+                    const geometry = feature.geometry;
+                    const properties = feature.properties;
+                    let layer;
                     
-                    response.features.forEach(function(feature) {
-                        const coords = feature.geometry.coordinates;
-                        const properties = feature.properties;
+                    if (geometry.type === 'Point') {
+                        // Create marker for farm location
+                        const coords = geometry.coordinates;
+                        layer = L.marker([coords[1], coords[0]], {
+                            icon: L.divIcon({
+                                className: 'farm-marker',
+                                html: '<div style="background-color:#FEBE14; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        });
                         
-                        if (properties.type === 'location') {
-                            // Create marker for farm location
-                            const marker = L.marker([coords[1], coords[0]], {
-                                icon: L.divIcon({
-                                    className: 'farm-marker',
-                                    html: '<div style="background-color:#FEBE14; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
-                                    iconSize: [20, 20],
-                                    iconAnchor: [10, 10]
-                                })
-                            });
-                            
-                            const popupContent = `
-                                <div class="farm-popup">
-                                    <h6>${properties.name}</h6>
-                                    <p><strong>Code:</strong> ${properties.farm_code}</p>
-                                    <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
-                                    <p><strong>Status:</strong> ${properties.status_display}</p>
-                                </div>
-                            `;
-                            
-                            marker.bindPopup(popupContent);
-                            farmGroup.addLayer(marker);
-                            farmMarkers.push(marker);
-                        } else if (properties.type === 'boundary') {
-                            // Create polygon for farm boundary
-                            const polygon = L.geoJSON(feature.geometry, {
-                                style: {
-                                    color: '#0ab39c',
-                                    weight: 3,
-                                    opacity: 0.8,
-                                    fillColor: '#0ab39c',
-                                    fillOpacity: 0.2
-                                }
-                            });
-                            
-                            const popupContent = `
-                                <div class="farm-popup">
-                                    <h6>${properties.name} Boundary</h6>
-                                    <p><strong>Code:</strong> ${properties.farm_code}</p>
-                                    <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
-                                </div>
-                            `;
-                            
-                            polygon.bindPopup(popupContent);
-                            farmGroup.addLayer(polygon);
-                            farmMarkers.push(polygon);
-                        }
-                    });
-                    
-                    // Add all features to map and fit bounds
-                    farmGroup.addTo(farmMap);
-                    farmMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
-                } else {
-                    // Show message if no data found
-                    farmMap.setView([7.9465, -1.0232], 8);
-                    L.popup()
-                        .setLatLng([7.9465, -1.0232])
-                        .setContent('No location data found for this farm')
-                        .openOn(farmMap);
-                }
+                        const popupContent = `
+                            <div class="farm-popup">
+                                <h6>${properties.name}</h6>
+                                <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                                <p><strong>Status:</strong> ${properties.status_display}</p>
+                            </div>
+                        `;
+                        
+                        layer.bindPopup(popupContent);
+                        farmGroup.addLayer(layer);
+                        farmMarkers.push(layer);
+                    } else if (geometry.type === 'Polygon') {
+                        // Create polygon for farm boundary
+                        const coords = geometry.coordinates[0]; // First ring of polygon
+                        const latLngs = coords.map(coord => [coord[1], coord[0]]);
+                        layer = L.polygon(latLngs, {
+                            color: '#0ab39c',
+                            weight: 3,
+                            opacity: 0.8,
+                            fillColor: '#0ab39c',
+                            fillOpacity: 0.2
+                        });
+                        
+                        const popupContent = `
+                            <div class="farm-popup">
+                                <h6>${properties.name} Boundary</h6>
+                                <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                            </div>
+                        `;
+                        
+                        layer.bindPopup(popupContent);
+                        farmGroup.addLayer(layer);
+                        farmMarkers.push(layer);
+                    }
+                });
+                
+                // Add all features to map and fit bounds
+                farmGroup.addTo(farmMap);
+                farmMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
+                console.log('Map updated with', response.features.length, 'features');
+            } else {
+                // Show message if no data found
+                farmMap.setView([7.9465, -1.0232], 8);
+                L.popup()
+                    .setLatLng([7.9465, -1.0232])
+                    .setContent('No location data found for this farm')
+                    .openOn(farmMap);
+                console.log('No farm location data found');
             }
-        });
-    }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading farm geojson:', error);
+            // Show error message
+            farmMap.setView([7.9465, -1.0232], 8);
+            L.popup()
+                .setLatLng([7.9465, -1.0232])
+                .setContent('Error loading farm location data')
+                .openOn(farmMap);
+        }
+    });
+}
 
     // Load farm details
-    function loadFarmDetails(farmId) {
-        $.ajax({
-            url: `/farmers/farms/detail/${farmId}/`,
-            type: "GET",
-            success: function(response) {
-                if (response.success) {
-                    const farm = response.farm;
-                    
-                    // Update detail card
-                    $('#farmName').text(farm.name);
-                    $('#farmCode').text(farm.farm_code);
-                    $('#farmFarmer').text(`${farm.farmer_name} (${farm.national_id})`);
-                    $('#farmArea').text(farm.area_hectares);
-                    $('#farmStatus').html(`<span class="status-badge status-${farm.status}">${farm.status_display}</span>`);
-                    $('#farmSoilType').text(farm.soil_type);
-                    $('#farmIrrigation').text(farm.irrigation_type);
-                    $('#farmIrrigationCoverage').text(`${farm.irrigation_coverage}%`);
-                    $('#farmRegistrationDate').text(farm.registration_date);
-                    $('#farmLastVisit').text(farm.last_visit_date);
-                    $('#farmCropsCount').text(response.crops_count);
-                    $('#farmVisitsCount').text(response.visits_count);
-                    
-                    // Update crops list
-                    const cropsList = $('#farmCropsList');
-                    cropsList.empty();
-                    
-                    if (response.crops.length > 0) {
-                        response.crops.forEach(function(crop) {
-                            cropsList.append(`
-                                <div class="card mb-2">
-                                    <div class="card-body py-2">
-                                        <h6 class="card-title mb-1">${crop.variety}</h6>
-                                        <p class="card-text mb-1 small">
-                                            Planted: ${crop.planting_date} | 
-                                            Density: ${crop.planting_density} trees/ha |
-                                            Total: ${crop.total_trees} trees
-                                        </p>
-                                        ${crop.expected_yield ? `<p class="card-text mb-0 small">Expected Yield: ${crop.expected_yield} tons/ha</p>` : ''}
-                                    </div>
+   // Load farm details
+function loadFarmDetails(farmId) {
+    console.log('Loading details for farm ID:', farmId);
+    
+    // Ensure dropdown is selected
+    $('#farmSelect').val(farmId);
+    
+    $.ajax({
+        url: `/farmers/farms/detail/${farmId}/`,
+        type: "GET",
+        success: function(response) {
+            if (response.success) {
+                const farm = response.farm;
+                console.log('Farm data loaded:', farm);
+                
+                // Update detail card
+                $('#farmName').text(farm.name);
+                $('#farmCode').text(farm.farm_code);
+                $('#farmFarmer').text(`${farm.farmer_name} (${farm.national_id})`);
+                $('#farmArea').text(farm.area_hectares);
+                $('#farmStatus').html(`<span class="status-badge status-${farm.status}">${farm.status_display}</span>`);
+                $('#farmSoilType').text(farm.soil_type);
+                $('#farmIrrigation').text(farm.irrigation_type);
+                $('#farmIrrigationCoverage').text(`${farm.irrigation_coverage}%`);
+                $('#farmRegistrationDate').text(farm.registration_date);
+                $('#farmLastVisit').text(farm.last_visit_date);
+                $('#farmCropsCount').text(response.crops_count);
+                $('#farmVisitsCount').text(response.visits_count);
+                
+                // Update crops list
+                const cropsList = $('#farmCropsList');
+                cropsList.empty();
+                
+                if (response.crops.length > 0) {
+                    response.crops.forEach(function(crop) {
+                        cropsList.append(`
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <h6 class="card-title mb-1">${crop.variety}</h6>
+                                    <p class="card-text mb-1 small">
+                                        Planted: ${crop.planting_date} | 
+                                        Density: ${crop.planting_density} trees/ha |
+                                        Total: ${crop.total_trees} trees
+                                    </p>
+                                    ${crop.expected_yield ? `<p class="card-text mb-0 small">Expected Yield: ${crop.expected_yield} tons/ha</p>` : ''}
                                 </div>
-                            `);
-                        });
-                    } else {
-                        cropsList.append('<p class="text-muted">No crops recorded</p>');
-                    }
-                    
-                    // Update visits list
-                    const visitsList = $('#farmVisitsList');
-                    visitsList.empty();
-                    
-                    if (response.visits.length > 0) {
-                        response.visits.forEach(function(visit) {
-                            visitsList.append(`
-                                <div class="card mb-2">
-                                    <div class="card-body py-2">
-                                        <h6 class="card-title mb-1">${visit.visit_date}</h6>
-                                        <p class="card-text mb-1 small">${visit.purpose}</p>
-                                        <p class="card-text mb-0 small">By: ${visit.conducted_by}</p>
-                                    </div>
-                                </div>
-                            `);
-                        });
-                    } else {
-                        visitsList.append('<p class="text-muted">No visits recorded</p>');
-                    }
-                    
-                    // Show detail container
-                    $('#farmDetailContainer').show();
-                    
-                    // Update map
-                    updateFarmMap(farmId);
+                            </div>
+                        `);
+                    });
+                } else {
+                    cropsList.append('<p class="text-muted">No crops recorded</p>');
                 }
-            },
-            error: function() {
+                
+                // Update visits list
+                const visitsList = $('#farmVisitsList');
+                visitsList.empty();
+                
+                if (response.visits.length > 0) {
+                    response.visits.forEach(function(visit) {
+                        visitsList.append(`
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <h6 class="card-title mb-1">${visit.visit_date}</h6>
+                                    <p class="card-text mb-1 small">${visit.purpose}</p>
+                                    <p class="card-text mb-0 small">By: ${visit.conducted_by}</p>
+                                </div>
+                            </div>
+                        `);
+                    });
+                } else {
+                    visitsList.append('<p class="text-muted">No visits recorded</p>');
+                }
+                
+                // Show detail container
+                $('#farmDetailContainer').show();
+                
+                console.log('Farm details displayed, updating map...');
+                // Update map with farm location and polygons
+                updateFarmMap(farmId);
+            } else {
+                console.error('API response indicates failure:', response);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Failed to load farm details'
+                    text: response.error || 'Failed to load farm details'
                 });
             }
-        });
-    }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error loading farm details:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load farm details: ' + error
+            });
+        }
+    });
+}
 
     // Farm selection change handler
     $('#farmSelect').change(function() {
@@ -1177,34 +1208,40 @@ $(document).ready(function() {
         }
     });
 
+    
+
     // Filter change handlers
     $('#statusFilter, #farmerFilter').change(function() {
         farmTable.ajax.reload();
     });
 
     // Tab change handler
-    $('#farmTabs button').on('click', function (e) {
-        e.preventDefault();
-        $(this).tab('show');
-        
-        if ($(this).attr('id') === 'map-tab') {
-            // Initialize all farms map if not already done
-            if (!allFarmsMap) {
-                initAllFarmsMap();
-            }
-        } else if ($(this).attr('id') === 'stats-tab') {
-            // Load statistics
-            loadFarmStats();
-        } else if ($(this).attr('id') === 'detail-tab') {
-            // Initialize farm map if not already done
-            if (!farmMap) {
-                initFarmMap();
-            }
-            // Load farms for dropdown
-            loadFarmsForDropdown();
+    // Tab change handler
+$('#farmTabs button').on('click', function (e) {
+    e.preventDefault();
+    $(this).tab('show');
+    
+    if ($(this).attr('id') === 'map-tab') {
+        // Initialize all farms map if not already done
+        if (!allFarmsMap) {
+            console.log('Initializing all farms map...');
+            initAllFarmsMap();
         }
-    });
-
+    // } else if ($(this).attr('id') === 'stats-tab') {
+    //     // Load statistics
+    //     console.log('Loading farm statistics...');
+    //     loadFarmStats();
+    } else if ($(this).attr('id') === 'detail-tab') {
+        // Initialize farm map if not already done
+        if (!farmMap) {
+            console.log('Initializing farm map for detail tab...');
+            initFarmMap();
+        }
+        // Load farms for dropdown
+        console.log('Loading farms for dropdown...');
+        loadFarmsForDropdown();
+    }
+});
     // Add farm form submission
     $('#addFarmForm').submit(function(e) {
         e.preventDefault();
@@ -1488,18 +1525,27 @@ $(document).ready(function() {
         });
     });
 
-    // View button click
-    $('#farmTable').on('click', '.view-btn', function() {
-        const farmId = $(this).data('id');
-        
-        // Switch to detail tab
-        $('#detail-tab').tab('show');
-        
-        // Select the farm in dropdown and load details
-        setTimeout(() => {
-            $('#farmSelect').val(farmId).trigger('change');
-        }, 300);
-    });
+    // View button click - SINGLE HANDLER
+$('#farmTable').on('click', '.view-btn', function() {
+    const farmId = $(this).data('id');
+    console.log('View button clicked for farm ID:', farmId);
+    
+    // Switch to detail tab
+    $('#detail-tab').tab('show');
+    
+    // Ensure farm map is initialized
+    if (!farmMap) {
+        console.log('Initializing farm map...');
+        initFarmMap();
+    }
+    
+    // Immediately update the dropdown selection
+    $('#farmSelect').val(farmId);
+    
+    // Immediately load farm details without waiting for dropdown change
+    console.log('Loading farm details...');
+    loadFarmDetails(farmId);
+});
 
     // Export button click
     $('#exportBtn').click(function() {

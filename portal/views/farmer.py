@@ -136,6 +136,7 @@ def get_farmer_detail(request, farmer_id):
                 'status': farm.get_status_display(),
                 'latitude': farm.location.y if farm.location else None,
                 'longitude': farm.location.x if farm.location else None,
+                
                 'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A'
             })
         
@@ -182,24 +183,40 @@ def farmer_get_farm_geojson(request, farmer_id):
         
         features = []
         for farm in farms:
+            properties = {
+                'name': farm.name,
+                'farm_code': farm.farm_code,
+                'area_hectares': farm.area_hectares,
+                'status_display': farm.get_status_display(),
+                'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A',
+                'has_boundary': bool(farm.boundary or farm.geom)
+            }
+            
+            # Add point geometry if available
             if farm.location:
-                feature = {
+                features.append({
                     'type': 'Feature',
                     'geometry': {
                         'type': 'Point',
                         'coordinates': [farm.location.x, farm.location.y]
                     },
-                    'properties': {
-                        'id': farm.id,
-                        'name': farm.name,
-                        'farm_code': farm.farm_code,
-                        'area_hectares': farm.area_hectares,
-                        'status': farm.status,
-                        'status_display': farm.get_status_display(),
-                        'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A'
-                    }
-                }
-                features.append(feature)
+                    'properties': properties
+                })
+            
+            # Add polygon geometry if available
+            if farm.boundary:
+                # Convert Django GEOS geometry to GeoJSON
+                features.append({
+                    'type': 'Feature',
+                    'geometry': json.loads(farm.boundary.geojson),
+                    'properties': {**properties, 'type': 'boundary'}
+                })
+            elif farm.geom:
+                features.append({
+                    'type': 'Feature',
+                    'geometry': json.loads(farm.geom.geojson),
+                    'properties': {**properties, 'type': 'boundary'}
+                })
         
         geojson = {
             'type': 'FeatureCollection',
@@ -209,7 +226,7 @@ def farmer_get_farm_geojson(request, farmer_id):
         return JsonResponse(geojson)
         
     except Farmer.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Farmer not found'}, status=404)
+        return JsonResponse({'error': 'Farmer not found'}, status=404)
 
 @require_http_methods(["POST"])
 @login_required

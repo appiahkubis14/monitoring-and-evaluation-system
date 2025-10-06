@@ -89,9 +89,9 @@
                     <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#addFarmerModal">
                         <i class="fas fa-user-plus me-2"></i>Add New Farmer
                     </button>
-                    <button class="btn btn-gradient-primary" id="exportBtn">
+                    <!-- <button class="btn btn-gradient-primary" id="exportBtn">
                         <i class="fas fa-file-export me-2"></i>Export Data
-                    </button>
+                    </button> -->
                 </div>
                 <ul class="nav nav-tabs" id="farmerTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -659,8 +659,9 @@ function loadFarmersForDropdown() {
 }
 
 // Update map with farm locations
+// Update map with farm locations and polygons
 function updateFarmMap(farmerId) {
-    // Clear existing markers
+    // Clear existing markers and layers
     farmMarkers.forEach(marker => farmMap.removeLayer(marker));
     farmMarkers = [];
     
@@ -674,36 +675,54 @@ function updateFarmMap(farmerId) {
                 const farmGroup = L.featureGroup();
                 
                 response.features.forEach(function(feature) {
-                    const coords = feature.geometry.coordinates;
+                    const geometry = feature.geometry;
                     const properties = feature.properties;
                     
-                    // Create custom marker
-                    const marker = L.marker([coords[1], coords[0]], {
-                        icon: L.divIcon({
-                            className: 'farm-marker',
-                            html: '<div style="background-color: #0ab39c; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
-                        })
-                    });
+                    let layer;
                     
-                    // Create popup content
-                    const popupContent = `
-                        <div class="farm-popup">
-                            <h6>${properties.name}</h6>
-                            <p><strong>Code:</strong> ${properties.farm_code}</p>
-                            <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
-                            <p><strong>Status:</strong> ${properties.status_display}</p>
-                            <p><strong>Registered:</strong> ${properties.registration_date}</p>
-                        </div>
-                    `;
+                    if (geometry.type === 'Point') {
+                        // Create marker for point data
+                        const coords = geometry.coordinates;
+                        layer = L.marker([coords[1], coords[0]], {
+                            icon: L.divIcon({
+                                className: 'farm-marker',
+                                html: '<div style="background-color: #0ab39c; border-radius: 50%; width: 20px; height: 20px; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        });
+                    } else if (geometry.type === 'Polygon') {
+                        // Create polygon layer
+                        const coords = geometry.coordinates[0]; // First ring of polygon
+                        const latLngs = coords.map(coord => [coord[1], coord[0]]);
+                        layer = L.polygon(latLngs, {
+                            color: '#0ab39c',
+                            weight: 2,
+                            fillColor: '#0ab39c',
+                            fillOpacity: 0.3
+                        });
+                    }
                     
-                    marker.bindPopup(popupContent);
-                    farmGroup.addLayer(marker);
-                    farmMarkers.push(marker);
+                    if (layer) {
+                        // Create popup content
+                        const popupContent = `
+                            <div class="farm-popup">
+                                <h6>${properties.name}</h6>
+                                <p><strong>Code:</strong> ${properties.farm_code}</p>
+                                <p><strong>Area:</strong> ${properties.area_hectares} ha</p>
+                                <p><strong>Status:</strong> ${properties.status_display}</p>
+                                <p><strong>Registered:</strong> ${properties.registration_date}</p>
+                                ${properties.has_boundary ? '<p><strong>Boundary:</strong> Available</p>' : ''}
+                            </div>
+                        `;
+                        
+                        layer.bindPopup(popupContent);
+                        farmGroup.addLayer(layer);
+                        farmMarkers.push(layer);
+                    }
                 });
                 
-                // Add all markers to map and fit bounds
+                // Add all layers to map and fit bounds
                 farmGroup.addTo(farmMap);
                 farmMap.fitBounds(farmGroup.getBounds(), { padding: [50, 50] });
             } else {
@@ -725,7 +744,7 @@ function updateFarmMap(farmerId) {
         }
     });
 }
-
+// Load farmer details
 // Load farmer details
 function loadFarmerDetails(farmerId) {
     $.ajax({
@@ -751,7 +770,7 @@ function loadFarmerDetails(farmerId) {
                 // Show detail container
                 $('#farmerDetailContainer').show();
                 
-                // Update map
+                // Update map with farms and polygons
                 updateFarmMap(farmerId);
             }
         },
@@ -972,13 +991,26 @@ $('#editFarmerForm').submit(function(e) {
 });
 
 // Delete button click
-$('#farmerTable').on('click', '.delete-btn', function() {
-    const farmerId = $(this).data('id');
+// View button click
+// $('#farmerTable').on('click', '.view-btn', function() {
+//     const farmerId = $(this).data('id');
     
-    // Store farmer ID for deletion
-    $('#deleteModal').data('farmerId', farmerId);
-    $('#deleteModal').modal('show');
-});
+//     // Switch to detail tab
+//     $('#detail-tab').tab('show');
+    
+//     // Ensure map is initialized
+//     if (!farmMap) {
+//         initMap();
+//     }
+    
+//     // Immediately load farmer details without waiting for dropdown
+//     loadFarmerDetails(farmerId);
+    
+//     // Also update the dropdown selection
+//     setTimeout(() => {
+//         $('#farmerSelect').val(farmerId);
+//     }, 100);
+// });
 
 // Confirm delete
 $('#confirmDeleteBtn').click(function() {
@@ -1021,16 +1053,38 @@ $('#confirmDeleteBtn').click(function() {
 });
 
 // View button click
+// $('#farmerTable').on('click', '.view-btn', function() {
+//     const farmerId = $(this).data('id');
+    
+//     // Switch to detail tab
+//     $('#detail-tab').tab('show');
+    
+//     // Select the farmer in dropdown and load details
+//     setTimeout(() => {
+//         $('#farmerSelect').val(farmerId).trigger('change');
+//     }, 300);
+// });
+
+// View button click - SINGLE HANDLER
 $('#farmerTable').on('click', '.view-btn', function() {
     const farmerId = $(this).data('id');
+    console.log('View button clicked for farmer ID:', farmerId);
     
     // Switch to detail tab
     $('#detail-tab').tab('show');
     
-    // Select the farmer in dropdown and load details
-    setTimeout(() => {
-        $('#farmerSelect').val(farmerId).trigger('change');
-    }, 300);
+    // Ensure map is initialized
+    if (!farmMap) {
+        console.log('Initializing map...');
+        initMap();
+    }
+    
+    // Immediately update the dropdown selection
+    $('#farmerSelect').val(farmerId);
+    
+    // Immediately load farmer details without waiting for dropdown change
+    console.log('Loading farmer details...');
+    loadFarmerDetails(farmerId);
 });
 
 // Export button click

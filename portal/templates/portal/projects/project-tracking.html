@@ -141,7 +141,7 @@
                     <button class="btn btn-gradient-primary" id="addProjectBtn">
                         <i class="fas fa-plus me-2"></i>New Project
                     </button>
-                    <div class="btn-group ms-2">
+                    <!-- <div class="btn-group ms-2">
                         <button type="button" class="btn btn-gradient-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-file-export me-2"></i>Export
                         </button>
@@ -150,7 +150,7 @@
                             <li><a class="dropdown-item" href="#" id="export-excel">Excel</a></li>
                             <li><a class="dropdown-item" href="#" id="export-pdf">PDF</a></li>
                         </ul>
-                    </div>
+                    </div> -->
                 </div>
                 <ul class="nav nav-tabs" id="projectTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -858,34 +858,100 @@ function loadProjectStats() {
 }
 
 // Load staff members for dropdown
+// Enhanced version with loading states and better error handling
 function loadStaffMembers() {
+    // Show loading state in dropdowns
+    const managerSelect = $('#project-manager');
+    const editManagerSelect = $('#edit-project-manager');
+    const managerFilter = $('#manager-filter');
+    
+    // Set loading state
+    managerSelect.empty().append('<option value="">Loading staff members...</option>').prop('disabled', true);
+    editManagerSelect.empty().append('<option value="">Loading staff members...</option>').prop('disabled', true);
+    managerFilter.empty().append('<option value="">Loading managers...</option>').prop('disabled', true);
+    
     $.ajax({
         url: '/projects/staff/',
         type: 'GET',
+        timeout: 10000, // 10 second timeout
         success: function(data) {
-            if (data.success) {
-                const managerSelect = $('#project-manager');
-                const managerFilter = $('#manager-filter');
-                
+            // Re-enable dropdowns
+            managerSelect.prop('disabled', false);
+            editManagerSelect.prop('disabled', false);
+            managerFilter.prop('disabled', false);
+            
+            if (data.success && data.staff && data.staff.length > 0) {
+                // Clear and populate all dropdowns
                 managerSelect.empty().append('<option value="">Select a manager</option>');
+                editManagerSelect.empty().append('<option value="">Select a manager</option>');
                 managerFilter.empty().append('<option value="">All Managers</option>');
                 
                 $.each(data.staff, function(index, staff) {
+                    const optionText = staff.designation ? 
+                        `${staff.name} (${staff.designation})` : 
+                        staff.name;
+                    
+                    // Add to add project modal
                     managerSelect.append($('<option>', {
                         value: staff.id,
-                        text: `${staff.name} (${staff.designation})`
+                        text: optionText,
+                        'data-staff-id': staff.id
                     }));
                     
+                    // Add to edit project modal
+                    editManagerSelect.append($('<option>', {
+                        value: staff.id,
+                        text: optionText,
+                        'data-staff-id': staff.id
+                    }));
+                    
+                    // Add to filter dropdown
                     managerFilter.append($('<option>', {
                         value: staff.id,
-                        text: staff.name
+                        text: staff.name,
+                        'data-staff-id': staff.id
                     }));
                 });
+                
+                console.log('Staff members loaded successfully:', data.staff.length, 'staff members');
+                
+            } else {
+                // Handle empty or invalid response
+                managerSelect.empty().append('<option value="">No staff members available</option>');
+                editManagerSelect.empty().append('<option value="">No staff members available</option>');
+                managerFilter.empty().append('<option value="">No managers available</option>');
+                
+                if (!data.success) {
+                    console.error('Error in staff response:', data.error);
+                    showAlert('warning', 'Warning', 'No staff members available or failed to load staff data.');
+                }
             }
         },
-        error: function(error) {
+        error: function(xhr, status, error) {
+            // Re-enable dropdowns with error state
+            managerSelect.prop('disabled', false);
+            editManagerSelect.prop('disabled', false);
+            managerFilter.prop('disabled', false);
+            
+            let errorMessage = 'Failed to load staff members. ';
+            
+            if (status === 'timeout') {
+                errorMessage += 'Request timed out.';
+            } else if (xhr.status === 404) {
+                errorMessage += 'Staff endpoint not found.';
+            } else if (xhr.status >= 500) {
+                errorMessage += 'Server error occurred.';
+            } else {
+                errorMessage += 'Please check your connection and try again.';
+            }
+            
+            // Set error state in dropdowns
+            managerSelect.empty().append('<option value="">Error loading staff</option>');
+            editManagerSelect.empty().append('<option value="">Error loading staff</option>');
+            managerFilter.empty().append('<option value="">Error loading managers</option>');
+            
             console.error('Error loading staff members:', error);
-            showAlert('error', 'Error', 'Failed to load staff members.');
+            showAlert('error', 'Error', errorMessage);
         }
     });
 }
@@ -980,12 +1046,15 @@ function viewProjectDetails(projectId) {
         }
     });
 }
-
 // Render project details
 function renderProjectDetails(data) {
     const project = data.project;
     const financials = data.financials;
     const farmers = data.farmers;
+
+    console.log('Project:', project);
+    console.log('Financials:', financials);
+    console.log('Farmers:', farmers);
     
     let statusClass = 'status-' + project.status;
     if (project.is_overdue) {
@@ -1000,6 +1069,7 @@ function renderProjectDetails(data) {
             </div>
             <div class="col-md-4 text-end">
                 <span class="status-badge ${statusClass}">${project.status_display}</span>
+                ${project.is_overdue ? '<span class="badge bg-danger ms-1">Overdue</span>' : ''}
             </div>
         </div>
         
@@ -1017,24 +1087,43 @@ function renderProjectDetails(data) {
                     </tr>
                     <tr>
                         <th>Days Remaining:</th>
-                        <td>${project.days_remaining}</td>
+                        <td>
+                            <span class="${project.days_remaining <= 0 ? 'text-danger' : ''}">
+                                ${project.days_remaining}
+                                ${project.days_remaining <= 0 ? '(Overdue)' : ''}
+                            </span>
+                        </td>
                     </tr>
                     <tr>
                         <th>Total Budget:</th>
-                        <td>$${project.total_budget.toLocaleString()}</td>
+                        <td>$${parseFloat(project.total_budget).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <th>Manager:</th>
-                        <td>${project.manager}</td>
+                        <td>${project.manager || 'Not assigned'}</td>
+                    </tr>
+                    <tr>
+                        <th>Project Farms:</th>
+                        <td>${project.total_project_farms}</td>
+                    </tr>
+                    <tr>
+                        <th>Project Area:</th>
+                        <td>${parseFloat(project.total_project_area).toLocaleString()} ha</td>
                     </tr>
                 </table>
             </div>
             <div class="col-md-6">
                 <h5>Progress</h5>
-                <div class="progress-container mb-2">
-                    <div class="progress-bar" style="width: ${project.progress_percent}%"></div>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar ${project.progress_percent >= 100 ? 'bg-success' : 'bg-primary'}" 
+                         style="width: ${project.progress_percent}%" 
+                         role="progressbar" 
+                         aria-valuenow="${project.progress_percent}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        ${project.progress_percent}%
+                    </div>
                 </div>
-                <p class="text-center">${project.progress_percent}% Complete</p>
                 
                 <h5 class="mt-4">Financial Summary</h5>
                 <table class="table table-sm">
@@ -1044,19 +1133,23 @@ function renderProjectDetails(data) {
                     </tr>
                     <tr>
                         <th>Total Loan Amount:</th>
-                        <td>$${financials.total_loan_amount.toLocaleString()}</td>
+                        <td>$${parseFloat(financials.total_loan_amount).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <th>Total Disbursed:</th>
-                        <td>$${financials.total_disbursed.toLocaleString()}</td>
+                        <td>$${parseFloat(financials.total_disbursed).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <th>Total Repaid:</th>
-                        <td>$${financials.total_repaid.toLocaleString()}</td>
+                        <td>$${parseFloat(financials.total_repaid).toLocaleString()}</td>
                     </tr>
                     <tr>
                         <th>Repayment Rate:</th>
-                        <td>${financials.repayment_rate.toFixed(2)}%</td>
+                        <td>
+                            <span class="${financials.repayment_rate >= 80 ? 'text-success' : financials.repayment_rate >= 50 ? 'text-warning' : 'text-danger'}">
+                                ${parseFloat(financials.repayment_rate).toFixed(2)}%
+                            </span>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -1066,42 +1159,97 @@ function renderProjectDetails(data) {
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5>Participating Farmers (${data.farmers_count})</h5>
-                    <button class="btn btn-sm btn-gradient-primary" id="add-farmer-btn" data-project-id="${project.id}">
-                        <i class="fas fa-plus me-1"></i>Add Farmer
-                    </button>
+                    <div>
+                        <span class="badge bg-light text-dark me-2">
+                            <i class="fas fa-tractor me-1"></i>${data.total_farms_in_project} Farms
+                        </span>
+                        <span class="badge bg-light text-dark me-2">
+                            <i class="fas fa-map me-1"></i>${parseFloat(data.total_area_in_project).toLocaleString()} ha
+                        </span>
+                        <button class="btn btn-sm btn-gradient-primary" id="add-farmer-btn" data-project-id="${project.id}">
+                            <i class="fas fa-plus me-1"></i>Add Farmer
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="table-responsive mt-2">
-                    <table class="table table-sm">
-                        <thead>
+                <div class="table-responsive mt-3">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
                             <tr>
                                 <th>Name</th>
                                 <th>National ID</th>
                                 <th>District</th>
-                                <th>Enrollment Date</th>
                                 <th>Status</th>
-                                <th>Farms</th>
-                                <th>Total Area (ha)</th>
+                                <th>Project Farms</th>
+                                <th>Project Area (ha)</th>
+                                <th>Total Farms</th>
+                                <th>Experience</th>
+                                <th>Primary Crop</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${farmers.map(farmer => `
                                 <tr>
-                                    <td>${farmer.name}</td>
+                                    <td>
+                                        <div class="fw-semibold">${farmer.name}</div>
+                                        <small class="text-muted">${farmer.community || 'N/A'}</small>
+                                    </td>
                                     <td>${farmer.national_id}</td>
                                     <td>${farmer.district}</td>
-                                    <td>${farmer.enrollment_date}</td>
-                                    <td><span class="status-badge status-${farmer.status}">${farmer.status_display}</span></td>
-                                    <td>${farmer.farms_count}</td>
-                                    <td>${farmer.total_area}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-secondary edit-participation" data-id="${farmer.id}">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                        <span class="badge ${farmer.status === 'active' ? 'bg-success' : farmer.status === 'pending' ? 'bg-warning' : 'bg-secondary'}">
+                                            ${farmer.status_display}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold">${farmer.project_farms_count}</span>
+                                        ${farmer.project_farms && farmer.project_farms.length > 0 ? `
+                                            <button class="btn btn-sm btn-outline-info ms-1" 
+                                                    type="button" 
+                                                    data-bs-toggle="popover" 
+                                                    title="Project Farms" 
+                                                    data-bs-content="${farmer.project_farms.map(farm => `${farm.name} (${farm.area_hectares} ha)`).join('<br>')}">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        ` : ''}
+                                    </td>
+                                    <td>${parseFloat(farmer.project_total_area).toLocaleString()}</td>
+                                    <td>
+                                        <span>${farmer.total_farms_count}</span>
+                                        <small class="text-muted d-block">${parseFloat(farmer.total_area_all_farms).toLocaleString()} ha total</small>
+                                    </td>
+                                    <td>${farmer.years_of_experience} yrs</td>
+                                    <td>${farmer.primary_crop}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary view-farmer" data-farmer-id="${farmer.id}" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary edit-participation" data-farmer-id="${farmer.id}" data-project-id="${project.id}" title="Edit Participation">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            ${farmer.cooperative_membership ? `
+                                                <button class="btn btn-outline-info" 
+                                                        type="button" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="Cooperative: ${farmer.cooperative_membership}">
+                                                    <i class="fas fa-users"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
                                     </td>
                                 </tr>
                             `).join('')}
+                            ${farmers.length === 0 ? `
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">
+                                        <i class="fas fa-users fa-2x mb-2"></i>
+                                        <br>
+                                        No farmers found in this project
+                                    </td>
+                                </tr>
+                            ` : ''}
                         </tbody>
                     </table>
                 </div>
@@ -1111,10 +1259,31 @@ function renderProjectDetails(data) {
     
     $('#project-detail-content').html(content);
     
+    // Initialize tooltips and popovers
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="popover"]').popover({
+        html: true,
+        trigger: 'focus',
+        placement: 'auto'
+    });
+    
     // Add event listener to add farmer button
     $('#add-farmer-btn').on('click', function() {
         const projectId = $(this).data('project-id');
         showAddFarmerModal(projectId);
+    });
+    
+    // Add event listeners to view farmer buttons
+    $('.view-farmer').on('click', function() {
+        const farmerId = $(this).data('farmer-id');
+        viewFarmerDetails(farmerId);
+    });
+    
+    // Add event listeners to edit participation buttons
+    $('.edit-participation').on('click', function() {
+        const farmerId = $(this).data('farmer-id');
+        const projectId = $(this).data('project-id');
+        editFarmerParticipation(farmerId, projectId);
     });
 }
 
@@ -1218,7 +1387,13 @@ function showConfirm(title, text, confirmButtonText = 'Yes', cancelButtonText = 
 }
 
 // Edit project - Load data into modal
+// Enhanced edit project function with staff selection
 function editProject(projectId) {
+    // Ensure staff members are loaded first
+    if ($('#edit-project-manager option').length <= 1) { // Only has "Select a manager" option
+        loadStaffMembers();
+    }
+    
     $.ajax({
         url: `/projects/detail/${projectId}/`,
         type: 'GET',
@@ -1226,32 +1401,45 @@ function editProject(projectId) {
             if (data.success) {
                 const project = data.project;
                 
-                // Populate the edit form using jQuery
+                // Populate the edit form
                 $('#edit-project-id').val(project.id);
                 $('#edit-project-code').val(project.code);
                 $('#edit-project-name').val(project.name);
                 $('#edit-project-description').val(project.description || '');
                 $('#edit-project-start-date').val(project.start_date);
                 $('#edit-project-end-date').val(project.end_date);
-                $('#edit-project-budget').val(project.total_budget);
+                $('#edit-project-budget').val(parseFloat(project.total_budget));
                 $('#edit-project-status').val(project.status);
                 
-                // Set manager if exists
-                if (project.manager_id) {
-                    $('#edit-project-manager').val(project.manager_id);
-                } else {
-                    $('#edit-project-manager').val('');
-                }
+                // Set manager - wait a moment for staff dropdown to be populated
+                setTimeout(() => {
+                    if (project.manager_id) {
+                        $('#edit-project-manager').val(project.manager_id);
+                    } else {
+                        $('#edit-project-manager').val('');
+                    }
+                }, 100);
                 
                 // Show the modal
                 $('#editProjectModal').modal('show');
             } else {
-                showAlert('error', 'Error', data.error);
+                showAlert('error', 'Error', data.error || 'Failed to load project details');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error loading project details:', error);
-            showAlert('error', 'Error', 'Failed to load project details.');
+            let errorMessage = 'Failed to load project details.';
+            
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {
+                // Use default error message
+            }
+            
+            showAlert('error', 'Error', errorMessage);
         }
     });
 }

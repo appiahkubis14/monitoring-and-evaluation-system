@@ -109,21 +109,47 @@ def project_list(request):
     
     return JsonResponse(response)
 
+
+from django.db.models import Prefetch, Sum, Count
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
+
 @require_http_methods(["GET"])
 @login_required
 def get_project_detail(request, project_id):
     """Get detailed information about a specific project"""
     try:
-        project = Project.objects.select_related('manager__user_profile__user').prefetch_related(
-            'participating_farmers__user_profile__user',
-            'participating_farmers__farms'
+        # Get project with optimized queries
+        project = Project.objects.select_related(
+            'manager__user_profile__user'
+        ).prefetch_related(
+            Prefetch(
+                'farm_set',  # Reverse relation from Farm to Project
+                queryset=Farm.objects.select_related(
+                    'farmer__user_profile__user',
+                    'farmer__user_profile__district'
+                ).prefetch_related('farmer__farms')
+            )
         ).get(id=project_id)
         
-        # Get project participation details
-        participations = ProjectParticipation.objects.filter(project=project).select_related(
-            'farmer__user_profile__user',
-            'farmer__user_profile__district'
-        )
+        # Get all farms for this project
+        project_farms = project.farm_set.all()
+        
+        # Get unique farmers from the project farms
+        farmer_ids = project_farms.values_list('farmer_id', flat=True).distinct()
+        farmers = Farmer.objects.filter(id__in=farmer_ids).select_related(
+            'user_profile__user', 
+            'user_profile__district'
+        ).prefetch_related('farms')
+        
+        # Create a mapping of farmer_id to their farms in this project
+        farmer_farms_map = {}
+        for farm in project_farms:
+            if farm.farmer_id not in farmer_farms_map:
+                farmer_farms_map[farm.farmer_id] = []
+            farmer_farms_map[farm.farmer_id].append(farm)
         
         # Get loan information for this project
         loans = Loan.objects.filter(project=project).select_related('farmer__user_profile__user')
@@ -138,20 +164,61 @@ def get_project_detail(request, project_id):
         elapsed_days = (today - project.start_date).days
         progress_percent = min(100, max(0, int((elapsed_days / total_days) * 100))) if total_days > 0 else 0
         
-        # Get farmer statistics
+        # Build farmers data
         farmers_data = []
-        for participation in participations:
-            farmer = participation.farmer
+        for farmer in farmers:
+            # Get this farmer's farms in this specific project
+            farmer_project_farms = farmer_farms_map.get(farmer.id, [])
+            
+            # Get all farms for this farmer (across all projects)
+            all_farmer_farms = farmer.farms.all()
+            
+            # Calculate project-specific farm stats
+            project_farms_count = len(farmer_project_farms)
+            project_total_area = sum(farm.area_hectares or 0 for farm in farmer_project_farms)
+            
+            # Get participation details if available
+            try:
+                participation = ProjectParticipation.objects.get(project=project, farmer=farmer)
+                enrollment_date = participation.enrollment_date.strftime('%Y-%m-%d')
+                status = participation.status
+                status_display = participation.get_status_display()
+            except ProjectParticipation.DoesNotExist:
+                enrollment_date = 'N/A'
+                status = 'unknown'
+                status_display = 'Unknown'
+            
             farmers_data.append({
                 'id': farmer.id,
                 'name': f"{farmer.user_profile.user.first_name} {farmer.user_profile.user.last_name}",
                 'national_id': farmer.national_id,
-                'district': farmer.user_profile.district.name if farmer.user_profile.district else 'N/A',
-                'enrollment_date': participation.enrollment_date.strftime('%Y-%m-%d'),
-                'status': participation.status,
-                'status_display': participation.get_status_display(),
-                'farms_count': farmer.farms.count(),
-                'total_area': farmer.farms.aggregate(total=Sum('area_hectares'))['total'] or 0
+                'district': farmer.user_profile.district.district if farmer.user_profile.district else 'N/A',
+                'enrollment_date': enrollment_date,
+                'status': status,
+                'status_display': status_display,
+                # Project-specific farm stats
+                'project_farms_count': project_farms_count,
+                'project_total_area': project_total_area,
+                # Overall farmer stats (all farms)
+                'total_farms_count': all_farmer_farms.count(),
+                'total_area_all_farms': all_farmer_farms.aggregate(total=Sum('area_hectares'))['total'] or 0,
+                # Farmer details
+                'years_of_experience': farmer.years_of_experience,
+                'primary_crop': farmer.primary_crop,
+                'community': farmer.community or 'N/A',
+                'cooperative_membership': farmer.cooperative_membership or 'N/A',
+                # Project farm details
+                'project_farms': [
+                    {
+                        'id': farm.id,
+                        'name': farm.name or 'Unnamed Farm',
+                        'farm_code': farm.farm_code,
+                        'area_hectares': farm.area_hectares,
+                        'status': farm.status,
+                        'registration_date': farm.registration_date.strftime('%Y-%m-%d') if farm.registration_date else 'N/A'
+                    }
+                    for farm in farmer_project_farms
+                ]
             })
         
         data = {
@@ -170,7 +237,10 @@ def get_project_detail(request, project_id):
                 'manager_id': project.manager.id if project.manager else None,
                 'progress_percent': progress_percent,
                 'days_remaining': max(0, (project.end_date - today).days),
-                'is_overdue': today > project.end_date
+                'is_overdue': today > project.end_date,
+                # Project farm statistics
+                'total_project_farms': project_farms.count(),
+                'total_project_area': project_farms.aggregate(total=Sum('area_hectares'))['total'] or 0,
             },
             'financials': {
                 'total_loans': total_loans,
@@ -181,9 +251,11 @@ def get_project_detail(request, project_id):
             },
             'farmers': farmers_data,
             'farmers_count': len(farmers_data),
-            'total_farms': sum(farmer['farms_count'] for farmer in farmers_data),
-            'total_area': sum(farmer['total_area'] for farmer in farmers_data)
+            'total_farms_in_project': project_farms.count(),
+            'total_area_in_project': project_farms.aggregate(total=Sum('area_hectares'))['total'] or 0
         }
+
+        print(data)
         
         return JsonResponse(data)
         
@@ -191,6 +263,9 @@ def get_project_detail(request, project_id):
         return JsonResponse({'success': False, 'error': 'Project not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+
+
 
 @require_http_methods(["POST"])
 @login_required
@@ -501,20 +576,40 @@ def get_available_farmers(request, project_id):
 
 @require_http_methods(["GET"])
 @login_required
-def get_staff_members(request):
+def get_staff_members_project(request):
     """Get all staff members for dropdowns"""
-    staff_members = Staff.objects.select_related('user_profile__user').filter(is_active=True)
+    try:
+        staff_members = Staff.objects.select_related('user_profile__user').filter(is_active=True)
+        
+        data = []
+        for staff in staff_members:
+            # Safely get user name with fallbacks
+            first_name = getattr(staff.user_profile.user, 'first_name', '')
+            last_name = getattr(staff.user_profile.user, 'last_name', '')
+            full_name = f"{first_name} {last_name}".strip()
+            
+            # Use staff ID if name is empty
+            if not full_name:
+                full_name = f"Staff {staff.staff_id}" if staff.staff_id else "Unnamed Staff"
+            
+            staff_data = {
+                'id': staff.id,
+                'name': full_name,
+                'designation': staff.designation if staff.designation else 'Staff',
+                'staff_id': staff.staff_id if staff.staff_id else f"ID-{staff.id}"
+            }
+            data.append(staff_data)
+
+        print(f"Loaded {len(data)} staff members")
+        
+        return JsonResponse({'success': True, 'staff': data})
     
-    data = []
-    for staff in staff_members:
-        data.append({
-            'id': staff.id,
-            'name': f"{staff.user_profile.user.first_name} {staff.user_profile.user.last_name}",
-            'designation': staff.designation,
-            'staff_id': staff.staff_id
-        })
-    
-    return JsonResponse({'success': True, 'staff': data})
+    except Exception as e:
+        print(f"Error loading staff members: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': f'Failed to load staff members: {str(e)}'
+        }, status=500)
 
 @require_http_methods(["GET"])
 @login_required

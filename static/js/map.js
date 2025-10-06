@@ -1837,7 +1837,7 @@ function initializePanelSections() {
     // const opacitySection = document.getElementById('opacity-section');
 
     if (layersSection) layersSection.classList.add('active');
-    if (analysisSection) analysisSection.classList.add('active');
+    // if (analysisSection) analysisSection.classList.add('active');
     // if (opacitySection) opacitySection.classList.add('active');
 
     // Add click handlers to section headers

@@ -89,7 +89,7 @@ urlpatterns = [
     path('projects/timeline/data/', get_project_timeline, name='get_project_timeline'),
     path('projects/stats/', get_project_stats, name='get_project_stats'),
     path('projects/export/', project_export, name='project_export'),
-    path('projects/staff/', get_staff_members, name='get_staff_members'),
+    path('projects/staff/', get_staff_members_project, name='get_staff_members'),
     path('projects/<int:project_id>/available-farmers/', get_available_farmers, name='get_available_farmers'),
     
     # Milestones and compliance

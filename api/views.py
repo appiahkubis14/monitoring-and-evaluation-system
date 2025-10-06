@@ -489,23 +489,41 @@ class MonitoringVisitAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class ProjectAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
-    def get(self, request, district):
+    @swagger_auto_schema(
+        operation_description="Fetch all projects data - optionally filter by district",
+        manual_parameters=[
+            openapi.Parameter(
+                'district',
+                openapi.IN_QUERY,
+                description="Filter by district name",
+                type=openapi.TYPE_STRING,
+                required=False
+            )
+        ]
+    )
+    def get(self, request, district=None):
         """
-        Fetch projects data - can filter by district
+        Fetch projects data - can filter by district if provided
         """
         try:
             projects = Project.objects.filter(is_deleted=False)
             
-            # Filter by district if provided
+            # Filter by district if provided (either from URL parameter or query parameter)
             if district:
                 projects = projects.filter(
-                    participating_farmers__user_profile__district__name__icontains=district
+                    participating_farmers__user_profile__district__district__icontains=district
                 ).distinct()
+            else:
+                # Also check for district in query parameters
+                district_query = request.GET.get('district')
+                if district_query:
+                    projects = projects.filter(
+                        participating_farmers__user_profile__district__district__icontains=district_query
+                    ).distinct()
             
             if not projects.exists():
                 return Response({
@@ -529,6 +547,15 @@ class ProjectAPIView(APIView):
                 'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+    @swagger_auto_schema(
+        operation_description="Create a new project",
+        request_body=ProjectCreateSerializer,
+        responses={
+            201: ProjectSerializer,
+            400: "Validation error",
+            500: "Internal server error"
+        }
+    )
     def post(self, request):
         """
         Create a new project
@@ -563,7 +590,6 @@ class ProjectAPIView(APIView):
                 'data': [],
                 'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 class FollowUpActionAPIView(APIView):

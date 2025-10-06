@@ -290,7 +290,7 @@ class FarmSerializer(serializers.ModelSerializer):
             'visit_id', 'visit_date', 'officer', 'officer_name', 'observation',
             'issues_identified', 'infrastructure_identified', 'recommended_actions',
             'follow_up_actions', 'area_hectares', 'soil_type', 'irrigation_type',
-            'irrigation_coverage', 'boundary_coordinates', 'latitude', 'longitude',
+            'irrigation_coverage', 'boundary_coordinates', 'latitude', 'longitude','geom',
             'altitude', 'slope', 'district_name', 'region_name', 'status',
             'registration_date', 'last_visit_date', 'validation_status',
             'created_at', 'updated_at'

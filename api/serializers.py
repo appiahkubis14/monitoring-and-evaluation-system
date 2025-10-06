@@ -112,9 +112,13 @@ class FarmerSerializer(serializers.ModelSerializer):
     bank_account_number = serializers.CharField(source='user_profile.bank_account_number', read_only=True)
     bank_name = serializers.CharField(source='user_profile.bank_name', read_only=True)
     
-    # Location fields - FIX: Use correct field names from District model
+    # Location fields
     district_name = serializers.CharField(source='user_profile.district.district', read_only=True)
     region_name = serializers.CharField(source='user_profile.district.region', read_only=True)
+    
+    # Farms data
+    farms = serializers.SerializerMethodField()
+    farms_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Farmer
@@ -125,9 +129,22 @@ class FarmerSerializer(serializers.ModelSerializer):
             'labour_hired', 'estimated_yield', 'yield_in_pre_season', 'harvest_date',
             'first_name', 'last_name', 'email', 'phone_number', 'gender', 
             'date_of_birth', 'address', 'bank_account_number', 'bank_name',
-            'district_name', 'region_name', 'created_at', 'updated_at'
+            'district_name', 'region_name', 'farms', 'farms_count',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
+    
+    def get_farms(self, obj):
+        """Get all farms for this farmer"""
+        farms = obj.farms.filter(is_deleted=False)
+        return FarmSerializer(farms, many=True).data
+    
+    def get_farms_count(self, obj):
+        """Get count of farms for this farmer"""
+        return obj.farms.filter(is_deleted=False).count()
+
+
+
 class FarmerCreateSerializer(serializers.ModelSerializer):
     # User data
     first_name = serializers.CharField(write_only=True, max_length=30)

@@ -238,7 +238,7 @@ class FarmerAPIView(APIView):
     permission_classes = [AllowAny]
     
     @swagger_auto_schema(
-        operation_description="Fetch all farmers data - optionally filter by district",
+        operation_description="Fetch all farmers data with their farms - optionally filter by district",
         manual_parameters=[
             openapi.Parameter(
                 'district',
@@ -251,10 +251,20 @@ class FarmerAPIView(APIView):
     )
     def get(self, request, district=None):
         """
-        Fetch farmers data - can filter by district if provided
+        Fetch farmers data with their farms - can filter by district if provided
         """
         try:
             farmers = Farmer.objects.filter(is_deleted=False)
+            
+            # Prefetch related data to optimize queries
+            farmers = farmers.select_related(
+                'user_profile__user',
+                'user_profile__district'
+            ).prefetch_related(
+                'farms',  # Prefetch all farms for each farmer
+                'farms__project',
+                'farms__officer__user_profile__user'
+            )
             
             # Filter by district if provided (either from URL parameter or query parameter)
             if district:
@@ -272,11 +282,10 @@ class FarmerAPIView(APIView):
                     'status': 0
                 }, status=status.HTTP_404_NOT_FOUND)
             
-            # FIX: Use many=True for queryset
             serializer = FarmerSerializer(farmers, many=True)
             
             return Response({
-                'msg': 'Farmers data fetched successfully',
+                'msg': 'Farmers data with farms fetched successfully',
                 'data': serializer.data,
                 'status': 1
             }, status=status.HTTP_200_OK)
@@ -288,6 +297,7 @@ class FarmerAPIView(APIView):
                 'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+   
     @swagger_auto_schema(
         operation_description="Create a new farmer",
         request_body=FarmerCreateSerializer,

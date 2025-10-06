@@ -22,8 +22,15 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    #version control
+    
+    path('v1/version/', views.versionTblView.as_view()),
+
     # Authentication
     path('v1/staff/login/', views.StaffLoginAPIView.as_view(), name='staff-login'),
+
+      path('v1/regions/', views.RegionAPIView.as_view(), name='regions-list'),
+      path('v1/districts/', views.DistrictAPIView.as_view(), name='districts-list'),
     
     # Farmers
     path('v1/farmers/<str:district>/', views.FarmerAPIView.as_view(), name='farmers-by-district'),

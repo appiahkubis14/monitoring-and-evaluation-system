@@ -12,38 +12,93 @@ import uuid
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+class RegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Region
+        fields = [
+            'id', 'region', 'reg_code', 'created_at', 'updated_at'
+        ]
+
 class DistrictSerializer(serializers.ModelSerializer):
-    region_name = serializers.CharField(source='region.name', read_only=True)
+    class Meta:
+        model = District
+        fields = [
+            'id', 'district', 'district_code', 'region', 'reg_code', 
+            'created_at', 'updated_at'
+        ]
+
+class DistrictWithRegionSerializer(serializers.ModelSerializer):
+    """Serializer that includes full region details"""
+    region_details = serializers.SerializerMethodField()
     
     class Meta:
         model = District
-        fields = ['id', 'name', 'code', 'region_name']
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    district_details = DistrictSerializer(source='district', read_only=True)
+        fields = [
+            'id', 'district', 'district_code', 'region', 'reg_code', 'geom',
+            'region_details', 'created_at', 'updated_at'
+        ]
     
-    class Meta:
-        model = UserProfile
-        fields = ['id', 'role', 'phone_number', 'profile_picture', 'district', 'district_details', 
-                 'address', 'date_of_birth', 'gender', 'bank_account_number', 'bank_name']
+    def get_region_details(self, obj):
+        """Get region details if region exists"""
+        if obj.region and obj.reg_code:
+            try:
+                region = Region.objects.filter(reg_code=obj.reg_code).first()
+                if region:
+                    return {
+                        'id': region.id,
+                        'region': region.region,
+                        'reg_code': region.reg_code
+                    }
+            except Region.DoesNotExist:
+                pass
+        return None
+
 
 class StaffLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    district_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        fields = [
+            'id', 'user', 'role', 'phone_number', 'profile_picture', 
+            'district', 'district_details', 'address', 'date_of_birth', 
+            'gender', 'bank_account_number', 'bank_name'
+        ]
+    
+    def get_district_details(self, obj):
+        """Get district details if district exists"""
+        if obj.district:
+            return DistrictSerializer(obj.district).data
+        return None
+
 class StaffSerializer(serializers.ModelSerializer):
     user_profile = UserProfileSerializer(read_only=True)
-    assigned_districts_details = DistrictSerializer(source='assigned_districts', many=True, read_only=True)
+    assigned_districts = DistrictSerializer(many=True, read_only=True)
     
     class Meta:
         model = Staff
-        fields = ['id', 'user_profile', 'staff_id', 'designation', 'date_joined', 
-                 'assigned_districts', 'assigned_districts_details', 'is_active']
+        fields = [
+            'id', 'user_profile', 'staff_id', 'designation', 
+            'date_joined', 'assigned_districts', 'is_active'
+        ]
+
+
+######################################################################################################################
+
 
 
 
 ##############################################################################################################
-
 
 class FarmerSerializer(serializers.ModelSerializer):
     # User profile related fields
@@ -57,9 +112,9 @@ class FarmerSerializer(serializers.ModelSerializer):
     bank_account_number = serializers.CharField(source='user_profile.bank_account_number', read_only=True)
     bank_name = serializers.CharField(source='user_profile.bank_name', read_only=True)
     
-    # Location fields
-    district_name = serializers.CharField(source='user_profile.district.name', read_only=True)
-    region_name = serializers.CharField(source='user_profile.district.region.name', read_only=True)
+    # Location fields - FIX: Use correct field names from District model
+    district_name = serializers.CharField(source='user_profile.district.district', read_only=True)
+    region_name = serializers.CharField(source='user_profile.district.region', read_only=True)
     
     class Meta:
         model = Farmer
@@ -73,8 +128,6 @@ class FarmerSerializer(serializers.ModelSerializer):
             'district_name', 'region_name', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
-
-
 class FarmerCreateSerializer(serializers.ModelSerializer):
     # User data
     first_name = serializers.CharField(write_only=True, max_length=30)
@@ -106,7 +159,7 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
     
     def validate_district_name(self, value):
         """Validate district exists by name"""
-        if not District.objects.filter(name__iexact=value).exists():
+        if not District.objects.filter(district__iexact=value).exists():
             raise serializers.ValidationError("District does not exist.")
         return value
     
@@ -118,7 +171,7 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
                 'last_name': validated_data.pop('last_name'),
                 'phone_number': validated_data.pop('phone_number'),
                 'district_name': validated_data.pop('district_name'),
-                'email': validated_data.pop('email', None),
+                'email': validated_data.pop('email', ''),
             }
             
             # Extract user profile optional data
@@ -131,7 +184,7 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
             }
             
             # Get district by name
-            district = District.objects.get(name__iexact=user_data['district_name'])
+            district = District.objects.get(district__iexact=user_data['district_name'])
             
             # Generate email if not provided
             email = user_data['email']
@@ -186,11 +239,11 @@ class FarmerCreateSerializer(serializers.ModelSerializer):
         except District.DoesNotExist:
             raise serializers.ValidationError("District not found.")
         except Exception as e:
+            # Clean up if user was created but farmer creation failed
             if 'user' in locals():
                 user.delete()
             raise serializers.ValidationError(f"Error creating farmer: {str(e)}")
 
-from django.utils.dateparse import parse_date, parse_datetime
         
 ######################################################################################################
 class FarmSerializer(serializers.ModelSerializer):
@@ -259,6 +312,9 @@ class DateFieldWithDatetimeSupport(serializers.DateField):
         return super().to_internal_value(value)
 
 
+
+
+
 class FarmCreateSerializer(serializers.ModelSerializer):
     boundary_coordinates = serializers.ListField(
         child=serializers.ListField(child=serializers.FloatField()),
@@ -269,8 +325,9 @@ class FarmCreateSerializer(serializers.ModelSerializer):
     longitude = serializers.FloatField(write_only=True, required=False)
     
     # Use custom date fields that handle datetime strings
-    visit_date = DateFieldWithDatetimeSupport(write_only=True, required=False)
-    last_visit_date = DateFieldWithDatetimeSupport(write_only=True, required=False)
+    # # Make date fields more flexible
+    # visit_date = serializers.CharField(write_only=True, required=False)
+    # last_visit_date = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = Farm
@@ -285,53 +342,51 @@ class FarmCreateSerializer(serializers.ModelSerializer):
             'status', 'last_visit_date', 'validation_status'
         ]
 
-        def to_internal_value(self, data):
-            """Handle datetime to date conversion before any validation"""
-            data = data.copy()
-            
-            # Handle visit_date conversion
-            if 'visit_date' in data and data['visit_date']:
-                data['visit_date'] = self._convert_to_date_string(data['visit_date'])
-            
-            # Handle last_visit_date conversion
-            if 'last_visit_date' in data and data['last_visit_date']:
-                data['last_visit_date'] = self._convert_to_date_string(data['last_visit_date'])
-            
-            return super().to_internal_value(data)
-        
-        def _convert_to_date_string(self, value):
-            """Convert various date/datetime formats to date string"""
-            if isinstance(value, str):
-                # Try parsing as datetime first
-                parsed_datetime = parse_datetime(value)
-                if parsed_datetime:
-                    return parsed_datetime.date().isoformat()
+    # def validate_visit_date(self, value):
+    #     """Convert string to date object"""
+    #     if value:
+    #         try:
+    #             # Extract date part from datetime string
+    #             if 'T' in value:
+    #                 value = value.split('T')[0]
+    #             elif ' ' in value:
+    #                 value = value.split(' ')[0]
                 
-                # Try parsing as date
-                parsed_date = parse_date(value)
-                if parsed_date:
-                    return value  # Already a valid date string
+    #             # Parse to date object
+    #             from datetime import datetime
+    #             date_obj = datetime.strptime(value, '%Y-%m-%d').date()
                 
-                # Handle common datetime string formats manually
-                if 'T' in value:
-                    return value.split('T')[0]
-                elif ' ' in value:
-                    return value.split(' ')[0]
-            
-            return value
+    #             # Validate not in future
+    #             if date_obj > timezone.now().date():
+    #                 raise serializers.ValidationError("Visit date cannot be in the future.")
+                
+    #             return date_obj
+    #         except ValueError:
+    #             raise serializers.ValidationError("Invalid date format. Use YYYY-MM-DD.")
+    #     return value
 
-     # Keep all your existing validate methods the same...
-    def validate_visit_date(self, value):
-        """Ensure visit date is not in the future"""
-        if value and value > timezone.now().date():
-            raise serializers.ValidationError("Visit date cannot be in the future.")
-        return value
-    
-    def validate_last_visit_date(self, value):
-        """Ensure last visit date is not in the future"""
-        if value and value > timezone.now().date():
-            raise serializers.ValidationError("Last visit date cannot be in the future.")
-        return value
+    # def validate_last_visit_date(self, value):
+    #     """Convert string to date object"""
+    #     if value:
+    #         try:
+    #             # Extract date part from datetime string
+    #             if 'T' in value:
+    #                 value = value.split('T')[0]
+    #             elif ' ' in value:
+    #                 value = value.split(' ')[0]
+                
+    #             # Parse to date object
+    #             from datetime import datetime
+    #             date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+                
+    #             # Validate not in future
+    #             if date_obj > timezone.now().date():
+    #                 raise serializers.ValidationError("Last visit date cannot be in the future.")
+                
+    #             return date_obj
+    #         except ValueError:
+    #             raise serializers.ValidationError("Invalid date format. Use YYYY-MM-DD.")
+    #     return value
     
     def validate(self, data):
         """Additional validation for date logic"""
@@ -387,9 +442,11 @@ class FarmCreateSerializer(serializers.ModelSerializer):
                 if boundary_coordinates[0] != boundary_coordinates[-1]:
                     boundary_coordinates.append(boundary_coordinates[0])
                 
-                polygon = Polygon(boundary_coordinates)
+                # Create polygon with SRID 4326
+                polygon = Polygon(boundary_coordinates, srid=4326)
                 # Update has_farm_boundary_polygon field
                 validated_data['has_farm_boundary_polygon'] = True
+                print(f"Created polygon with {len(boundary_coordinates)} points")
             except Exception as e:
                 raise serializers.ValidationError(f"Invalid boundary coordinates: {str(e)}")
         
@@ -397,59 +454,105 @@ class FarmCreateSerializer(serializers.ModelSerializer):
         if latitude is not None and longitude is not None:
             try:
                 location = Point(longitude, latitude, srid=4326)
+                print(f"Created point at {longitude}, {latitude}")
             except Exception as e:
                 raise serializers.ValidationError(f"Invalid coordinates: {str(e)}")
         
         # Initialize region and district codes
         region_code = "UN"
         district_code = "UN"
+        region_name = "Unknown"
+        district_name = "Unknown"
         
         # Try spatial queries only if we have a valid polygon or location
         spatial_point = None
         if polygon:
             spatial_point = polygon.centroid
+            print(f"Using polygon centroid: {spatial_point.coords}")
         elif location:
             spatial_point = location
+            print(f"Using location point: {spatial_point.coords}")
         
         if spatial_point:
             try:
+                print("Attempting spatial query...")
+                
                 # Find district containing the point
                 district_obj = District.objects.filter(
-                    geom__isnull=False,
+                    geom__isnull=False
+                ).filter(
                     geom__contains=spatial_point
                 ).first()
                 
                 if district_obj:
-                    district_code = district_obj.code if district_obj.code else "UN"
-                    # Get region from district
-                    if district_obj.region:
-                        region_code = district_obj.region.code if district_obj.region.code else "UN"
+                    print(f"Found district: {district_obj.district}")
+                    district_code = district_obj.district_code if district_obj.district_code else "UN"
+                    district_name = district_obj.district
+                    
+                    # Get region using reg_code (since there's no foreign key)
+                    region_obj = Region.objects.filter(
+                        reg_code=district_obj.reg_code
+                    ).first() if district_obj.reg_code else None
+                    
+                    if region_obj:
+                        region_code = region_obj.reg_code if region_obj.reg_code else "UN"
+                        region_name = region_obj.region
+                        print(f"Found region: {region_obj.region}")
+                    else:
+                        print("No region found for district reg_code")
+                
+                else:
+                    print("No district found containing the point")
+                    # Fallback: use buffer search
+                    buffer_point = spatial_point.buffer(0.01)  # ~1km buffer
+                    nearby_district = District.objects.filter(
+                        geom__isnull=False
+                    ).filter(
+                        geom__intersects=buffer_point
+                    ).first()
+                    
+                    if nearby_district:
+                        print(f"Found nearby district: {nearby_district.district}")
+                        district_code = nearby_district.district_code if nearby_district.district_code else "UN"
+                        district_name = nearby_district.district
+                        
+                        region_obj = Region.objects.filter(
+                            reg_code=nearby_district.reg_code
+                        ).first() if nearby_district.reg_code else None
+                        
+                        if region_obj:
+                            region_code = region_obj.reg_code if region_obj.reg_code else "UN"
+                            region_name = region_obj.region
                 
             except Exception as e:
                 print(f"Spatial query error: {e}")
-                # Fallback: get from farmer's district
-                try:
-                    farmer_district = validated_data['farmer'].user_profile.district
-                    if farmer_district:
-                        district_code = farmer_district.code if farmer_district.code else "UN"
-                        if farmer_district.region:
-                            region_code = farmer_district.region.code if farmer_district.region.code else "UN"
-                except Exception as farmer_error:
-                    print(f"Farmer district fallback error: {farmer_error}")
-        else:
-            # No spatial data, use farmer's district
+                # Continue with fallback
+        
+        # Fallback: get from farmer's district if spatial query failed
+        if region_code == "UN" or district_code == "UN":
             try:
                 farmer_district = validated_data['farmer'].user_profile.district
                 if farmer_district:
-                    district_code = farmer_district.code if farmer_district.code else "UN"
+                    district_code = farmer_district.district_code if farmer_district.district_code else "UN"
+                    district_name = farmer_district.district
+                    
+                    # Get region from district's region field (string)
                     if farmer_district.region:
-                        region_code = farmer_district.region.code if farmer_district.region.code else "UN"
+                        region_name = farmer_district.region
+                        # Try to find region by name to get reg_code
+                        region_obj = Region.objects.filter(region=region_name).first()
+                        if region_obj:
+                            region_code = region_obj.reg_code if region_obj.reg_code else "UN"
+                    print(f"Using farmer's district: {district_name}, region: {region_name}")
             except Exception as farmer_error:
                 print(f"Farmer district fallback error: {farmer_error}")
         
         # Generate farm code
         farm_count = Farm.objects.count() + 1
-        farm_code = f"ES-{region_code}-{district_code}-{farm_count:06d}"
+        farm_code = f"EX-{region_code}-{district_code}-{farm_count:06d}"
+        
+        print(f"Generated farm code: {farm_code}")
+        print(f"Region: {region_name}, District: {district_name}")
         
         # Create farm with ALL spatial data
         farm_data = {
@@ -469,9 +572,13 @@ class FarmCreateSerializer(serializers.ModelSerializer):
         if location:
             farm_data['location'] = location
         
-        farm = Farm.objects.create(**farm_data)
-        
-        return farm
+        try:
+            farm = Farm.objects.create(**farm_data)
+            print(f"Farm created successfully: {farm.name}")
+            return farm
+        except Exception as e:
+            print(f"Error creating farm: {e}")
+            raise serializers.ValidationError(f"Error creating farm: {str(e)}")
 ################################################################################################################################
 
 class ProjectSerializer(serializers.ModelSerializer):

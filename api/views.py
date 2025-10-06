@@ -5,11 +5,11 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from django.db.models import Q
 from portal.models import (
-    ComplianceCheck, Milestone, UserProfile, Staff, Farmer, Farm, MonitoringVisit, 
+    ComplianceCheck, Milestone, Region, UserProfile, Staff, Farmer, Farm, MonitoringVisit, 
     Project, District, FarmVisit, versionTbl
 )
 from .serializers import (
-    StaffLoginSerializer, StaffSerializer, FarmerSerializer, 
+    DistrictSerializer, RegionSerializer, StaffLoginSerializer, StaffSerializer, FarmerSerializer, 
     FarmerCreateSerializer, FarmSerializer, FarmCreateSerializer,
     MonitoringVisitSerializer, MonitoringVisitCreateSerializer,
     ProjectSerializer, ProjectCreateSerializer, MilestoneSerializer,
@@ -66,7 +66,6 @@ class versionTblView(APIView):
             raise e
         return JsonResponse(status, safe=False)
 
-
 class StaffLoginAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -109,8 +108,8 @@ class StaffLoginAPIView(APIView):
                             # Prefetch related data to avoid N+1 queries
                             staff = Staff.objects.select_related(
                                 'user_profile', 
-                                'user_profile__district',
-                                'user_profile__district__region'
+                                'user_profile__user',  # Add this to access User model
+                                'user_profile__district'
                             ).prefetch_related('assigned_districts').get(id=staff.id)
                             
                             staff_serializer = StaffSerializer(staff)
@@ -151,37 +150,129 @@ class StaffLoginAPIView(APIView):
                 'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class RegionAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Fetch all regions",
+        responses={
+            200: RegionSerializer(many=True),
+            404: "No regions found",
+            500: "Internal server error"
+        }
+    )
+    def get(self, request):
+        """
+        Fetch all regions
+        """
+        try:
+            regions = Region.objects.filter(is_deleted=False)
+            
+            if not regions.exists():
+                return Response({
+                    'msg': 'No regions found',
+                    'data': [],
+                    'status': 0
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = RegionSerializer(regions, many=True)
+            
+            return Response({
+                'msg': 'Regions data fetched successfully',
+                'data': serializer.data,
+                'status': 1
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'msg': f'Error fetching regions: {str(e)}',
+                'data': [],
+                'status': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+class DistrictAPIView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    @swagger_auto_schema(
+        operation_description="Fetch all districts",
+        responses={
+            200: DistrictSerializer(many=True),
+            404: "No districts found",
+            500: "Internal server error"
+        }
+    )
+    def get(self, request):
+        """
+        Fetch all districts
+        """
+        try:
+            districts = District.objects.filter(is_deleted=False)
+            
+            if not districts.exists():
+                return Response({
+                    'msg': 'No districts found',
+                    'data': [],
+                    'status': 0
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = DistrictSerializer(districts, many=True)
+            
+            return Response({
+                'msg': 'Districts data fetched successfully',
+                'data': serializer.data,
+                'status': 1
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'msg': f'Error fetching districts: {str(e)}',
+                'data': [],
+                'status': 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class FarmerAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
     
-    # @staff_exists_required
-    # @swagger_auto_schema(
-    #     operation_description="Fetch all farmers data by district",
-       
-    # )
-    def get(self, request, district):
+    @swagger_auto_schema(
+        operation_description="Fetch all farmers data - optionally filter by district",
+        manual_parameters=[
+            openapi.Parameter(
+                'district',
+                openapi.IN_QUERY,
+                description="Filter by district name",
+                type=openapi.TYPE_STRING,
+                required=False
+            )
+        ]
+    )
+    def get(self, request, district=None):
         """
-        Fetch farmers data - can filter by district or region
+        Fetch farmers data - can filter by district if provided
         """
         try:
-        
             farmers = Farmer.objects.filter(is_deleted=False)
-            # Filter by district if provided
+            
+            # Filter by district if provided (either from URL parameter or query parameter)
             if district:
-                farmers = farmers.filter(user_profile__district__name__icontains=district)
+                farmers = farmers.filter(user_profile__district__district__icontains=district)
+            else:
+                # Also check for district in query parameters
+                district_query = request.GET.get('district')
+                if district_query:
+                    farmers = farmers.filter(user_profile__district__district__icontains=district_query)
             
             if not farmers.exists():
                 return Response({
-                    'msg': 'No farmers found',
+                    'msg': 'No farmers found', 
                     'data': [],
                     'status': 0
                 }, status=status.HTTP_404_NOT_FOUND)
             
+            # FIX: Use many=True for queryset
             serializer = FarmerSerializer(farmers, many=True)
             
             return Response({
@@ -196,8 +287,16 @@ class FarmerAPIView(APIView):
                 'data': [],
                 'status': 0
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
 
+    @swagger_auto_schema(
+        operation_description="Create a new farmer",
+        request_body=FarmerCreateSerializer,
+        responses={
+            201: FarmerSerializer,
+            400: "Validation error",
+            500: "Internal server error"
+        }
+    )
     def post(self, request):
         """
         Create a new farmer
@@ -210,7 +309,7 @@ class FarmerAPIView(APIView):
             if serializer.is_valid():
                 farmer = serializer.save()
                 
-                # Prepare response data
+                # Prepare response data - FIX: Use the same serializer instance
                 response_serializer = FarmerSerializer(farmer)
                 
                 return Response({
@@ -234,6 +333,7 @@ class FarmerAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 class FarmAPIView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -247,7 +347,7 @@ class FarmAPIView(APIView):
             
             # Filter by district if provided
             if district:
-                farms = farms.filter(farmer__user_profile__district__name__icontains=district)
+                farms = farms.filter(farmer__user_profile__district__district__icontains=district)
             
             if not farms.exists():
                 return Response({
@@ -272,6 +372,7 @@ class FarmAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def post(self, request):
+        print(request.data)
         """
         Create a new farm
         
@@ -284,11 +385,11 @@ class FarmAPIView(APIView):
                 farm = serializer.save()
                 
                 # Prepare response data
-                response_serializer = FarmSerializer(farm)
+                # response_serializer = FarmSerializer(farm)
                 
                 return Response({
                     'msg': 'Farm created successfully',
-                    'data': response_serializer.data,
+                    'data': [],
                     'status': 1
                 }, status=status.HTTP_201_CREATED)
             

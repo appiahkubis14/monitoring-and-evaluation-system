@@ -229,26 +229,26 @@ class StaffAdmin(ImportExportModelAdmin):
         return obj.user_profile.user.username
     get_username.short_description = 'Username'
     get_username.admin_order_field = 'user_profile__user__username'
-
 @admin.register(Farmer)
 class FarmerAdmin(ImportExportModelAdmin):
     resource_class = FarmerResource
     list_display = (
-        'national_id', 'get_username', 'get_full_name', 'district', 
+        'national_id', 'get_username', 'get_full_name', 'get_district', 
         'primary_crop', 'years_of_experience', 'extension_services', 
         'cooperative_membership', 'farms_count'
     )
     list_filter = (
         'primary_crop', 'extension_services', 'years_of_experience',
-        'district', 'cooperative_membership'
+        'user_profile__district', 'cooperative_membership'  # Fix filter
     )
     search_fields = (
         'national_id', 'user_profile__user__username', 
         'user_profile__user__first_name', 'user_profile__user__last_name',
-        'primary_crop', 'business_name', 'community'
+        'primary_crop', 'business_name', 'community',
+        'user_profile__district__district'  # Add district search
     )
-    list_select_related = ('user_profile__user', 'district')
-    readonly_fields = ('national_id', 'created_at', 'updated_at', 'farms_count')
+    list_select_related = ('user_profile__user', 'user_profile__district')
+    readonly_fields = ('national_id', 'created_at', 'updated_at', 'farms_count', 'get_district')
     date_hierarchy = 'user_profile__user__date_joined'
     
     fieldsets = (
@@ -259,7 +259,7 @@ class FarmerAdmin(ImportExportModelAdmin):
         }),
         ('Location Details', {
             'fields': (
-                'district', 'community'
+                'get_district', 'community'  # Use get_district instead of district
             )
         }),
         ('Farming Information', {
@@ -287,19 +287,38 @@ class FarmerAdmin(ImportExportModelAdmin):
         }),
     )
     
+    def get_district(self, obj):
+        """Display district from user profile"""
+        if obj.user_profile and obj.user_profile.district:
+            return obj.user_profile.district.district
+        return "No district"
+    get_district.short_description = 'District'
+    get_district.admin_order_field = 'user_profile__district__district'
+    
     def get_username(self, obj):
-        return obj.user_profile.user.username
+        """Display username"""
+        if obj.user_profile and obj.user_profile.user:
+            return obj.user_profile.user.username
+        return "No username"
     get_username.short_description = 'Username'
     get_username.admin_order_field = 'user_profile__user__username'
     
     def get_full_name(self, obj):
-        return obj.user_profile.user.get_full_name()
+        """Display full name"""
+        if obj.user_profile and obj.user_profile.user:
+            return f"{obj.user_profile.user.first_name} {obj.user_profile.user.last_name}"
+        return "No name"
     get_full_name.short_description = 'Full Name'
     get_full_name.admin_order_field = 'user_profile__user__first_name'
     
     def farms_count(self, obj):
+        """Display number of farms"""
         return obj.farms.count()
-    farms_count.short_description = 'Number of Farms'
+    farms_count.short_description = 'Farms Count'
+
+
+
+  
 
 @admin.register(Farm)
 class FarmAdmin(LeafletGeoAdmin, ImportExportModelAdmin):
@@ -325,8 +344,8 @@ class FarmAdmin(LeafletGeoAdmin, ImportExportModelAdmin):
     settings_overrides = {
         'DEFAULT_CENTER': (7.9465, -1.0232),  # Ghana coordinates
         'DEFAULT_ZOOM': 7,
-        'MIN_ZOOM': 1,
-        'MAX_ZOOM': 18,
+        'MIN_ZOOM': 11,
+        'MAX_ZOOM': 16,
     }
     
     fieldsets = (

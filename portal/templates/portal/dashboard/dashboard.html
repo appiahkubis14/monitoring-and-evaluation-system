@@ -123,6 +123,76 @@
         </div>
     </div>
 
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Regional Performance - Fixed to show data properly -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Regional Performance</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleRegionalChart()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="regionalPerformanceChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-center small">
+                        <span class="mr-3">
+                            <i class="fas fa-circle text-primary"></i> Farmers
+                        </span>
+                        <span class="mr-3">
+                            <i class="fas fa-circle text-success"></i> Farms
+                        </span>
+                        <span>
+                            <i class="fas fa-circle text-info"></i> Hectares
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loan Performance - Fixed to handle zero data -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Loan Performance (Last 6 Months)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 280px;">
+                        <canvas id="loanPerformanceChart"></canvas>
+                    </div>
+                    {% if total_loan_disbursed == 0 %}
+                    <div class="alert alert-info mt-2 text-center py-2">
+                        <small><i class="fas fa-info-circle me-1"></i>No loan data available for the selected period</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Yield Analysis - Fixed to show actual data -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Yield Analysis by Crop</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 280px;">
+                        <canvas id="yieldAnalysisChart"></canvas>
+                    </div>
+                    <div class="mt-2 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-chart-line me-1"></i>
+                            Projected vs Actual Yield (tons/ha)
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Project Performance -->
     <div class="row">
         <!-- Project Progress -->
@@ -238,227 +308,96 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
+    <!-- Loan Summary & Quick Actions -->
     <div class="row mb-4">
-        <!-- Regional Performance -->
-        <div class="col-xl-4 col-lg-6">
-            <div class="card shadow mb-4">
+        <div class="col-xl-8 col-lg-6 mb-4">
+            <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Regional Performance</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Loan Summary</h6>
+                    <a href="/monitoring/loans/">View All Loans</a>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="regionalPerformanceChart" height="250"></canvas>
-                    </div>
-                    <div class="mt-3 text-center small">
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-primary"></i> Farmers
-                        </span>
-                        <span class="mr-3">
-                            <i class="fas fa-circle text-success"></i> Farms
-                        </span>
-                        <span>
-                            <i class="fas fa-circle text-info"></i> Hectares
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loan Performance -->
-        <div class="col-xl-4 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Loan Performance (Last 6 Months)</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-bar">
-                        <canvas id="loanPerformanceChart" height="280"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Yield Analysis -->
-        <div class="col-xl-4 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Yield Analysis by Crop</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-bar">
-                        <canvas id="yieldAnalysisChart" height="280"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activities & Quick Actions -->
-    <div class="row mb-4">
-    <!-- Loan Summary & Quick Actions Row - Equal Height -->
-    <div class="col-xl-8 col-lg-6 mb-4">
-        <div class="card shadow h-100">  <!-- Added h-100 class -->
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Loan Summary</h6>
-                <a href="/monitoring/loans/">View All Loans</a>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-3 mb-3">
-                        <div class="card border-left-success h-100">  <!-- Added h-100 -->
-                            <div class="card-body d-flex flex-column">  <!-- Added flex classes -->
-                                <h5 class="card-title text-success">GHS {{ total_loan_disbursed|floatformat:2|intcomma }}</h5>
-                                <p class="card-text small mt-auto">Total Disbursed</p>  <!-- Added mt-auto -->
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-success h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-success">GHS {{ total_loan_disbursed|floatformat:2|intcomma }}</h5>
+                                    <p class="card-text small mt-auto">Total Disbursed</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card border-left-primary h-100">  <!-- Added h-100 -->
-                            <div class="card-body d-flex flex-column">  <!-- Added flex classes -->
-                                <h5 class="card-title text-primary">GHS {{ total_loan_repaid|floatformat:2|intcomma }}</h5>
-                                <p class="card-text small mt-auto">Total Repaid</p>  <!-- Added mt-auto -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-primary h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-primary">GHS {{ total_loan_repaid|floatformat:2|intcomma }}</h5>
+                                    <p class="card-text small mt-auto">Total Repaid</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card border-left-warning h-100">  <!-- Added h-100 -->
-                            <div class="card-body d-flex flex-column">  <!-- Added flex classes -->
-                                <h5 class="card-title text-warning" id="outstandingAmount">GHS 0.00</h5>
-                                <p class="card-text small mt-auto">Outstanding</p>  <!-- Added mt-auto -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-warning h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-warning" id="outstandingAmount">GHS 0.00</h5>
+                                    <p class="card-text small mt-auto">Outstanding</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="card border-left-info h-100">  <!-- Added h-100 -->
-                            <div class="card-body d-flex flex-column">  <!-- Added flex classes -->
-                                <h5 class="card-title text-info" id="repaymentRate">0%</h5>
-                                <p class="card-text small mt-auto">Repayment Rate</p>  <!-- Added mt-auto -->
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-info h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-info" id="repaymentRate">0%</h5>
+                                    <p class="card-text small mt-auto">Repayment Rate</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Quick Actions -->
-    <div class="col-xl-4 col-lg-6 mb-4">
-        <div class="card shadow h-100">  <!-- Added h-100 class -->
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-            </div>
-            <div class="card-body">
-                <div class="row h-100">  <!-- Added h-100 -->
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/projects/" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-project-diagram me-2"></i>Manage Projects
-                        </a>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/farmers/" class="btn btn-outline-info w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-users me-2"></i>View Farmers
-                        </a>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/loans/" class="btn btn-outline-success w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-hand-holding-usd me-2"></i>Loan Management
-                        </a>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/farms/" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-tractor me-2"></i>Farm Management
-                        </a>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/reports/" class="btn btn-outline-danger w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-chart-bar me-2"></i>Generate Reports
-                        </a>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                        <a href="/monitoring/visits/" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">  <!-- Added flex classes -->
-                            <i class="fas fa-clipboard-list me-2"></i>Monitoring Visits
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <!-- Detailed Analysis Section -->
-    <!-- <div class="container-fluid">
         
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="timeFilter">Time Range</label>
-                    <select class="form-control" id="timeFilter">
-                        <option value="30">Last Month</option>
-                        <option value="60">Last 2 Months</option>
-                        <option value="90">Last 3 Months</option>
-                        <option value="180" selected>Last 6 Months</option>
-                        <option value="360">Last 12 Months</option>
-                    </select>
+        <!-- Quick Actions -->
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="regionFilter">Region</label>
-                    <select class="form-control" id="regionFilter" multiple>
-                        {% for region in regions %}
-                            <option value="{{ region.id }}" selected>{{ region.region }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="projectFilter">Project</label>
-                    <select class="form-control" id="projectFilter" multiple>
-                        {% for project in projects %}
-                            <option value="{{ project.id }}" selected>{{ project.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group d-flex align-items-end">
-                    <button class="btn btn-primary me-2" onclick="loadComparisonData()">Apply Filters</button>
-                    <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
-                </div>
-            </div>
-        </div> -->
-        
-        <!-- Detailed Analysis Chart -->
-        <!-- <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Detailed Performance Analysis</h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
-                               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                <div class="card-body">
+                    <div class="row h-100">
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/projects/" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-project-diagram me-2"></i>Manage Projects
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" 
-                                 aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Chart Options:</div>
-                                <a class="dropdown-item" href="#" onclick="changeChartType('bar')">Bar Chart</a>
-                                <a class="dropdown-item" href="#" onclick="changeChartType('line')">Line Chart</a>
-                                <a class="dropdown-item" href="#" onclick="changeChartType('stack')">Stacked Bar</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" onclick="exportChartData()">Export Data</a>
-                            </div>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="performanceChart" style="height: 500px;"></div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/farmers/" class="btn btn-outline-info w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-users me-2"></i>View Farmers
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/loans/" class="btn btn-outline-success w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-hand-holding-usd me-2"></i>Loan Management
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/farms/" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-tractor me-2"></i>Farm Management
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/reports/" class="btn btn-outline-danger w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-chart-bar me-2"></i>Generate Reports
+                            </a>
+                        </div>
+                        <div class="col-sm-6 mb-3">
+                            <a href="/monitoring/visits/" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-clipboard-list me-2"></i>Monitoring Visits
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div> -->
-    <!-- </div> -->
+        </div>
+    </div>
 </div>
 
 <!-- Add Project Modal -->
@@ -599,6 +538,12 @@
 .card-border-left-info { border-left: 0.25rem solid #36b9cc !important; }
 .card-border-left-warning { border-left: 0.25rem solid #f6c23e !important; }
 .card-border-left-danger { border-left: 0.25rem solid #e74a3b !important; }
+
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
 </style>
 
 <!-- JavaScript Libraries -->
@@ -611,9 +556,8 @@
 
 <script>
 // Global variables
-let performanceChart;
-let currentChartType = 'bar';
-let currentData = null;
+let regionalChart, loanChart, yieldChart;
+let regionalChartType = 'bar';
 
 // Calculate loan summary values
 function calculateLoanSummary() {
@@ -638,32 +582,15 @@ $(document).ready(function() {
     // Initialize charts
     initializeCharts();
     
-    // Initialize performance chart
-    // initializePerformanceChart();
-    
     // Set up event handlers
     setupEventHandlers();
-    
-    // Initialize Select2
-    $('#regionFilter, #projectFilter').select2({
-        placeholder: "Select options",
-        allowClear: true,
-        width: '100%'
-    });
 });
-
-// Initialize performance chart
-// function initializePerformanceChart() {
-//     performanceChart = echarts.init(document.getElementById('performanceChart'));
-//     loadComparisonData();
-// }
 
 // Set up all event handlers
 function setupEventHandlers() {
     // Handle form submission for adding project
     $('#submitProject').click(function() {
         const formData = $('#addProjectForm').serialize();
-        // Add your project creation logic here
         console.log('Project form data:', formData);
         $('#addProjectModal').modal('hide');
         Swal.fire({
@@ -676,7 +603,6 @@ function setupEventHandlers() {
     // Handle form submission for scheduling visit
     $('#submitVisit').click(function() {
         const formData = $('#scheduleVisitForm').serialize();
-        // Add your visit scheduling logic here
         console.log('Visit form data:', formData);
         $('#scheduleVisitModal').modal('hide');
         Swal.fire({
@@ -685,45 +611,46 @@ function setupEventHandlers() {
             text: 'Farm visit scheduled successfully.'
         });
     });
-    
-    // Handle time filter change
-    $('#timeFilter').change(loadComparisonData);
-    
-    // Window resize handler
-    $(window).resize(function() {
-        if (performanceChart) {
-            performanceChart.resize();
-        }
-    });
 }
 
-// Initialize charts function
+// Initialize charts function - FIXED VERSION
 function initializeCharts() {
-    // Regional Performance Chart
+    // Regional Performance Chart - FIXED
     const regionalCtx = document.getElementById('regionalPerformanceChart').getContext('2d');
     const regionalData = {{ regional_data|safe }};
     
-    new Chart(regionalCtx, {
-        type: 'bar',
+    // Filter out regions with no data for better visualization
+    const filteredRegionalData = regionalData.filter(item => 
+        item.farmers > 0 || item.farms > 0 || item.hectares > 0
+    );
+    
+    // If no data in filtered, show all regions with zeros
+    const displayRegionalData = filteredRegionalData.length > 0 ? filteredRegionalData : regionalData.slice(0, 5);
+    
+    regionalChart = new Chart(regionalCtx, {
+        type: regionalChartType,
         data: {
-            labels: regionalData.map(item => item.region),
+            labels: displayRegionalData.map(item => item.region),
             datasets: [
                 {
                     label: 'Farmers',
-                    data: regionalData.map(item => item.farmers),
+                    data: displayRegionalData.map(item => item.farmers),
                     backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
                     borderWidth: 1
                 },
                 {
                     label: 'Farms',
-                    data: regionalData.map(item => item.farms),
+                    data: displayRegionalData.map(item => item.farms),
                     backgroundColor: '#1cc88a',
+                    borderColor: '#1cc88a',
                     borderWidth: 1
                 },
                 {
                     label: 'Hectares',
-                    data: regionalData.map(item => item.hectares),
+                    data: displayRegionalData.map(item => item.hectares),
                     backgroundColor: '#36b9cc',
+                    borderColor: '#36b9cc',
                     borderWidth: 1
                 }
             ]
@@ -732,49 +659,36 @@ function initializeCharts() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true }
-            }
-        }
-    });
-    
-    // Loan Performance Chart
-    const loanCtx = document.getElementById('loanPerformanceChart').getContext('2d');
-    const loanData = {{ loan_data|safe }};
-    
-    new Chart(loanCtx, {
-        type: 'bar',
-        data: {
-            labels: loanData.map(item => item.month),
-            datasets: [
-                {
-                    label: 'Disbursed',
-                    data: loanData.map(item => item.disbursed),
-                    backgroundColor: '#1cc88a',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Repaid',
-                    data: loanData.map(item => item.repaid),
-                    backgroundColor: '#4e73df',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Defaulted',
-                    data: loanData.map(item => item.defaulted),
-                    backgroundColor: '#e74a3b',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
+                y: { 
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return 'GHS ' + value.toLocaleString();
+                            return value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toLocaleString();
+                            }
+                            return label;
                         }
                     }
                 }
@@ -782,11 +696,76 @@ function initializeCharts() {
         }
     });
     
-    // Yield Analysis Chart
+    // Loan Performance Chart - FIXED to handle zero data
+    const loanCtx = document.getElementById('loanPerformanceChart').getContext('2d');
+    const loanData = {{ loan_data|safe }};
+    
+    // Check if we have any non-zero data
+    const hasLoanData = loanData.some(item => item.disbursed > 0 || item.repaid > 0 || item.defaulted > 0);
+    
+    if (hasLoanData) {
+        loanChart = new Chart(loanCtx, {
+            type: 'bar',
+            data: {
+                labels: loanData.map(item => item.month),
+                datasets: [
+                    {
+                        label: 'Disbursed',
+                        data: loanData.map(item => item.disbursed),
+                        backgroundColor: '#1cc88a',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Repaid',
+                        data: loanData.map(item => item.repaid),
+                        backgroundColor: '#4e73df',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Defaulted',
+                        data: loanData.map(item => item.defaulted),
+                        backgroundColor: '#e74a3b',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'GHS ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': GHS ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        // Show a message when no data
+        loanCtx.font = '16px Arial';
+        loanCtx.fillStyle = '#6c757d';
+        loanCtx.textAlign = 'center';
+        loanCtx.fillText('No loan data available', loanCtx.canvas.width / 2, loanCtx.canvas.height / 2);
+    }
+    
+    // Yield Analysis Chart - FIXED to show actual data
     const yieldCtx = document.getElementById('yieldAnalysisChart').getContext('2d');
     const yieldData = {{ yield_data|safe }};
     
-    new Chart(yieldCtx, {
+    yieldChart = new Chart(yieldCtx, {
         type: 'bar',
         data: {
             labels: yieldData.map(item => item.crop),
@@ -816,154 +795,34 @@ function initializeCharts() {
                         text: 'Tons per Hectare'
                     }
                 }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' tons/ha';
+                        }
+                    }
+                }
             }
         }
     });
 }
 
-// Load comparison data
-// Load comparison data
-function loadComparisonData() {
-    const timeRange = $('#timeFilter').val();
-    const regions = $('#regionFilter').val() || [];
-    const projects = $('#projectFilter').val() || [];
-    
-    // Build URL with proper parameters
-    const params = new URLSearchParams({
-        time_range: timeRange,
-    });
-    
-    // Add regions and projects as separate parameters
-    regions.forEach(region => params.append('regions', region));
-    projects.forEach(project => params.append('projects', project));
-    
-    const url = `/api/performance-analysis/?${params.toString()}`;
-    
-    showLoading();
-    
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            currentData = data;
-            updatePerformanceChart(data);
-            hideLoading();
-        })
-        .catch(error => {
-            console.error('Error loading performance data:', error);
-            hideLoading();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to load performance data. Please try again.'
-            });
-        });
-}
-function showLoading() {
-    if (performanceChart) {
-        performanceChart.showLoading('default', {
-            text: 'Loading performance data...',
-            color: '#4e73df',
-            textColor: '#495057',
-            maskColor: 'rgba(255, 255, 255, 0.8)'
-        });
+// Toggle regional chart type
+function toggleRegionalChart() {
+    regionalChartType = regionalChartType === 'bar' ? 'line' : 'bar';
+    if (regionalChart) {
+        regionalChart.destroy();
     }
+    initializeCharts();
 }
 
-function hideLoading() {
-    if (performanceChart) {
-        performanceChart.hideLoading();
-    }
-}
-
-// Update performance chart
-function updatePerformanceChart(data) {
-    if (!performanceChart) return;
-    
-    const option = {
-        backgroundColor: '#f8f9fa',
-        title: {
-            text: 'Detailed Performance Analysis',
-            left: 'center',
-            textStyle: {
-                color: '#343a40',
-                fontSize: 16,
-                fontWeight: 'bold'
-            }
-        },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'shadow' }
-        },
-        legend: {
-            data: data.series.map(s => s.name),
-            top: 30
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            top: '20%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            data: data.months
-        },
-        yAxis: {
-            type: 'value',
-            name: 'Values'
-        },
-        series: data.series.map((series, index) => ({
-            name: series.name,
-            type: currentChartType === 'stack' ? 'bar' : currentChartType,
-            stack: currentChartType === 'stack' ? 'total' : null,
-            data: series.data,
-            itemStyle: { color: series.color }
-        }))
-    };
-    
-    performanceChart.setOption(option, true);
-}
-
-// Chart type toggle function
-function changeChartType(type) {
-    currentChartType = type;
-    if (currentData) {
-        updatePerformanceChart(currentData);
-    }
-}
-
-// Reset filters
-function resetFilters() {
-    $('#timeFilter').val('180');
-    $('#regionFilter').val(null).trigger('change');
-    $('#projectFilter').val(null).trigger('change');
-    loadComparisonData();
-}
-
-// Export functionality
-function exportChartData() {
-    if (!currentData) return;
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-        + "Month," + currentData.series.map(s => s.name).join(",") + "\n"
-        + currentData.months.map((month, i) => 
-            month + "," + currentData.series.map(s => s.data[i]).join(",")
-        ).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "performance_analysis.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+// Handle window resize
+$(window).resize(function() {
+    // Reinitialize charts on resize for better responsiveness
+    setTimeout(initializeCharts, 100);
+});
 </script>
 
 {% endblock %}

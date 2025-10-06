@@ -130,7 +130,7 @@ def get_loan_detail(request, loan_id):
     try:
         loan = Loan.objects.select_related(
             'farmer__user_profile__user',
-            'farmer__user_profile__district__region',
+            'farmer__user_profile__district__region_foreignkey',
             'project'
         ).prefetch_related('disbursements', 'repayments').get(id=loan_id)
         
@@ -471,12 +471,14 @@ def get_available_farmers_for_loan(request):
                 'id': farmer.id,
                 'name': f"{farmer.user_profile.user.first_name} {farmer.user_profile.user.last_name}",
                 'national_id': farmer.national_id,
-                'district': farmer.user_profile.district.name if farmer.user_profile.district else 'N/A',
-                'farm_size': farmer.farm_size,
+                'district': farmer.user_profile.district.district if farmer.user_profile.district else 'N/A',
+                # 'farm_size': farmer.farm_size,
                 'years_of_experience': farmer.years_of_experience,
                 'active_loans_count': farmer.loans.filter(status__in=['applied', 'approved', 'disbursed', 'repaying']).count(),
                 'completed_loans_count': farmer.loans.filter(status='completed').count()
             })
+
+            print(data)
         
         return JsonResponse({'success': True, 'farmers': data})
         
@@ -490,7 +492,7 @@ def get_active_projects(request):
     try:
         active_projects = Project.objects.filter(
             status='active',
-            end_date__gte=timezone.now().date()
+            # end_date__gte=timezone.now().date()
         )
         
         data = []
@@ -504,6 +506,7 @@ def get_active_projects(request):
                 'total_budget': float(project.total_budget),
                 'farmers_count': project.participating_farmers.count()
             })
+            print(data)
         
         return JsonResponse({'success': True, 'projects': data})
         

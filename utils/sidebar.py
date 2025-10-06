@@ -19,11 +19,11 @@ class Sidebar:
                     "url": "/dashboard/overview/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
                 },
-                "KPI Dashboard": {
-                    "icon": "fas fa-key", 
-                    "url": "/reports/kpi/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
+                # "KPI Dashboard": {
+                #     "icon": "fas fa-key", 
+                #     "url": "/reports/kpi/", 
+                #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+                # },
               
             },
         },

@@ -30,7 +30,7 @@ def farm_list(request):
     # Base queryset with related data
     queryset = Farm.objects.filter(validation_status=True).select_related(
         'farmer__user_profile__user', 
-        'farmer__user_profile__district__region'
+        'farmer__user_profile__district__region_foreignkey'
     ).all()
     
     # Apply filters
@@ -123,7 +123,7 @@ def get_farm_detail(request, farm_id):
     try:
         farm = Farm.objects.select_related(
             'farmer__user_profile__user',
-            'farmer__user_profile__district__region'
+            'farmer__user_profile__district__region_foreignkey'
         ).prefetch_related('crops__variety', 'visits').get(id=farm_id)
         
         # Get farm crops

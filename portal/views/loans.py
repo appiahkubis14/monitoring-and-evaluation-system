@@ -31,7 +31,7 @@ def loan_list(request):
     queryset = Loan.objects.select_related(
         'farmer__user_profile__user', 
         'project',
-        'farmer__user_profile__district__region'
+        'farmer__user_profile__district__region_foreignkey'
     ).all()
     
     # Apply filters

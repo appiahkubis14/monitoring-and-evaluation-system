@@ -85,12 +85,30 @@ class Region(TimeStampModel):
 class District(TimeStampModel):
     district = models.CharField(max_length=250)
     district_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
-    region = models.CharField(max_length=250,null=True, blank=True)
+    region = models.CharField(max_length=250, null=True, blank=True)
     reg_code = models.CharField(max_length=10, unique=True, blank=True, null=True)
+    region_foreignkey = models.ForeignKey(
+        'Region',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='districts',
+        to_field='reg_code'  # This is the key change
+    )
     geom = GeometryField(blank=True, null=True, srid=4326)
     
     def __str__(self):
         return f"{self.district} ({self.region})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate the region_foreignkey based on the reg_code
+        if self.reg_code and not self.region_foreignkey:
+            try:
+                region_obj = Region.objects.get(reg_code=self.reg_code)
+                self.region_foreignkey = region_obj
+            except Region.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
     
 
 class societyTble(models.Model):
@@ -178,13 +196,13 @@ class Farmer(TimeStampModel):
         verbose_name = "Farmer"
         verbose_name_plural = "Farmers"
     
-    def save(self, *args, **kwargs):
-        if not self.national_id:
-            # Generate national ID if not provided
-            count = Farmer.objects.count() + 1
-            district_code = self.user_profile.district.code if self.user_profile.district and self.user_profile.district.code else "DF"
-            self.national_id = f"MNG{district_code}{count:04d}"
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.national_id:
+    #         # Generate national ID if not provided
+    #         count = Farmer.objects.count() + 1
+    #         district_code = self.user_profile.district.code if self.user_profile.district and self.user_profile.district.code else "DF"
+    #         self.national_id = f"MNG{district_code}{count:04d}"
+    #     super().save(*args, **kwargs)
 
 
 class Project(TimeStampModel):

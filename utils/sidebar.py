@@ -19,16 +19,12 @@ class Sidebar:
                     "url": "/dashboard/overview/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
                 },
-                "Performance Metrics": {
-                    "icon": "fas fa-chart-line", 
-                    "url": "/dashboard/performance/", 
+                "KPI Dashboard": {
+                    "icon": "fas fa-key", 
+                    "url": "/reports/kpi/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
                 },
-                "Regional Comparison": {
-                    "icon": "fas fa-globe-africa", 
-                    "url": "/dashboard/regional/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.STAKEHOLDER.value]
-                },
+              
             },
         },
         
@@ -183,77 +179,73 @@ class Sidebar:
                     "url": "/reports/export/", 
                     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
                 },
-                "KPI Dashboard": {
-                    "icon": "fas fa-key", 
-                    "url": "/reports/kpi/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
+                
             }
         },
         
-        "Communication": {
-            "icon": "fas fa-comments",
-            "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
-            "sub_items": {
-                "Alerts & Notifications": {
-                    "icon": "fas fa-bell", 
-                    "url": "/communication/alerts/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
-                "Extension Services": {
-                    "icon": "fas fa-broadcast-tower", 
-                    "url": "/communication/extension/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
-                "Message Templates": {
-                    "icon": "fas fa-envelope", 
-                    "url": "/communication/templates/", 
-                    "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
-                },
-            }
-        },
+        # "Communication": {
+        #     "icon": "fas fa-comments",
+        #     "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value],
+        #     "sub_items": {
+        #         "Alerts & Notifications": {
+        #             "icon": "fas fa-bell", 
+        #             "url": "/communication/alerts/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+        #         },
+        #         "Extension Services": {
+        #             "icon": "fas fa-broadcast-tower", 
+        #             "url": "/communication/extension/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+        #         },
+        #         "Message Templates": {
+        #             "icon": "fas fa-envelope", 
+        #             "url": "/communication/templates/", 
+        #             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]
+        #         },
+        #     }
+        # },
         
-        "System Administration": {
-            "icon": "fas fa-cogs",
-            "groups": [UserRole.ADMIN.value],
-            "sub_items": {
-                "User Management": {
-                    "icon": "fas fa-user-cog", 
-                    "url": "/admin/users/", 
-                    "groups": [UserRole.ADMIN.value]
-                },
-                "Role Permissions": {
-                    "icon": "fas fa-user-lock", 
-                    "url": "/admin/roles/", 
-                    "groups": [UserRole.ADMIN.value]
-                },
-                "Data Management": {
-                    "icon": "fas fa-database", 
-                    "url": "/admin/data/", 
-                    "groups": [UserRole.ADMIN.value]
-                },
-                "System Settings": {
-                    "icon": "fas fa-sliders-h", 
-                    "url": "/admin/settings/", 
-                    "groups": [UserRole.ADMIN.value]
-                },
-                "Audit Logs": {
-                    "icon": "fas fa-history", 
-                    "url": "/admin/logs/", 
-                    "groups": [UserRole.ADMIN.value]
-                },
-                "Admin Dashboard": {
-                    "icon": "fas fa-user-shield",
-                    "url": "/admin/",
-                    "groups": [UserRole.ADMIN.value]
-                }
-            }
-        },
+        # "System Administration": {
+        #     "icon": "fas fa-cogs",
+        #     "groups": [UserRole.ADMIN.value],
+        #     "sub_items": {
+        #         "User Management": {
+        #             "icon": "fas fa-user-cog", 
+        #             "url": "/admin/users/", 
+        #             "groups": [UserRole.ADMIN.value]
+        #         },
+        #         "Role Permissions": {
+        #             "icon": "fas fa-user-lock", 
+        #             "url": "/admin/roles/", 
+        #             "groups": [UserRole.ADMIN.value]
+        #         },
+        #         "Data Management": {
+        #             "icon": "fas fa-database", 
+        #             "url": "/admin/data/", 
+        #             "groups": [UserRole.ADMIN.value]
+        #         },
+        #         "System Settings": {
+        #             "icon": "fas fa-sliders-h", 
+        #             "url": "/admin/settings/", 
+        #             "groups": [UserRole.ADMIN.value]
+        #         },
+        #         "Audit Logs": {
+        #             "icon": "fas fa-history", 
+        #             "url": "/admin/logs/", 
+        #             "groups": [UserRole.ADMIN.value]
+        #         },
+        #         "Admin Dashboard": {
+        #             "icon": "fas fa-user-shield",
+        #             "url": "/admin/",
+        #             "groups": [UserRole.ADMIN.value]
+        #         }
+        #     }
+        # },
         
         
-        "Logout": {
+        "Admin Panel": {
             "icon": "fas fa-sign-out-alt",
-            "url": "/logout/",
+            "url": "/admin/",
             "groups": [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value, UserRole.FIELD_OFFICER.value, UserRole.FARMER.value, UserRole.STAKEHOLDER.value]
         },
 

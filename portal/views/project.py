@@ -26,8 +26,15 @@ def project_list(request):
     search_value = request.GET.get('search[value]', '')
     status_filter = request.GET.get('status')
     
-    # Base queryset with related data
-    queryset = Project.objects.select_related('manager__user_profile__user').prefetch_related('participating_farmers').all()
+    # Base queryset with optimized related data
+    queryset = Project.objects.select_related(
+        'manager__user_profile__user'
+    ).prefetch_related(
+        Prefetch(
+            'farm_set',
+            queryset=Farm.objects.select_related('farmer')
+        )
+    ).all()
     
     # Apply filters
     if status_filter:
@@ -76,12 +83,28 @@ def project_list(request):
     # Prepare data for response
     data = []
     for project in page_obj:
+        # Get all farms for this project to calculate farmer count
+        project_farms = project.farm_set.all()
+        
+        # Get unique farmers from the project farms
+        farmer_ids = project_farms.values_list('farmer_id', flat=True).distinct()
+        farmers_count = len(farmer_ids)
+        
         # Calculate progress metrics
-        farmers_count = project.participating_farmers.count()
         today = timezone.now().date()
         total_days = (project.end_date - project.start_date).days
         elapsed_days = (today - project.start_date).days
         progress_percent = min(100, max(0, int((elapsed_days / total_days) * 100))) if total_days > 0 else 0
+        
+        # Safely get manager name with fallbacks
+        manager_name = 'Not assigned'
+        if project.manager and project.manager.user_profile:
+            user = project.manager.user_profile.user
+            first_name = getattr(user, 'first_name', '')
+            last_name = getattr(user, 'last_name', '')
+            manager_name = f"{first_name} {last_name}".strip()
+            if not manager_name:
+                manager_name = f"Staff {project.manager.staff_id}" if project.manager.staff_id else "Unnamed Staff"
         
         data.append({
             'id': project.id,
@@ -93,13 +116,13 @@ def project_list(request):
             'status': project.status,
             'status_display': project.get_status_display(),
             'total_budget': float(project.total_budget),
-            'manager': f"{project.manager.user_profile.user.first_name} {project.manager.user_profile.user.last_name}" if project.manager else 'Not assigned',
+            'manager': manager_name,
             'farmers_count': farmers_count,
             'progress_percent': progress_percent,
             'days_remaining': max(0, (project.end_date - today).days),
             'is_overdue': today > project.end_date
         })
-    
+
     response = {
         'draw': draw,
         'recordsTotal': total_records,

@@ -200,7 +200,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Project Progress Overview</h6>
-                    <a href="/monitoring/projects/">View All Projects</a>
+                    <a href="/projects/">View All Projects</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -213,7 +213,7 @@
                                     <th>Farmers</th>
                                     <th>Start Date</th>
                                     <th>End Date</th>
-                                    <th>Actions</th>
+                                    <!-- <th>Actions</th> -->
                                 </tr>
                             </thead>
                             <tbody>
@@ -251,7 +251,7 @@
                                     <td>{{ project.farmer_count|default:0 }}</td>
                                     <td>{{ project.start_date|date:"M d, Y" }}</td>
                                     <td>{{ project.end_date|date:"M d, Y" }}</td>
-                                    <td>
+                                    <!-- <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="/monitoring/projects/{{ project.id }}/" class="btn btn-info">
                                                 <i class="fas fa-eye"></i>
@@ -260,7 +260,7 @@
                                                 <i class="fas fa-chart-bar"></i>
                                             </a>
                                         </div>
-                                    </td>
+                                    </td> -->
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -364,32 +364,32 @@
                 <div class="card-body">
                     <div class="row h-100">
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/projects/" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                            <a href="/projects/" class="btn btn-outline-primary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-project-diagram me-2"></i>Manage Projects
                             </a>
                         </div>
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/farmers/" class="btn btn-outline-info w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                            <a href="/farmers/" class="btn btn-outline-info w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-users me-2"></i>View Farmers
                             </a>
                         </div>
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/loans/" class="btn btn-outline-success w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                            <a href="/loans/applications/" class="btn btn-outline-success w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-hand-holding-usd me-2"></i>Loan Management
                             </a>
                         </div>
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/farms/" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                            <a href="/farmers/farms/" class="btn btn-outline-warning w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-tractor me-2"></i>Farm Management
                             </a>
                         </div>
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/reports/" class="btn btn-outline-danger w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
-                                <i class="fas fa-chart-bar me-2"></i>Generate Reports
+                            <a href="/map/" class="btn btn-outline-danger w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-chart-bar me-2"></i>Map Overview
                             </a>
                         </div>
                         <div class="col-sm-6 mb-3">
-                            <a href="/monitoring/visits/" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
+                            <a href="/monitoring/" class="btn btn-outline-secondary w-100 mb-2 h-100 d-flex align-items-center justify-content-center">
                                 <i class="fas fa-clipboard-list me-2"></i>Monitoring Visits
                             </a>
                         </div>

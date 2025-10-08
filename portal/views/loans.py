@@ -949,7 +949,7 @@ def get_repayment_detail(request, repayment_id):
     try:
         repayment = LoanRepayment.objects.select_related(
             'loan__farmer__user_profile__user',
-            'loan__farmer__user_profile__district__region',
+            'loan__farmer__user_profile__district__region_foreignkey',
             'loan__project',
             'received_by__user_profile__user'
         ).get(id=repayment_id)

@@ -162,22 +162,20 @@ JAZZMIN_SETTINGS = {
 
 
 
-
-#CJ
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": True,
     "footer_small_text": True,
     "body_small_text": True,
     "brand_small_text": False,
     "brand_colour": "navbar-warning",
-    "accent": "accent-warning",
-    "navbar": "navbar-warning navbar-light",
+    "accent": "accent-lightblue",
+    "navbar": "navbar-lightblue navbar-dark",
     "no_navbar_border": False,
     "navbar_fixed": False,
     "layout_boxed": False,
     "footer_fixed": False,
     "sidebar_fixed": True,
-    "sidebar": "sidebar-light-warning",
+    "sidebar": "sidebar-light-lightblue",
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": False,
@@ -199,7 +197,6 @@ JAZZMIN_UI_TWEAKS = {
     "text_inputs": "form-control",
     "select_inputs": "form-select"
 }
-
 
 
 

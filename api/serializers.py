@@ -349,7 +349,7 @@ class FarmCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Farm
         fields = [
-            'farmer', 'name', 'project', 'main_buyers', 'land_use_classification',
+            'farmer', 'name', 'main_buyers', 'land_use_classification',
             'accessibility', 'proximity_to_processing_plants', 'service_provider',
             'farmer_groups_affiliated', 'value_chain_linkages', 'visit_id',
             'visit_date', 'officer', 'observation', 'issues_identified',

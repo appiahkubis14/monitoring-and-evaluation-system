@@ -997,6 +997,7 @@ def get_repayment_detail(request, repayment_id):
                 'repayment_percentage': (float(total_repaid) / float(total_disbursed) * 100) if total_disbursed > 0 else 0
             }
         }
+        print(data)
         
         return JsonResponse(data)
         

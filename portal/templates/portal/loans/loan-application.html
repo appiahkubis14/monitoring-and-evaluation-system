@@ -480,6 +480,7 @@ $(document).ready(function() {
             url: "{% url 'get_available_farmers_for_loan' %}",
             type: "GET",
             success: function(response) {
+                
                 if (response.success) {
                     const farmerSelect = $('#farmerSelect');
                     farmerSelect.empty().append('<option value="">Select Farmer</option>');

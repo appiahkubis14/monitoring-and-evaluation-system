@@ -2271,7 +2271,7 @@ function selectSearchResult(farmId) {
     zoomToFarm(farmId);
 
     // Show farm details
-    showFarmDetails(farmId);
+    // showFarmDetails(farmId);
 }
 
 // Highlight farm on map when hovering over search result
@@ -2587,12 +2587,415 @@ function getMarkerStyle(farm) {
 
 
 
+// Global variables for boundary editing
+let originalFarmLayer = null;
+let vertexMarkers = [];
 
+// Enhanced startEditingBoundary function
+// Enhanced startEditingBoundary function
+function startEditingBoundary() {
+    const farm = farmsData.find(f => f.id === currentFarmId);
+    if (!farm || !farm.boundary) {
+        showToast('No boundary available for editing', 'warning');
+        return;
+    }
 
-// Render farms on map
+    // Find the existing polygon layer
+    const existingLayer = farmLayers.getLayers().find(l => l.options.farmId === currentFarmId);
+    if (!existingLayer || !(existingLayer instanceof L.Polygon)) {
+        showToast('Could not find farm boundary for editing', 'error');
+        return;
+    }
+
+    // Set editing mode
+    isEditingMode = true;
+
+    // Store reference to original polygon
+    originalFarmLayer = existingLayer;
+
+    // Get the coordinates
+    const latlngs = existingLayer.getLatLngs()[0];
+
+    // Remove original layer from map and farmLayers completely
+    farmLayers.removeLayer(existingLayer);
+    if (map.hasLayer(existingLayer)) {
+        map.removeLayer(existingLayer);
+    }
+
+    // Create new polygon for editing with click event
+    editingLayer = L.polygon(latlngs, {
+        color: '#ff6b35',
+        fillColor: '#ff6b35',
+        fillOpacity: 0.3,
+        weight: 3,
+        dashArray: '10, 10'
+    }).addTo(map);
+
+    // Add click event to editing polygon to show modal
+    editingLayer.on('click', function(e) {
+        showFarmDetailsModalInEditMode();
+    });
+
+    // Clear any existing vertex markers
+    clearVertexMarkers();
+
+    // Add vertices as draggable markers
+    latlngs.forEach((latlng, index) => {
+        const vertexMarker = L.marker(latlng, {
+            draggable: true,
+            icon: L.divIcon({
+                className: 'vertex-marker',
+                html: '<div style="background-color: #ff6b35; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+                iconSize: [16, 16]
+            })
+        }).addTo(map);
+
+        vertexMarker.on('drag', function (e) {
+            const marker = e.target;
+            const newLatLng = marker.getLatLng();
+
+            // Update the polygon vertex
+            const currentLatLngs = editingLayer.getLatLngs()[0];
+            currentLatLngs[index] = newLatLng;
+            editingLayer.setLatLngs([currentLatLngs]);
+        });
+
+        // Prevent vertex marker clicks from triggering polygon click
+        vertexMarker.on('click', function(e) {
+            L.DomEvent.stopPropagation(e);
+        });
+
+        vertexMarkers.push(vertexMarker);
+    });
+
+    // Update UI
+    document.getElementById('editBoundaryBtn').style.display = 'none';
+    document.getElementById('saveBoundaryBtn').style.display = 'inline-block';
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    document.getElementById('validateBoundaryBtn').style.display = 'none';
+
+    // Show the modal in edit mode
+    showFarmDetailsModalInEditMode();
+
+    showToast('Drag the orange circle vertices to reshape the boundary. Click on the orange polygon to show details.', 'info');
+}
+
+// Function to show farm details modal in edit mode
+function showFarmDetailsModalInEditMode() {
+    const farm = farmsData.find(f => f.id === currentFarmId);
+    if (!farm) return;
+
+    const modalContent = `
+        <div class="farm-details-grid">
+            <div class="farm-details-section">
+                <h6>Farm Information</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Farm Code:</span>
+                    <span class="detail-value">${farm.farm_code}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${escapeHtml(farm.name)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value"><span class="badge bg-${getStatusClass(farm.status)}">${farm.status}</span></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Area:</span>
+                    <span class="detail-value">${farm.area_hectares || 'N/A'} hectares</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Soil Type:</span>
+                    <span class="detail-value">${farm.soil_type || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Irrigation:</span>
+                    <span class="detail-value">${farm.irrigation_type || 'N/A'} (${farm.irrigation_coverage || 0}%)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Validation:</span>
+                    <span class="detail-value">${farm.validation_status ? '<span class="badge bg-success">Validated</span>' : '<span class="badge bg-warning">Not Validated</span>'}</span>
+                </div>
+            </div>
+            
+            <div class="farm-details-section">
+                <h6>Farmer Information</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${escapeHtml(farm.farmer_name)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">National ID:</span>
+                    <span class="detail-value">${farm.farmer_national_id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Primary Crop:</span>
+                    <span class="detail-value">${farm.primary_crop}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Experience:</span>
+                    <span class="detail-value">${farm.years_of_experience} years</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cooperative:</span>
+                    <span class="detail-value">${farm.cooperative_membership || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Registration:</span>
+                    <span class="detail-value">${farm.registration_date}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Visit:</span>
+                    <span class="detail-value">${farm.last_visit_date || 'Never'}</span>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3 editing-instructions">
+            <h6><i class="fas fa-edit"></i> Editing Mode Active</h6>
+            <p class="mb-1">• Drag the <span style="color: #ff6b35;">● orange circles</span> to reshape the boundary</p>
+            <p class="mb-1">• Click <strong>Save Changes</strong> when finished</p>
+            <p class="mb-0">• Click <strong>Cancel</strong> to discard changes</p>
+        </div>
+    `;
+
+    document.getElementById('farmDetails').innerHTML = modalContent;
+
+    // Update modal title to show editing mode
+    document.querySelector('#farmModal .modal-title').textContent = 'Edit Farm Boundary';
+
+    // Show the modal if it's not already shown
+    const farmModalElement = document.getElementById('farmModal');
+    const farmModal = bootstrap.Modal.getInstance(farmModalElement);
+    if (!farmModal) {
+        new bootstrap.Modal(farmModalElement).show();
+    } else {
+        farmModal.show();
+    }
+}
+
+// Enhanced saveBoundaryChanges function
+function saveBoundaryChanges() {
+    if (!editingLayer || !currentFarmId) {
+        showToast('No boundary changes to save', 'warning');
+        return;
+    }
+
+    try {
+        // Get updated coordinates from the edited layer
+        const latlngs = editingLayer.getLatLngs()[0];
+        const coordinates = latlngs.map(latlng => [latlng.lng, latlng.lat]);
+
+        // Ensure polygon is closed
+        const firstCoord = coordinates[0];
+        const lastCoord = coordinates[coordinates.length - 1];
+        if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
+            coordinates.push([firstCoord[0], firstCoord[1]]);
+        }
+
+        console.log('Saving coordinates:', coordinates);
+
+        // Show saving indicator
+        showToast('Saving boundary changes...', 'info');
+
+        fetch(`/map/farm/${currentFarmId}/update-boundary/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                boundary_coordinates: coordinates
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Boundary updated successfully', 'success');
+                
+                // Clean up ALL editing layers completely
+                cleanupEditingLayers();
+                
+                // Create new farm polygon with updated coordinates
+                createUpdatedFarmPolygon(coordinates);
+                
+                // Reset UI
+                resetEditingUI();
+                
+                // Update farmsData with new boundary
+                updateFarmDataWithNewBoundary(currentFarmId, coordinates);
+                
+                // Close modal
+                const farmModal = bootstrap.Modal.getInstance(document.getElementById('farmModal'));
+                if (farmModal) {
+                    farmModal.hide();
+                }
+
+                // Show the updated farm
+                setTimeout(() => {
+                    showFarmDetails(currentFarmId);
+                }, 500);
+                
+            } else {
+                showToast('Error updating boundary: ' + data.error, 'error');
+                cancelEditing();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error updating boundary', 'error');
+            cancelEditing();
+        });
+
+    } catch (error) {
+        console.error('Error saving boundary:', error);
+        showToast('Error processing boundary data', 'error');
+        cancelEditing();
+    }
+}
+
+// Clean up ALL editing layers and markers completely
+function cleanupEditingLayers() {
+    // Remove editing polygon
+    if (editingLayer) {
+        if (map.hasLayer(editingLayer)) {
+            map.removeLayer(editingLayer);
+        }
+        editingLayer = null;
+    }
+    
+    // Remove all vertex markers
+    clearVertexMarkers();
+    
+    // Clear original farm layer reference
+    originalFarmLayer = null;
+}
+
+// Clear all vertex markers
+function clearVertexMarkers() {
+    vertexMarkers.forEach(marker => {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    vertexMarkers = [];
+}
+
+// Create updated farm polygon with new coordinates
+function createUpdatedFarmPolygon(coordinates) {
+    const farm = farmsData.find(f => f.id === currentFarmId);
+    if (!farm) return;
+
+    // Convert to Leaflet format [lat, lng]
+    const leafletCoords = coordinates.map(coord => [coord[1], coord[0]]);
+
+    // Create new polygon with updated coordinates
+    const farmStyle = getFarmStyle(farm);
+    
+    const newPolygon = L.polygon(leafletCoords, {
+        ...farmStyle,
+        farmId: farm.id,
+        farmData: farm
+    });
+
+    // Add popup
+    newPolygon.bindPopup(createFarmPopup(farm));
+
+    // Add event listeners
+    // newPolygon.on('click', function (e) {
+    //     L.DomEvent.stopPropagation(e);
+    //     showFarmDetails(farm.id);
+    // });
+
+    newPolygon.on('mouseover', function (e) {
+        this.setStyle({
+            weight: farm.validation_status ? 4 : 3,
+            fillOpacity: farm.validation_status ? 0.6 : 0.3
+        });
+    });
+
+    newPolygon.on('mouseout', function (e) {
+        this.setStyle(getFarmStyle(farm));
+    });
+
+    // Add to farm layers
+    farmLayers.addLayer(newPolygon);
+    
+    // Clear and redistribute trees for this farm
+    clearTreeIconsForFarm(farm.id);
+    safeDistributeTrees(leafletCoords, farm);
+    
+    console.log('Created updated polygon for farm', farm.id);
+    
+    // Zoom to the updated farm
+    map.fitBounds(newPolygon.getBounds(), { padding: [20, 20] });
+}
+
+// Update farm data with new boundary
+function updateFarmDataWithNewBoundary(farmId, coordinates) {
+    const farmIndex = farmsData.findIndex(f => f.id === farmId);
+    if (farmIndex !== -1) {
+        // Update the boundary in local data
+        farmsData[farmIndex].boundary = {
+            type: "Polygon",
+            coordinates: [coordinates]
+        };
+        
+        // Also update has_boundary flag
+        farmsData[farmIndex].has_boundary = true;
+        
+        console.log('Updated local farm data with new boundary');
+    }
+}
+
+// Clear tree icons for specific farm
+function clearTreeIconsForFarm(farmId) {
+    if (window.treeIconsLayer) {
+        const layersToRemove = [];
+        window.treeIconsLayer.eachLayer(layer => {
+            if (layer.options && layer.options.farmId === farmId) {
+                layersToRemove.push(layer);
+            }
+        });
+        
+        layersToRemove.forEach(layer => {
+            window.treeIconsLayer.removeLayer(layer);
+        });
+    }
+}
+
+// SINGLE cancelEditing function - remove all duplicates
+function cancelEditing() {
+    // Clean up ALL editing layers
+    cleanupEditingLayers();
+    
+    // Restore original farm layer if it exists
+    if (originalFarmLayer) {
+        // Re-add original polygon to farmLayers
+        farmLayers.addLayer(originalFarmLayer);
+        originalFarmLayer = null;
+    }
+    
+    // Reset UI
+    resetEditingUI();
+    
+    showToast('Editing cancelled', 'info');
+}
+
+// Reset editing UI
+function resetEditingUI() {
+    document.getElementById('editBoundaryBtn').style.display = 'inline-block';
+    document.getElementById('saveBoundaryBtn').style.display = 'none';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+// Enhanced renderFarmsOnMap function to prevent duplicates
 function renderFarmsOnMap() {
-    // Clear existing layers
+    // Clear existing layers completely
     farmLayers.clearLayers();
+    
+    // Also clear tree icons
+    clearTreeIcons();
 
     let validatedCount = 0;
     let nonValidatedCount = 0;
@@ -2604,20 +3007,28 @@ function renderFarmsOnMap() {
         'abandoned': 0
     };
 
+    // Track farm IDs to prevent duplicates
+    const processedFarmIds = new Set();
+
     farmsData.forEach(farm => {
+        // Skip if we've already processed this farm (prevent duplicates)
+        if (processedFarmIds.has(farm.id)) {
+            console.warn('Duplicate farm ID found:', farm.id);
+            return;
+        }
+        processedFarmIds.add(farm.id);
+
         let layer = null;
 
         // Create boundary polygon if available
         if (farm.boundary && farm.boundary.coordinates) {
             try {
-                // Fix the coordinate format - handle both formats
                 let coordinates = farm.boundary.coordinates[0];
 
                 console.log('Farm', farm.id, 'boundary coordinates:', coordinates);
 
-                // Check if coordinates are in the problematic format [[lng], [lat], [lng], [lat]]
+                // Fix coordinate format if needed
                 if (Array.isArray(coordinates[0]) && coordinates[0].length === 1) {
-                    // Convert from [[lng], [lat], [lng], [lat]] to [[lng, lat], [lng, lat]]
                     const fixedCoords = [];
                     for (let i = 0; i < coordinates.length; i += 2) {
                         if (i + 1 < coordinates.length) {
@@ -2656,14 +3067,12 @@ function renderFarmsOnMap() {
                     layer = L.polygon(leafletCoords, {
                         ...farmStyle,
                         farmId: farm.id,
-                        farmData: farm // Store farm data for easy access
+                        farmData: farm
                     });
 
-                    // Add popup with status and validation info
+                    // Add popup and events
                     layer.bindPopup(createFarmPopup(farm));
-                    // distributeTreesInPolygon(leafletCoords, farm);
-                    safeDistributeTrees(leafletCoords, farm);
-
+                    
                     // Add click event
                     // layer.on('click', function (e) {
                     //     L.DomEvent.stopPropagation(e);
@@ -2690,15 +3099,20 @@ function renderFarmsOnMap() {
                     }
                     statusCounts[farm.status]++;
 
+                    // Add to farm layers
                     farmLayers.addLayer(layer);
-                    console.log('Successfully created polygon for farm', farm.id, 'Status:', farm.status, 'Validation:', farm.validation_status);
+                    
+                    // Distribute trees
+                    safeDistributeTrees(leafletCoords, farm);
+                    
+                    console.log('Successfully created polygon for farm', farm.id);
+
                 } else {
                     console.warn('Not enough coordinates for farm', farm.id, ':', leafletCoords.length);
                 }
 
             } catch (error) {
                 console.error('Error creating polygon for farm:', farm.id, error);
-                console.error('Farm boundary data:', farm.boundary);
             }
         }
 
@@ -2709,10 +3123,8 @@ function renderFarmsOnMap() {
 
                 // Handle location coordinate format
                 if (Array.isArray(coords[0]) && coords[0].length === 1) {
-                    // Convert from [[lng], [lat]] to [lat, lng]
                     coords = [coords[1][0], coords[0][0]];
                 } else {
-                    // Already in [lng, lat] format
                     coords = [coords[1], coords[0]];
                 }
 
@@ -2724,11 +3136,9 @@ function renderFarmsOnMap() {
                     farmData: farm
                 });
 
-                // Add popup with status and validation info
+                // Add popup and events
                 layer.bindPopup(createFarmPopup(farm));
 
-                // Add click event
-                
                 // Add hover effects for markers
                 layer.on('mouseover', function (e) {
                     this.setStyle({
@@ -2750,7 +3160,7 @@ function renderFarmsOnMap() {
                 statusCounts[farm.status]++;
 
                 farmLayers.addLayer(layer);
-                console.log('Successfully created marker for farm', farm.id, 'Status:', farm.status, 'Validation:', farm.validation_status);
+                console.log('Successfully created marker for farm', farm.id);
 
             } catch (error) {
                 console.error('Error creating marker for farm:', farm.id, error);
@@ -2764,20 +3174,109 @@ function renderFarmsOnMap() {
 
     // Update statistics displays
     updateValidationStats(validatedCount, nonValidatedCount);
-    // updateStatusStats(statusCounts);
     
     // Fit map to show all farms if we have any
     const layers = farmLayers.getLayers();
     if (layers.length > 0) {
-        console.log('Fitting bounds for', layers.length, 'layers');
-        console.log('Status counts:', statusCounts);
-        console.log('Validated:', validatedCount, 'Non-validated:', nonValidatedCount);
+        console.log('Rendered', layers.length, 'farm layers');
+        console.log('Farm IDs:', Array.from(processedFarmIds));
         fitToBounds();
     } else {
         console.warn('No layers were created');
         showToast('No farm boundaries could be displayed', 'warning');
     }
 }
+
+// Update the showFarmDetails function to ensure proper state
+function showFarmDetails(farmId) {
+    const farm = farmsData.find(f => f.id === farmId);
+    if (!farm) return;
+
+    currentFarmId = farmId;
+
+    // Make sure we're not in editing mode when showing details
+    if (editingLayer) {
+        cancelEditing();
+    }
+
+    const modalContent = `
+        <div class="farm-details-grid">
+            <div class="farm-details-section">
+                <h6>Farm Information</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Farm Code:</span>
+                    <span class="detail-value">${farm.farm_code}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${escapeHtml(farm.name)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value"><span class="badge bg-${getStatusClass(farm.status)}">${farm.status}</span></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Area:</span>
+                    <span class="detail-value">${farm.area_hectares || 'N/A'} hectares</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Soil Type:</span>
+                    <span class="detail-value">${farm.soil_type || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Irrigation:</span>
+                    <span class="detail-value">${farm.irrigation_type || 'N/A'} (${farm.irrigation_coverage || 0}%)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Validation:</span>
+                    <span class="detail-value">${farm.validation_status ? '<span class="badge bg-success">Validated</span>' : '<span class="badge bg-warning">Not Validated</span>'}</span>
+                </div>
+            </div>
+            
+            <div class="farm-details-section">
+                <h6>Farmer Information</h6>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">${escapeHtml(farm.farmer_name)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">National ID:</span>
+                    <span class="detail-value">${farm.farmer_national_id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Primary Crop:</span>
+                    <span class="detail-value">${farm.primary_crop}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Experience:</span>
+                    <span class="detail-value">${farm.years_of_experience} years</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cooperative:</span>
+                    <span class="detail-value">${farm.cooperative_membership || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Registration:</span>
+                    <span class="detail-value">${farm.registration_date}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Visit:</span>
+                    <span class="detail-value">${farm.last_visit_date || 'Never'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('farmDetails').innerHTML = modalContent;
+
+    // Show/hide edit button based on boundary availability
+    const editBtn = document.getElementById('editBoundaryBtn');
+    editBtn.style.display = (farm.boundary && farm.boundary.coordinates) ? 'inline-block' : 'none';
+
+    const farmModal = new bootstrap.Modal(document.getElementById('farmModal'));
+    farmModal.show();
+}
+
 
 
 // Function to distribute tree icons within a polygon - FIXED VERSION
@@ -3262,234 +3761,97 @@ function zoomToFarm(farmId) {
         layer.openPopup();
 
         // Show farm details
-        showFarmDetails(farmId);
+        // showFarmDetails(farmId);
     }
 }
 
-// Show farm details in modal
-function showFarmDetails(farmId) {
-    const farm = farmsData.find(f => f.id === farmId);
-    if (!farm) return;
+// // Show farm details in modal
+// function showFarmDetails(farmId) {
+//     const farm = farmsData.find(f => f.id === farmId);
+//     if (!farm) return;
 
-    currentFarmId = farmId;
+//     currentFarmId = farmId;
 
-    const modalContent = `
-            <div class="farm-details-grid">
-                <div class="farm-details-section">
-                    <h6>Farm Information</h6>
-                    <div class="detail-row">
-                        <span class="detail-label">Farm Code:</span>
-                        <span class="detail-value">${farm.farm_code}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Name:</span>
-                        <span class="detail-value">${escapeHtml(farm.name)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Status:</span>
-                        <span class="detail-value"><span class="badge bg-${getStatusClass(farm.status)}">${farm.status}</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Area:</span>
-                        <span class="detail-value">${farm.area_hectares || 'N/A'} hectares</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Soil Type:</span>
-                        <span class="detail-value">${farm.soil_type || 'N/A'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Irrigation:</span>
-                        <span class="detail-value">${farm.irrigation_type || 'N/A'} (${farm.irrigation_coverage || 0}%)</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Validation:</span>
-                        <span class="detail-value">${farm.validation_status ? '<span class="badge bg-success">Validated</span>' : '<span class="badge bg-warning">Not Validated</span>'}</span>
-                    </div>
-                </div>
+//     const modalContent = `
+//             <div class="farm-details-grid">
+//                 <div class="farm-details-section">
+//                     <h6>Farm Information</h6>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Farm Code:</span>
+//                         <span class="detail-value">${farm.farm_code}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Name:</span>
+//                         <span class="detail-value">${escapeHtml(farm.name)}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Status:</span>
+//                         <span class="detail-value"><span class="badge bg-${getStatusClass(farm.status)}">${farm.status}</span></span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Area:</span>
+//                         <span class="detail-value">${farm.area_hectares || 'N/A'} hectares</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Soil Type:</span>
+//                         <span class="detail-value">${farm.soil_type || 'N/A'}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Irrigation:</span>
+//                         <span class="detail-value">${farm.irrigation_type || 'N/A'} (${farm.irrigation_coverage || 0}%)</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Validation:</span>
+//                         <span class="detail-value">${farm.validation_status ? '<span class="badge bg-success">Validated</span>' : '<span class="badge bg-warning">Not Validated</span>'}</span>
+//                     </div>
+//                 </div>
                 
-                <div class="farm-details-section">
-                    <h6>Farmer Information</h6>
-                    <div class="detail-row">
-                        <span class="detail-label">Name:</span>
-                        <span class="detail-value">${escapeHtml(farm.farmer_name)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">National ID:</span>
-                        <span class="detail-value">${farm.farmer_national_id}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Primary Crop:</span>
-                        <span class="detail-value">${farm.primary_crop}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Experience:</span>
-                        <span class="detail-value">${farm.years_of_experience} years</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Cooperative:</span>
-                        <span class="detail-value">${farm.cooperative_membership || 'N/A'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Registration:</span>
-                        <span class="detail-value">${farm.registration_date}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Last Visit:</span>
-                        <span class="detail-value">${farm.last_visit_date || 'Never'}</span>
-                    </div>
-                </div>
-            </div>
+//                 <div class="farm-details-section">
+//                     <h6>Farmer Information</h6>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Name:</span>
+//                         <span class="detail-value">${escapeHtml(farm.farmer_name)}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">National ID:</span>
+//                         <span class="detail-value">${farm.farmer_national_id}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Primary Crop:</span>
+//                         <span class="detail-value">${farm.primary_crop}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Experience:</span>
+//                         <span class="detail-value">${farm.years_of_experience} years</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Cooperative:</span>
+//                         <span class="detail-value">${farm.cooperative_membership || 'N/A'}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Registration:</span>
+//                         <span class="detail-value">${farm.registration_date}</span>
+//                     </div>
+//                     <div class="detail-row">
+//                         <span class="detail-label">Last Visit:</span>
+//                         <span class="detail-value">${farm.last_visit_date || 'Never'}</span>
+//                     </div>
+//                 </div>
+//             </div>
            
-        `;
+//         `;
 
-    document.getElementById('farmDetails').innerHTML = modalContent;
+//     document.getElementById('farmDetails').innerHTML = modalContent;
 
-    // Show/hide edit button based on boundary availability
-    const editBtn = document.getElementById('editBoundaryBtn');
-    editBtn.style.display = farm.has_boundary ? 'inline-block' : 'none';
+//     // Show/hide edit button based on boundary availability
+//     const editBtn = document.getElementById('editBoundaryBtn');
+//     editBtn.style.display = farm.has_boundary ? 'inline-block' : 'none';
 
-    const farmModal = new bootstrap.Modal(document.getElementById('farmModal'));
-    farmModal.show();
-}
+//     const farmModal = new bootstrap.Modal(document.getElementById('farmModal'));
+//     farmModal.show();
+// }
 
-// Start editing boundary using Leaflet Draw
-function startEditingBoundary() {
 
-    const farm = farmsData.find(f => f.id === currentFarmId);
-    if (!farm || !farm.boundary) {
-        showToast('No boundary available for editing', 'warning');
-        return;
-    }
-
-    // Find the existing polygon layer
-    const existingLayer = farmLayers.getLayers().find(l => l.options.farmId === currentFarmId);
-    if (!existingLayer || !(existingLayer instanceof L.Polygon)) {
-        showToast('Could not find farm boundary for editing', 'error');
-        return;
-    }
-
-    // Store reference to original polygon
-    currentPolygon = existingLayer;
-
-    // Get the coordinates
-    const latlngs = existingLayer.getLatLngs()[0];
-
-    // Hide original layer
-    existingLayer.setStyle({ opacity: 0, fillOpacity: 0 });
-
-    // Create new polygon for editing with vertices
-    editingLayer = L.polygon(latlngs, {
-        color: '#ff6b35',
-        fillColor: '#ff6b35',
-        fillOpacity: 0.3,
-        weight: 3,
-        dashArray: '10, 10'
-    }).addTo(map);
-
-    // Add vertices as draggable markers
-    editingLayer.vertexMarkers = [];
-    latlngs.forEach((latlng, index) => {
-        const vertexMarker = L.marker(latlng, {
-            draggable: true,
-            icon: L.divIcon({
-                className: 'vertex-marker',
-                html: '<div style="background-color: #ff6b35; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
-                iconSize: [16, 16]
-            })
-        }).addTo(map);
-
-        vertexMarker.on('drag', function (e) {
-            const marker = e.target;
-            const newLatLng = marker.getLatLng();
-
-            // Update the polygon vertex
-            latlngs[index] = newLatLng;
-            editingLayer.setLatLngs([latlngs]);
-        });
-
-        editingLayer.vertexMarkers.push(vertexMarker);
-    });
-
-    // Update UI
-    document.getElementById('editBoundaryBtn').style.display = 'none';
-    document.getElementById('saveBoundaryBtn').style.display = 'inline-block';
-    document.getElementById('cancelEditBtn').style.display = 'inline-block';
-
-    showToast('Drag the circle vertices to reshape the boundary', 'info');
-}
-
-// Save boundary changes to server
-function saveBoundaryChanges() {
-    if (!editingLayer || !currentFarmId) {
-        showToast('No boundary changes to save', 'warning');
-        return;
-    }
-
-    try {
-        // Get updated coordinates from the edited layer
-        const latlngs = editingLayer.getLatLngs()[0];
-        const coordinates = latlngs.map(latlng => [latlng.lng, latlng.lat]);
-
-        // Ensure polygon is closed
-        const firstCoord = coordinates[0];
-        const lastCoord = coordinates[coordinates.length - 1];
-        if (firstCoord[0] !== lastCoord[0] || firstCoord[1] !== lastCoord[1]) {
-            coordinates.push([firstCoord[0], firstCoord[1]]);
-        }
-
-        console.log('Saving coordinates:', coordinates);
-
-        // Show saving indicator
-        showToast('Saving boundary changes...', 'info');
-
-        fetch(`/map/farm/${currentFarmId}/update-boundary/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                boundary_coordinates: coordinates
-            })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Boundary updated successfully', 'success');
-                    //reload the page
-                    window.location.reload();
-
-                    // Disable editing
-                    editingLayer.disableEdit();
-
-                    // Close modal and reload data
-                    const farmModal = bootstrap.Modal.getInstance(document.getElementById('farmModal'));
-                    if (farmModal) {
-                        farmModal.hide();
-                    }
-
-                    // Reload farm data to show updated boundary
-                    setTimeout(() => {
-                        loadFarmData();
-                    }, 500);
-
-                } else {
-                    showToast('Error updating boundary: ' + data.error, 'error');
-                    cancelEditing();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error updating boundary', 'error');
-                cancelEditing();
-            });
-
-    } catch (error) {
-        console.error('Error saving boundary:', error);
-        showToast('Error processing boundary data', 'error');
-        cancelEditing();
-    }
-}
 
 
 // Validate farm boundary
@@ -3599,90 +3961,6 @@ function updateValidationStatus(farmData) {
             validationBadge.className = 'badge bg-warning';
         }
     }
-}
-
-
-function cancelEditing() {
-    try {
-        // Disable editing if enabled
-        if (editingLayer && editingLayer.disableEdit) {
-            editingLayer.disableEdit();
-        }
-
-        // Remove editing layer
-        if (editingLayer && window.editableLayers) {
-            window.editableLayers.removeLayer(editingLayer);
-        }
-
-        // Restore original polygon
-        if (currentPolygon) {
-            farmLayers.addLayer(currentPolygon);
-            currentPolygon = null;
-        }
-
-    } catch (error) {
-        console.error('Error cancelling editing:', error);
-    } finally {
-        // Reset UI
-        document.getElementById('editBoundaryBtn').style.display = 'inline-block';
-        document.getElementById('saveBoundaryBtn').style.display = 'none';
-        document.getElementById('cancelEditBtn').style.display = 'none';
-
-        editingLayer = null;
-        showToast('Editing cancelled', 'info');
-    }
-}
-
-
-function cancelEditing() {
-    // Remove editing layer
-    if (editingLayer) {
-        map.removeLayer(editingLayer);
-        editingLayer = null;
-    }
-
-    // Restore original polygon if it exists
-    if (currentPolygon) {
-        // Re-add original polygon to map and farmLayers
-        map.addLayer(currentPolygon);
-        currentPolygon = null;
-    }
-
-    // Reset UI
-    document.getElementById('editBoundaryBtn').style.display = 'inline-block';
-    document.getElementById('saveBoundaryBtn').style.display = 'none';
-    document.getElementById('cancelEditBtn').style.display = 'none';
-
-    showToast('Editing cancelled', 'info');
-}
-
-
-// Cancel editing
-function cancelEditing() {
-    // Remove draw control if it exists
-    if (editingLayer && editingLayer.drawControl) {
-        map.removeControl(editingLayer.drawControl);
-    }
-
-    if (editingLayer) {
-        map.removeLayer(editingLayer);
-        editingLayer = null;
-    }
-
-    if (currentPolygon) {
-        currentPolygon.setStyle({
-            opacity: 1,
-            fillOpacity: 0.5
-        });
-        currentPolygon = null;
-    }
-
-    // Reset UI
-    document.getElementById('editBoundaryBtn').style.display = 'inline-block';
-    document.getElementById('saveBoundaryBtn').style.display = 'none';
-    document.getElementById('cancelEditBtn').style.display = 'none';
-
-    showToast('Editing cancelled', 'info');
 }
 
 

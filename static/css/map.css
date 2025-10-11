@@ -952,3 +952,32 @@ body.fullscreen-mode footer {
 
 
 
+.vertex-marker {
+    background: transparent !important;
+    border: none !important;
+}
+
+.vertex-marker div {
+    cursor: move;
+    pointer-events: all;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.vertex-marker div:hover {
+    transform: scale(1.2);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+}
+
+/* Style for editing instructions */
+.editing-instructions {
+    border-left: 4px solid #17a2b8;
+}
+
+.draggable-handle {
+    cursor: move;
+}
+
+.modal-dialog-draggable {
+    position: absolute;
+}

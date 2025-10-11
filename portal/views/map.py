@@ -109,10 +109,64 @@ def get_farm_data(request):
             'error': str(e)
         })
 
+# @login_required
+# @csrf_exempt
+# def update_farm_boundary(request, farm_id):
+#     """Update farm boundary coordinates"""
+#     if request.method != 'POST':
+#         return JsonResponse({'success': False, 'error': 'Only POST method allowed'})
+    
+#     try:
+#         farm = Farm.objects.get(id=farm_id)
+#         data = json.loads(request.body)
+#         print("Received boundary data:", data)
+        
+#         # # Check if user has permission to edit this farm
+#         # user_role = request.user.userprofile.role
+#         # if user_role not in [UserRole.ADMIN.value, UserRole.PROJECT_MANAGER.value]:
+#         #     return JsonResponse({'success': False, 'error': 'Insufficient permissions'})
+        
+#         # Update boundary coordinates
+#         boundary_coords = data.get('boundary_coordinates')
+#         if boundary_coords and len(boundary_coords) >= 3:
+#             print(f"Processing {len(boundary_coords)} coordinates")
+            
+#             # Ensure the polygon is closed (first and last points are the same)
+#             if boundary_coords[0] != boundary_coords[-1]:
+#                 boundary_coords.append(boundary_coords[0])
+                
+#             # Create Polygon - coordinates should be in [lng, lat] format
+#             polygon = Polygon(boundary_coords)
+#             farm.boundary = polygon
+#             farm.boundary_coord = boundary_coords  # Store raw coordinates in ArrayField
+#             farm.save()
+            
+#             print(f"Successfully updated boundary for farm {farm_id}")
+            
+#             return JsonResponse({
+#                 'success': True, 
+#                 'message': 'Boundary updated successfully',
+#                 'farm_id': farm.id
+#             })
+#         else:
+#             return JsonResponse({
+#                 'success': False, 
+#                 'error': 'Invalid boundary coordinates provided - need at least 3 points'
+#             })
+            
+#     except Farm.DoesNotExist:
+#         return JsonResponse({'success': False, 'error': 'Farm not found'})
+#     except Exception as e:
+#         import traceback
+#         print(f"Error updating boundary: {e}")
+#         print(traceback.format_exc())
+#         return JsonResponse({'success': False, 'error': str(e)})
+    
+
 @login_required
 @csrf_exempt
 def update_farm_boundary(request, farm_id):
-    """Update farm boundary coordinates"""
+    """Update farm boundary coordinates and geom field"""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Only POST method allowed'})
     
@@ -137,16 +191,42 @@ def update_farm_boundary(request, farm_id):
                 
             # Create Polygon - coordinates should be in [lng, lat] format
             polygon = Polygon(boundary_coords)
+            
+            # Update both boundary and geom fields
             farm.boundary = polygon
+            farm.geom = polygon  # Update geom field as well
             farm.boundary_coord = boundary_coords  # Store raw coordinates in ArrayField
+            farm.has_farm_boundary_polygon = True  # Set boundary flag to True
+            
+            # Calculate area in hectares if needed
+            try:
+                # Transform to a projected coordinate system for area calculation
+                from django.contrib.gis.geos import GEOSGeometry
+                wgs84_geom = GEOSGeometry(polygon.wkt, srid=4326)
+                
+                # Use a suitable projected CRS for area calculation (e.g., UTM)
+                # This is a simplified approach - you might want to detect the appropriate UTM zone
+                projected_srid = 3857  # Web Mercator - suitable for small areas
+                transformed_geom = wgs84_geom.transform(projected_srid, clone=True)
+                area_sq_m = transformed_geom.area
+                area_hectares = area_sq_m / 10000  # Convert to hectares
+                
+                farm.area_hectares = round(area_hectares, 2)
+                print(f"Calculated area: {farm.area_hectares} hectares")
+                
+            except Exception as area_error:
+                print(f"Could not calculate area: {area_error}")
+                # Don't fail the entire update if area calculation fails
+            
             farm.save()
             
-            print(f"Successfully updated boundary for farm {farm_id}")
+            print(f"Successfully updated boundary and geom for farm {farm_id}")
             
             return JsonResponse({
                 'success': True, 
                 'message': 'Boundary updated successfully',
-                'farm_id': farm.id
+                'farm_id': farm.id,
+                'area_hectares': farm.area_hectares
             })
         else:
             return JsonResponse({
@@ -161,7 +241,8 @@ def update_farm_boundary(request, farm_id):
         print(f"Error updating boundary: {e}")
         print(traceback.format_exc())
         return JsonResponse({'success': False, 'error': str(e)})
-    
+
+
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
